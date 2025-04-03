@@ -1,0 +1,187 @@
+[gd_scene load_steps=7 format=3 uid="uid://g0255w6yhbnl"]
+
+[ext_resource type="Script" uid="uid://dlrsegepy25q8" path="res://Scenes/galaxy_display.gd" id="1_3fprc"]
+[ext_resource type="PackedScene" uid="uid://biwtif1e8fvo2" path="res://Scenes/fits_image.tscn" id="2_01ug0"]
+[ext_resource type="PackedScene" uid="uid://cyh72nd7q1v85" path="res://Scenes/plot_display.tscn" id="2_oanb5"]
+[ext_resource type="PackedScene" uid="uid://kiiwnpbw1pv" path="res://Scenes/aligned_displayer.tscn" id="3_tc3t6"]
+[ext_resource type="PackedScene" path="res://ui/tab_toolbar.tscn" id="5_uxvqo"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_01ug0"]
+bg_color = Color(0.0980392, 0.0980392, 0.14902, 1)
+
+[node name="GalaxyDisplay" type="PanelContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_01ug0")
+script = ExtResource("1_3fprc")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="TabToolbar" parent="VBoxContainer" instance=ExtResource("5_uxvqo")]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/MarginContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.867)
+theme_override_font_sizes/font_size = 44
+text = "This is object 12345"
+horizontal_alignment = 1
+
+[node name="MarginContainer2" type="MarginContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="MarginContainer3" type="MarginContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="Imaging" type="HBoxContainer" parent="VBoxContainer/MarginContainer3"]
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+alignment = 1
+
+[node name="ICF150W" type="VBoxContainer" parent="VBoxContainer/MarginContainer3/Imaging"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="VBoxContainer/MarginContainer3/Imaging/ICF150W"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "F150W"
+horizontal_alignment = 1
+
+[node name="F150W" parent="VBoxContainer/MarginContainer3/Imaging/ICF150W" instance=ExtResource("2_01ug0")]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 2
+
+[node name="ICF200W" type="VBoxContainer" parent="VBoxContainer/MarginContainer3/Imaging"]
+layout_mode = 2
+size_flags_horizontal = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="VBoxContainer/MarginContainer3/Imaging/ICF200W"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "F200W"
+horizontal_alignment = 1
+
+[node name="F200W" parent="VBoxContainer/MarginContainer3/Imaging/ICF200W" instance=ExtResource("2_01ug0")]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 2
+
+[node name="MarginContainer4" type="MarginContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="Spec2Ds" parent="VBoxContainer/MarginContainer4" instance=ExtResource("3_tc3t6")]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+plot_display_path = NodePath("../../MarginContainer5/Spec1d")
+show_cursor_line = true
+cursor_line_color = Color(1.49205e-06, 0.627126, 0.473357, 1)
+cursor_line_width = 4.01
+
+[node name="Spec2D_F115W" parent="VBoxContainer/MarginContainer4/Spec2Ds" instance=ExtResource("2_01ug0")]
+visible = false
+layout_mode = 2
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+is_2d_spectrum = true
+
+[node name="Spec2D_F200W" parent="VBoxContainer/MarginContainer4/Spec2Ds" instance=ExtResource("2_01ug0")]
+layout_mode = 2
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+is_2d_spectrum = true
+
+[node name="Spec2D_F150W" parent="VBoxContainer/MarginContainer4/Spec2Ds" instance=ExtResource("2_01ug0")]
+layout_mode = 2
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+is_2d_spectrum = true
+
+[node name="MarginContainer5" type="MarginContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Spec1d" parent="VBoxContainer/MarginContainer5" instance=ExtResource("2_oanb5")]
+custom_minimum_size = Vector2(0, 300)
+layout_mode = 2
+x_min = 1.1
+x_max = 2.5
+y_max = 2.0
+margin_top = 20.0
+margin_bottom = 45.0
+plot_area_color = Color(0.0977035, 0.0977035, 0.148989, 1)
+axes_area_color = Color(0.0977035, 0.0977035, 0.148989, 1)
+show_crosshair = true
+x_tick_spacing = 0.2
+x_tick_decimals = 2
+x_label = "wavelength (μm)"
+y_label = "Flux ()"
+
+[node name="MarginContainer6" type="MarginContainer" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 220)
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/MarginContainer6"]
+layout_mode = 2
+
+[node name="Redshift" parent="VBoxContainer/MarginContainer6/VBoxContainer" instance=ExtResource("2_oanb5")]
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 2
+x_max = 5.0
+y_max = 4.0
+margin_left = 4.0
+margin_top = 10.0
+margin_bottom = 40.0
+plot_area_color = Color(0.0977035, 0.0977035, 0.148989, 1)
+axes_area_color = Color(0.0977035, 0.0977035, 0.148989, 1)
+x_tick_spacing = 0.25
+x_tick_decimals = 2
+title = "p(z)"
+x_label = "Redshift"
+
+[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer/MarginContainer6/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = -10
+theme_override_constants/margin_right = 15
+
+[node name="HSlider" type="HSlider" parent="VBoxContainer/MarginContainer6/VBoxContainer/MarginContainer"]
+layout_mode = 2
+max_value = 5.0
+step = 0.01
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="RedshiftLabel" type="Label" parent="CanvasLayer"]
+offset_left = 1706.0
+offset_top = 438.0
+offset_right = 3626.0
+offset_bottom = 499.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 44
+text = "z  = 1.0"
+
+[connection signal="plot_left_clicked" from="VBoxContainer/MarginContainer6/VBoxContainer/Redshift" to="." method="_on_redshift_plot_left_clicked"]
+[connection signal="value_changed" from="VBoxContainer/MarginContainer6/VBoxContainer/MarginContainer/HSlider" to="." method="_on_h_slider_value_changed"]

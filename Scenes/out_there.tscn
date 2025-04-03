@@ -1,0 +1,46 @@
+[gd_scene load_steps=3 format=3 uid="uid://i323og5c6b2h"]
+
+[ext_resource type="Script" uid="uid://hgglqc6jlqtr" path="res://Scenes/out_there.gd" id="1_wy0b7"]
+[ext_resource type="PackedScene" uid="uid://g0255w6yhbnl" path="res://Scenes/galaxy_display.tscn" id="2_mxkbm"]
+
+[node name="OutThere" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_wy0b7")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="GalaxyDisplay" parent="VBoxContainer/MarginContainer" instance=ExtResource("2_mxkbm")]
+layout_mode = 2
+
+[node name="Button" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Next object"
+
+[connection signal="pressed" from="VBoxContainer/Button" to="." method="_on_button_pressed"]

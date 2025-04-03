@@ -1,0 +1,83 @@
+[gd_scene load_steps=4 format=3 uid="uid://bl8dmttw12rb8"]
+
+[ext_resource type="Script" uid="uid://du7vk33aw34ea" path="res://Scenes/main.gd" id="1_jjgbg"]
+[ext_resource type="Texture2D" uid="uid://chuj0grm4mf33" path="res://abell.png" id="2_bo1nx"]
+[ext_resource type="PackedScene" uid="uid://cyh72nd7q1v85" path="res://Scenes/plot_display.tscn" id="3_8gbba"]
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_jjgbg")
+
+[node name="TextureRect5" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 1283.0
+offset_top = 2.0
+offset_right = 1914.0
+offset_bottom = 666.0
+texture = ExtResource("2_bo1nx")
+
+[node name="MenuBar" type="MenuBar" parent="."]
+layout_mode = 0
+offset_right = 155.0
+offset_bottom = 40.0
+theme_override_font_sizes/font_size = 23
+
+[node name="File" type="PopupMenu" parent="MenuBar"]
+
+[node name="Process" type="PopupMenu" parent="MenuBar"]
+auto_translate_mode = 1
+
+[node name="Help" type="PopupMenu" parent="MenuBar"]
+auto_translate_mode = 1
+
+[node name="PlotDisplay2" parent="." instance=ExtResource("3_8gbba")]
+layout_mode = 1
+offset_left = 218.0
+offset_top = 50.0
+offset_right = -885.0
+offset_bottom = -553.0
+
+[node name="PlotDisplay" parent="." instance=ExtResource("3_8gbba")]
+layout_mode = 1
+offset_left = 2.0
+offset_top = 599.0
+offset_right = -21.0
+offset_bottom = -7.0
+x_min = 0.65
+x_max = 5.165
+y_min = 1.0
+y_max = 7.0
+show_crosshair = true
+
+[node name="PlotDisplay3" parent="." instance=ExtResource("3_8gbba")]
+visible = false
+layout_mode = 1
+offset_left = 5.0
+offset_top = 851.0
+offset_right = -18.0
+offset_bottom = -1.0
+x_min = 0.65
+x_max = 5.165
+y_min = 1.0
+y_max = 7.0
+margin_top = 0.0
+margin_bottom = 25.0
+show_crosshair = true
+
+[node name="HSlider" type="HSlider" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 141.0
+offset_top = 1050.0
+offset_right = -156.0
+offset_bottom = 1076.0
+grow_horizontal = 2
+
+[connection signal="id_pressed" from="MenuBar/File" to="." method="_on_file_id_pressed"]
+[connection signal="value_changed" from="HSlider" to="." method="_on_h_slider_value_changed"]

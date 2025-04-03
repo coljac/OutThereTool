@@ -1,0 +1,17 @@
+[gd_scene load_steps=2 format=3 uid="uid://kiiwnpbw1pv"]
+
+[ext_resource type="Script" uid="uid://ciq7gr5y34ur7" path="res://Scenes/aligned_displayer.gd" id="1_tdqap"]
+
+[node name="AlignedDisplayer" type="Control"]
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 3
+anchor_right = 0.956
+anchor_bottom = 0.124
+offset_left = 15.0
+offset_top = 5.0
+offset_right = 15.48
+offset_bottom = 71.08
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_tdqap")
+cursor_line_color = Color(0.0745098, 0.811765, 0.941176, 0.7)

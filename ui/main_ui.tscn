@@ -1,0 +1,120 @@
+[gd_scene load_steps=5 format=3 uid="uid://cvip6m8f24inr"]
+
+[ext_resource type="Script" uid="uid://ds6nukonfixo4" path="res://ui/main_ui.gd" id="1_78d5d"]
+[ext_resource type="PackedScene" path="res://ui/top_bar.tscn" id="2_852uu"]
+[ext_resource type="PackedScene" uid="uid://de384mqpjawph" path="res://ui/tab_container.tscn" id="3_5ris2"]
+[ext_resource type="Texture2D" uid="uid://cpg7bchl457ac" path="res://theme/assets/icons/theme/SplitGrabber2.svg" id="4_podmt"]
+
+[node name="MainUI" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_78d5d")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 0
+
+[node name="TopBar" parent="VBoxContainer" instance=ExtResource("2_852uu")]
+layout_mode = 2
+
+[node name="HSplitContainer" type="HSplitContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 6
+theme_override_icons/grabber = ExtResource("4_podmt")
+split_offset = 250
+
+[node name="LeftPanel" type="PanelContainer" parent="VBoxContainer/HSplitContainer"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.25
+
+[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer/HSplitContainer/LeftPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Query & Filter"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ObjectIDLabel" type="Label" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Object ID:"
+
+[node name="ObjectIDEdit" type="LineEdit" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "uma-03_02484"
+placeholder_text = "Enter object ID"
+
+[node name="SearchButton" type="Button" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Search"
+
+[node name="HSeparator2" type="HSeparator" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="FiltersLabel" type="Label" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Filters:"
+
+[node name="RedshiftRangeLabel" type="Label" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Redshift Range:"
+
+[node name="RedshiftRangeContainer" type="HBoxContainer" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="MinRedshift" type="SpinBox" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/RedshiftRangeContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.1
+max_value = 10.0
+step = 0.1
+value = 0.5
+prefix = "Min:"
+
+[node name="MaxRedshift" type="SpinBox" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/RedshiftRangeContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.1
+max_value = 10.0
+step = 0.1
+value = 5.0
+prefix = "Max:"
+
+[node name="ApplyFiltersButton" type="Button" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Apply Filters"
+
+[node name="Spacer" type="Control" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MainPanel" type="VBoxContainer" parent="VBoxContainer/HSplitContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.75
+
+[node name="TabContainer" parent="VBoxContainer/HSplitContainer/MainPanel" instance=ExtResource("3_5ris2")]
+layout_mode = 2

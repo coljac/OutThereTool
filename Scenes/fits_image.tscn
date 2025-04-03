@@ -1,0 +1,24 @@
+[gd_scene load_steps=3 format=3 uid="uid://biwtif1e8fvo2"]
+
+[ext_resource type="Texture2D" uid="uid://d2lgadrp1sqoo" path="res://data/example.exr" id="1_tkbqm"]
+[ext_resource type="Script" uid="uid://dolk382f8r1ap" path="res://Scenes/fits_image.gd" id="2_b5gq6"]
+
+[node name="FitsImage" type="MarginContainer"]
+custom_minimum_size = Vector2(100, 100)
+offset_right = 141.0
+offset_bottom = 110.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("2_b5gq6")
+
+[node name="FitsImageShow" type="TextureRect" parent="."]
+layout_mode = 2
+texture = ExtResource("1_tkbqm")
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="."]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Label"
+horizontal_alignment = 1

@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3 uid="uid://b2v32r6pbrw7u"]
+
+[ext_resource type="Script" uid="uid://i52opmf6u4fu" path="res://main.gd" id="1_md8a2"]
+[ext_resource type="PackedScene" uid="uid://g0255w6yhbnl" path="res://Scenes/galaxy_display.tscn" id="2_63pow"]
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_md8a2")
+
+[node name="GalaxyDisplay" parent="." instance=ExtResource("2_63pow")]
+layout_mode = 1

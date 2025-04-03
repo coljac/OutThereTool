@@ -1,0 +1,29 @@
+[gd_scene load_steps=3 format=3 uid="uid://cwwfanma557v"]
+
+[ext_resource type="Script" uid="uid://xka5lrndxeyc" path="res://Scenes/plot_test.gd" id="1_aqnvs"]
+[ext_resource type="Script" uid="uid://oy0u7o563ort" path="res://Scenes/plot_display.gd" id="2_yvnqm"]
+
+[node name="PlotTest" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_aqnvs")
+
+[node name="PlotDisplay" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_yvnqm")
+x_min = -5.0
+x_max = 15.0
+y_min = -2.0

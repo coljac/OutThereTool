@@ -1,0 +1,41 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://ui/top_bar.gd" id="1_x4rqo"]
+[ext_resource type="Texture2D" path="res://theme/assets/icons/More.svg" id="2_71075"]
+[ext_resource type="Texture2D" path="res://theme/assets/icons/Gear.svg" id="3_xl5uh"]
+
+[node name="TopBar" type="HBoxContainer"]
+offset_right = 52.0
+offset_bottom = 24.0
+script = ExtResource("1_x4rqo")
+
+[node name="LeftSide" type="HBoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 2
+
+[node name="MoreOptions" type="Button" parent="LeftSide"]
+layout_mode = 2
+size_flags_horizontal = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_type_variation = &"IconButton"
+icon = ExtResource("2_71075")
+icon_alignment = 1
+
+[node name="SettingsButton" type="Button" parent="LeftSide"]
+layout_mode = 2
+size_flags_horizontal = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+theme_type_variation = &"IconButton"
+icon = ExtResource("3_xl5uh")
+icon_alignment = 1
+
+[node name="RightSide" type="HBoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 10
+
+[node name="Title" type="Label" parent="RightSide"]
+layout_mode = 2
+text = "Out There"
+horizontal_alignment = 2
