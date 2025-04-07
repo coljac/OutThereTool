@@ -150,6 +150,15 @@ func load_object() -> void:
 		nd._set_scale_pc(99.5)
 		nd.visible = true
 		nd.set_label(filt)
+		if filt == "F200W":
+			nd = $VBoxContainer/MarginContainer3/Imaging/Seg/SegMap#%SegMap
+			nd.hdu = x[filt] + 1
+			nd._set_file(path + object_id + ".beams.fits")
+			# nd._set_scale_pc(99.5)
+			nd.visible = true
+			nd.set_label("SegMap")
+				
+			
 	$VBoxContainer/MarginContainer4/Spec2Ds.position_textures()
 	#$VBoxContainer/MarginContainer4/Spec2Ds._on_plot_display_x_limits_changed(spec_1d.x_min, spec_1d.x_max)
 	# spec_1d.emit_signal("x_limits_changed", spec_1d.x_min, spec_1d.x_max)

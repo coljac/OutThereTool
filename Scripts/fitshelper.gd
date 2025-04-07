@@ -1,17 +1,20 @@
 extends Node
 var c_log10 = log(10)
 
+
 func zip_p32(inputs: Array[PackedFloat32Array]) -> Array[Vector2]:
 	var output = [] as Array[Vector2]
 	for i in range(inputs[0].size()):
 		output.append(Vector2(inputs[0][i], inputs[1][i]))
 	return output
 		
+
 func zip_arr(inputs: Array[Array]) -> Array[Vector2]:
 	var output = [] as Array[Vector2]
 	for i in range(inputs[0].size()):
 		output.append(Vector2(inputs[0][i], inputs[1][i]))
 	return output
+
 
 func get_pz(object: String) -> Array[PackedFloat32Array]:
 	var fits_table = FITSReader.new()
@@ -32,6 +35,10 @@ func _2d_to_1d(object: String, microns: bool = false) -> Dictionary: # Array[Vec
 	if microns:
 		return {}
 	return {}
+
+
+func get_segmap(object: String, filter: String):
+	pass
 
 
 func get_1d_spectrum(object: String, microns: bool = false) -> Dictionary: # Array[Vector2]:
@@ -63,6 +70,11 @@ func get_1d_spectrum(object: String, microns: bool = false) -> Dictionary: # Arr
 #   keep the hdu index in a dictionary
 # Might need PIXSCALE
 # Image is in .data. Easy!
+#     if ref_filters_list[i]=='F200W': # show segmentation map for F200W band 
+		# seg_im=  beam_hdul[hdul_ind+1].data
+		# segmap_cmap=get_cmap(seg_im)
+		# axs[i+1].imshow(seg_im,origin='lower',cmap=segmap_cmap)
+
 func get_directs(object: String) -> Dictionary:
 	var fits_file = FITSReader.new()
 	var filter_dict = {}
@@ -74,6 +86,8 @@ func get_directs(object: String) -> Dictionary:
 			var filt = fits_file.get_header_info(h['index'])['PUPIL']
 			if filt not in filter_dict:
 				filter_dict[filt] = h['index'] # fits_file.get_image_data(h['index'])
+			if filt == "F200W":
+				print(h['index'], " +1! ")
 
 	return filter_dict
 

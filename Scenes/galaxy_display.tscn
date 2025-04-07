@@ -79,6 +79,23 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 2
 
+[node name="Seg" type="VBoxContainer" parent="VBoxContainer/MarginContainer3/Imaging"]
+layout_mode = 2
+size_flags_horizontal = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="VBoxContainer/MarginContainer3/Imaging/Seg"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "F200W"
+horizontal_alignment = 1
+
+[node name="SegMap" parent="VBoxContainer/MarginContainer3/Imaging/Seg" instance=ExtResource("2_01ug0")]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 2
+color_map = 3
+
 [node name="MarginContainer4" type="MarginContainer" parent="VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 0
@@ -103,6 +120,7 @@ offset_top = -20.0
 offset_right = 20.0
 offset_bottom = 20.0
 is_2d_spectrum = true
+color_map = 5
 
 [node name="Spec2D_F200W" parent="VBoxContainer/MarginContainer4/Spec2Ds" instance=ExtResource("2_01ug0")]
 layout_mode = 2
@@ -111,6 +129,7 @@ offset_top = -20.0
 offset_right = 20.0
 offset_bottom = 20.0
 is_2d_spectrum = true
+color_map = 5
 
 [node name="Spec2D_F150W" parent="VBoxContainer/MarginContainer4/Spec2Ds" instance=ExtResource("2_01ug0")]
 layout_mode = 2
@@ -119,6 +138,7 @@ offset_top = -20.0
 offset_right = 20.0
 offset_bottom = 20.0
 is_2d_spectrum = true
+color_map = 5
 
 [node name="MarginContainer5" type="MarginContainer" parent="VBoxContainer"]
 layout_mode = 2
