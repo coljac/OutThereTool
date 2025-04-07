@@ -260,7 +260,7 @@ func toggle_lines(on: bool = true):
 			lambda = lambda * (1 + redshift)
 			spec_1d.add_constant_line(lambda, true, Color.RED, 2.0, false)
 			spec_1d.add_annotation(Vector2(lambda, (y_off * 0.075) + spec_1d.original_x_max * 0.7),
-				ln, Color(0, 0, 0), 12)
+				ln, Color.WHEAT, 12)
 			y_off += 1
 			y_off = y_off % 4
 	 

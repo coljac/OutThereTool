@@ -21,6 +21,8 @@ var original_x_min: float = 0.0
 var original_x_max: float = 10.0
 var original_y_min: float = 0.0
 var original_y_max: float = 10.0
+var original_x_tick_spacing: float = 1.0
+var original_y_tick_spacing: float = 1.0
 
 @export_category("Margins")
 # Margins for axes and title
@@ -129,6 +131,8 @@ func _ready():
 	original_x_max = x_max
 	original_y_min = y_min
 	original_y_max = y_max
+	original_x_tick_spacing = x_tick_spacing
+	original_y_tick_spacing = y_tick_spacing
 	
 	# Enable mouse input for crosshair and selection
 	set_process_input(true)
@@ -1103,10 +1107,11 @@ func reset_zoom():
 	var y_range = original_y_max - original_y_min
 	
 	# Calculate appropriate tick spacing (approximately 5-10 ticks)
-	var x_magnitude = pow(10, floor(log(x_range / 5) / log(10)))
-	var y_magnitude = pow(10, floor(log(y_range / 5) / log(10)))
+	#var x_magnitude = pow(10, floor(log(x_range / 5) / log(10)))
+	#var y_magnitude = pow(10, floor(log(y_range / 5) / log(10)))
 	
-	set_tick_spacing(x_magnitude, y_magnitude)
+	#set_tick_spacing(x_magnitude, y_magnitude)
+	set_tick_spacing(original_x_tick_spacing, original_y_tick_spacing)
 
 # Helper function to format numbers with specified decimals
 func format_number(value: float, decimals: int) -> String:
