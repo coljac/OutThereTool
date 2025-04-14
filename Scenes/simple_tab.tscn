@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3 uid="uid://75flqcgsoecp"]
+
+[ext_resource type="Script" uid="uid://bqjvfxmnx0ke7" path="res://Scenes/simple_tab.gd" id="1_k5tw7"]
+[ext_resource type="PackedScene" uid="uid://g0255w6yhbnl" path="res://Scenes/galaxy_display.tscn" id="2_kqvpu"]
+
+[node name="SimpleTab" type="TabContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+current_tab = 0
+drag_to_rearrange_enabled = true
+script = ExtResource("1_k5tw7")
+
+[node name="GalaxyDisplay" parent="." instance=ExtResource("2_kqvpu")]
+layout_mode = 2
+metadata/_tab_index = 0

@@ -151,7 +151,7 @@ func load_object() -> void:
 		nd.visible = true
 		nd.set_label(filt)
 		if filt == "F200W":
-			nd = $VBoxContainer/MarginContainer3/Imaging/Seg/SegMap#%SegMap
+			nd = %SegMap
 			nd.hdu = x[filt] + 1
 			nd._set_file(path + object_id + ".beams.fits")
 			# nd._set_scale_pc(99.5)

@@ -54,7 +54,7 @@ alignment = 1
 
 [node name="Label" type="Label" parent="VBoxContainer/MarginContainer3/Imaging/ICF150W"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_color = Color(0.437683, 0.270602, 0.67592, 1)
 text = "F150W"
 horizontal_alignment = 1
 
@@ -70,7 +70,7 @@ alignment = 1
 
 [node name="Label" type="Label" parent="VBoxContainer/MarginContainer3/Imaging/ICF200W"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_color = Color(0.437683, 0.270602, 0.67592, 1)
 text = "F200W"
 horizontal_alignment = 1
 
@@ -86,11 +86,12 @@ alignment = 1
 
 [node name="Label" type="Label" parent="VBoxContainer/MarginContainer3/Imaging/Seg"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_color = Color(0.437683, 0.270602, 0.67592, 1)
 text = "F200W"
 horizontal_alignment = 1
 
 [node name="SegMap" parent="VBoxContainer/MarginContainer3/Imaging/Seg" instance=ExtResource("2_01ug0")]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 2
