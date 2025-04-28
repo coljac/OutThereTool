@@ -105,15 +105,21 @@ theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="Spec2Ds" parent="VBoxContainer/MarginContainer4" instance=ExtResource("3_tc3t6")]
+[node name="Spec2DContainer" type="VBoxContainer" parent="VBoxContainer/MarginContainer4"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = -35
+
+[node name="Spec2Ds" parent="VBoxContainer/MarginContainer4/Spec2DContainer" instance=ExtResource("3_tc3t6")]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
-plot_display_path = NodePath("../../MarginContainer5/Spec1d")
+plot_display_path = NodePath("../../../MarginContainer5/Spec1d")
 show_cursor_line = true
 cursor_line_color = Color(1.49205e-06, 0.627126, 0.473357, 1)
 cursor_line_width = 4.01
 
-[node name="Spec2D_F115W" parent="VBoxContainer/MarginContainer4/Spec2Ds" instance=ExtResource("2_01ug0")]
+[node name="Spec2D_F115W" parent="VBoxContainer/MarginContainer4/Spec2DContainer/Spec2Ds" instance=ExtResource("2_01ug0")]
 visible = false
 layout_mode = 2
 offset_left = -20.0
@@ -123,7 +129,7 @@ offset_bottom = 20.0
 is_2d_spectrum = true
 color_map = 5
 
-[node name="Spec2D_F200W" parent="VBoxContainer/MarginContainer4/Spec2Ds" instance=ExtResource("2_01ug0")]
+[node name="Spec2D_F200W" parent="VBoxContainer/MarginContainer4/Spec2DContainer/Spec2Ds" instance=ExtResource("2_01ug0")]
 layout_mode = 2
 offset_left = -20.0
 offset_top = -20.0
@@ -132,7 +138,81 @@ offset_bottom = 20.0
 is_2d_spectrum = true
 color_map = 5
 
-[node name="Spec2D_F150W" parent="VBoxContainer/MarginContainer4/Spec2Ds" instance=ExtResource("2_01ug0")]
+[node name="Spec2D_F150W" parent="VBoxContainer/MarginContainer4/Spec2DContainer/Spec2Ds" instance=ExtResource("2_01ug0")]
+layout_mode = 2
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+is_2d_spectrum = true
+color_map = 5
+
+[node name="Spec2Ds2" parent="VBoxContainer/MarginContainer4/Spec2DContainer" instance=ExtResource("3_tc3t6")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+plot_display_path = NodePath("../../../MarginContainer5/Spec1d")
+show_cursor_line = true
+cursor_line_color = Color(1.49205e-06, 0.627126, 0.473357, 1)
+cursor_line_width = 4.01
+
+[node name="Spec2D_F115W" parent="VBoxContainer/MarginContainer4/Spec2DContainer/Spec2Ds2" instance=ExtResource("2_01ug0")]
+visible = false
+layout_mode = 2
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+is_2d_spectrum = true
+color_map = 5
+
+[node name="Spec2D_F200W" parent="VBoxContainer/MarginContainer4/Spec2DContainer/Spec2Ds2" instance=ExtResource("2_01ug0")]
+layout_mode = 2
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+is_2d_spectrum = true
+color_map = 5
+
+[node name="Spec2D_F150W" parent="VBoxContainer/MarginContainer4/Spec2DContainer/Spec2Ds2" instance=ExtResource("2_01ug0")]
+layout_mode = 2
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+is_2d_spectrum = true
+color_map = 5
+
+[node name="Spec2Ds3" parent="VBoxContainer/MarginContainer4/Spec2DContainer" instance=ExtResource("3_tc3t6")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+plot_display_path = NodePath("../../../MarginContainer5/Spec1d")
+show_cursor_line = true
+cursor_line_color = Color(1.49205e-06, 0.627126, 0.473357, 1)
+cursor_line_width = 4.01
+
+[node name="Spec2D_F115W" parent="VBoxContainer/MarginContainer4/Spec2DContainer/Spec2Ds3" instance=ExtResource("2_01ug0")]
+visible = false
+layout_mode = 2
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+is_2d_spectrum = true
+color_map = 5
+
+[node name="Spec2D_F200W" parent="VBoxContainer/MarginContainer4/Spec2DContainer/Spec2Ds3" instance=ExtResource("2_01ug0")]
+layout_mode = 2
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+is_2d_spectrum = true
+color_map = 5
+
+[node name="Spec2D_F150W" parent="VBoxContainer/MarginContainer4/Spec2DContainer/Spec2Ds3" instance=ExtResource("2_01ug0")]
 layout_mode = 2
 offset_left = -20.0
 offset_top = -20.0
@@ -202,7 +282,7 @@ offset_left = 1706.0
 offset_top = 438.0
 offset_right = 3626.0
 offset_bottom = 499.0
-theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_color = Color(0, 0.780392, 0, 1)
 theme_override_font_sizes/font_size = 44
 text = "z  = 1.0"
 

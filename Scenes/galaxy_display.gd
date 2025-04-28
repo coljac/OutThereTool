@@ -1,5 +1,5 @@
 extends Control
-
+signal next()
 # TODO: Fits images not the right size up top
 # TODO: Scaling
 # TODO: COlor map
@@ -15,7 +15,7 @@ extends Control
 #@export var object_id: String = "uma-03_03269" #2122"
 #var path = "./data/Good_example/"
 @export var object_id: String = "uma-03_02484" # 2122"
-var path = "./data/Needrefit_example/"
+var path = "./data/"
 
 @onready var redshift_label: Label = $CanvasLayer/RedshiftLabel
 @onready var tab_toolbar = $VBoxContainer/TabToolbar
@@ -42,8 +42,18 @@ func _ready():
 	set_process_input(true)
 	
 	# Connect the aligned_displayer to the plot_display
-	var aligned_displayer = $VBoxContainer/MarginContainer4/Spec2Ds
-	aligned_displayer.plot_display_path = $VBoxContainer/MarginContainer5/Spec1d.get_path()
+	var aligned_container = %Spec2DContainer
+	for child in aligned_container.get_children():
+		var aligned_displayer = child as AlignedDisplayer
+		if aligned_displayer:
+			aligned_displayer.add_to_group("spec2ds")
+			aligned_displayer.plot_display_path = $VBoxContainer/MarginContainer5/Spec1d.get_path()
+		# if child.name == "Spec2D_1":
+			# %Spec2Ds = child
+			# break
+
+	# var aligned_displayer = %Spec2Ds
+	# aligned_displayer.plot_display_path = $VBoxContainer/MarginContainer5/Spec1d.get_path()
 	
 	# Enable crosshair for the 1D spectrum plot
 	spec_1d.show_crosshair = true
@@ -55,14 +65,19 @@ func _ready():
 	
 	# Load the object with a slight delay to ensure all nodes are ready
 	call_deferred("load_object")
-	load_object()
-	
-	$VBoxContainer/MarginContainer4/Spec2Ds.call_deferred("position_textures")
+	# load_object()
+	for n in get_tree().get_nodes_in_group("spec2ds"): # .call_deferred("position_textures")
+		n.call_deferred("position_textures")
+	# %Spec2Ds.call_deferred("position_textures")
 
-	
 func _unhandled_input(event: InputEvent) -> void:
-	if Input.is_action_just_pressed("flag_bad"):
-		print("Flag bad")
+	if event.is_action_pressed("flag_bad"):
+		print("BAD")
+		get_viewport().set_input_as_handled()
+	
+# func _unhandled_input(event: InputEvent) -> void:
+# 	if Input.is_action_just_pressed("flag_bad"):
+# 		print("Flag bad")
 	
 		
 func set_redshift(z: float) -> void:
@@ -132,15 +147,16 @@ func load_object() -> void:
 	# Spec2D
 	var data2d = FitsHelper.get_2d_spectrum(path + object_id + ".stack.fits")
 	for k in ['F115W', 'F150W', 'F200W']:
-		var spec_display = get_node("VBoxContainer/MarginContainer4/Spec2Ds/Spec2D_" + k) as FitsImage
-		spec_display.visible = k in data2d
-		if k in data2d:
-			spec_display.hdu = data2d[k]
-			spec_display.set_image(path + object_id + ".stack.fits")
-			spec_display.visible = true
-			spec_display.set_label(k)
-			print("Loaded image ", k, " with scale ", spec_display.scaling)
-	
+		for spec2d in get_tree().get_nodes_in_group("spec2ds"):
+			var spec_display = spec2d.get_node("Spec2D_" + k) as FitsImage
+			spec_display.visible = k in data2d
+			if k in data2d:
+				spec_display.hdu = data2d[k]
+				spec_display.set_image(path + object_id + ".stack.fits")
+				spec_display.visible = true
+				spec_display.set_label(k)
+				print("Loaded image ", k, " with scale ", spec_display.scaling)
+		
 	# Directs
 	var x = FitsHelper.get_directs(path + object_id + ".beams.fits")
 	for filt in x:
@@ -159,7 +175,7 @@ func load_object() -> void:
 			nd.set_label("SegMap")
 				
 			
-	$VBoxContainer/MarginContainer4/Spec2Ds.position_textures()
+	%Spec2Ds.position_textures()
 	#$VBoxContainer/MarginContainer4/Spec2Ds._on_plot_display_x_limits_changed(spec_1d.x_min, spec_1d.x_max)
 	# spec_1d.emit_signal("x_limits_changed", spec_1d.x_min, spec_1d.x_max)
 	
