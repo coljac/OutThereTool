@@ -12,10 +12,12 @@ class_name AlignedDisplayer
 
 var plot_display: PlotDisplay # Reference to the PlotDisplay node
 var cursor_wavelength: float = 0.0 # Current wavelength position for the cursor line
-var cursor_height: int = 70 # 
+var cursor_height: int = 70 #
 
 func _ready():
 	# Get reference to the PlotDisplay
+	clip_contents = true
+
 	if plot_display_path:
 		plot_display = get_node(plot_display_path)
 		if plot_display:
@@ -54,7 +56,7 @@ func _draw():
 		# Draw vertical line
 		draw_line(
 			Vector2(x_pixel, 0),
-			Vector2(x_pixel, cursor_height), #.y/2.0),
+			Vector2(x_pixel, cursor_height), # .y/2.0),
 			cursor_line_color,
 			cursor_line_width
 		)

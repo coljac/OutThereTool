@@ -16,6 +16,18 @@ const GALAXY_DISPLAY_SCENE = "res://Scenes/galaxy_display.tscn"
 # Current zoom level
 var zoom_level = 100
 
+var objects = [
+	["./data/", "uma-03_02122"],
+	["./data/", "uma-03_02379"],
+	["./data/", "uma-03_02624"],
+	["./data/", "uma-03_03269"],
+	["./data/", "uma-03_02484"],
+	["./data/", "uma-03_03763"],
+	["./data/", "uma-03_03917"],
+	["./data/", "uma-03_04365"]
+]
+var obj_index = 0
+
 func _ready():
 	# Connect signals from the top bar
 	top_bar.more_options_pressed.connect(_on_more_options_pressed)
@@ -34,25 +46,49 @@ func _ready():
 	
 	# Add an initial tab
 	_add_initial_tab()
+	set_process_input(true)
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("next"):
+		print("NEXT")
+		next_object()
+		get_viewport().set_input_as_handled()
+
+func next_object() -> void:
+	# for ch in $VBoxContainer/MarginContainer.get_children():
+		# ch.queue_free()
+	var gal_display = %SimpleTab.get_tab_control(0)
+	# var newbox = gal_display.instantiate()
+	obj_index += 1
+	if obj_index >= objects.size():
+		obj_index = 0
+	gal_display.set_object_id(objects[obj_index][1])
+
+	# newbox.path = objects[obj_index][0]
+	# newbox.object_id = objects[obj_index][1]
+	# newbox.object_id = "uma-03_02122"
+	# newbox.name = "GalaxyDisplay"
+	# $VBoxContainer/MarginContainer.add_child(newbox)
+	# newbox.load_object()
+# 
 func _add_initial_tab():
 	# Add the first tab with a GalaxyDisplay
-	var tab_index = tab_container.create_tab("Galaxy View")
+	var tab_index = tab_container.create_tab("GalaxyView")
 	
 	# Select the first tab
 	tab_container.current_tab = tab_index
 
 func _on_more_options_pressed():
 	# Handle the more options button press
-	print("More options pressed")
+	print("Moreoptionspressed")
 
 func _on_settings_pressed():
 	# Handle the settings button press
-	print("Settings pressed")
+	print("Settingspressed")
 
 func _on_tab_added(tab_index):
 	# Handle a new tab being added
-	print("Tab added at index: ", tab_index)
+	print("Tabaddedatindex: ", tab_index)
 	
 	# Get the GalaxyDisplay instance in this tab
 	var galaxy_display = tab_container.get_tab_control(tab_index)
@@ -64,7 +100,7 @@ func _on_tab_added(tab_index):
 
 func _on_tab_closed(tab_index):
 	# Handle a tab being closed
-	print("Tab closed at index: ", tab_index)
+	print("Tabclosedatindex: ", tab_index)
 
 func _on_search_button_pressed():
 	# Get the object ID from the text field
@@ -83,8 +119,7 @@ func _on_apply_filters_button_pressed():
 	# Get the redshift range
 	var min_z = min_redshift.value
 	var max_z = max_redshift.value
-	print("Applying filters - Redshift range: ", min_z, " to ", max_z)
+	print("Applyingfilters - Redshiftrange: ", min_z, "to", max_z)
 	
 	# Here you would apply the filters to the GalaxyDisplay
 	# This is a placeholder for future implementation
-

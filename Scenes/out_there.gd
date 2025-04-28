@@ -21,13 +21,22 @@ var object_id: String = "./data/Good_example/uma-03_02122"
 var object_id2: String = "./data/Good_example/uma-03_02122"
 #var object_id2: String = "./data/outthere-hudfn_04375"
 
+func _ready() -> void:
+	print("I LIVEEEEEEEEEEEEE")
+	set_process_input(true)
 
 func pofz_pressed(pos):
 	print(pos)
 	
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("next"):
+		print("NEXT")
+		next_object()
+		get_viewport().set_input_as_handled()
 
-func _on_button_pressed() -> void:
-	for ch in  $VBoxContainer/MarginContainer.get_children():
+
+func next_object() -> void:
+	for ch in $VBoxContainer/MarginContainer.get_children():
 		ch.queue_free()
 	#if $VBoxContainer/MarginContainer/GalaxyDisplay:
 		#$VBoxContainer/MarginContainer/GalaxyDisplay.queue_free()
@@ -41,4 +50,3 @@ func _on_button_pressed() -> void:
 	newbox.name = "GalaxyDisplay"
 	$VBoxContainer/MarginContainer.add_child(newbox)
 	newbox.load_object()
-	

@@ -148,7 +148,11 @@ func _input(event):
 	
 	var plot_rect = get_plot_rect()
 	var local_mouse_pos = get_local_mouse_position()
-	var is_in_plot = plot_rect.has_point(local_mouse_pos)
+	var is_in_plot = false
+	if plot_rect.abs() == plot_rect:
+		#print(plot_rect)
+	#if local_mouse_pos.abs() == local_mouse_pos:
+		is_in_plot = plot_rect.has_point(local_mouse_pos)
 	
 	# Handle mouse motion
 	if event is InputEventMouseMotion:
@@ -254,6 +258,7 @@ func _draw():
 		title_label.add_theme_font_size_override("font_size", title_font_size)
 
 # Get the rectangle representing the plot area
+# Sometimes its negative, TODO
 func get_plot_rect() -> Rect2:
 	return Rect2(
 		margin_left,
