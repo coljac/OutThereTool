@@ -16,16 +16,7 @@ const GALAXY_DISPLAY_SCENE = "res://Scenes/galaxy_display.tscn"
 # Current zoom level
 var zoom_level = 100
 
-var objects = [
-	["./data/", "uma-03_02122"],
-	["./data/", "uma-03_02379"],
-	["./data/", "uma-03_02624"],
-	["./data/", "uma-03_03269"],
-	["./data/", "uma-03_02484"],
-	["./data/", "uma-03_03763"],
-	["./data/", "uma-03_03917"],
-	["./data/", "uma-03_04365"]
-]
+var objects = []
 var obj_index = 0
 
 func _ready():
@@ -33,6 +24,8 @@ func _ready():
 	top_bar.more_options_pressed.connect(_on_more_options_pressed)
 	top_bar.settings_pressed.connect(_on_settings_pressed)
 	
+	objects = DataManager.get_gals()
+
 	# Connect signals from the tab container
 	tab_container.tab_added.connect(_on_tab_added)
 	tab_container.tab_closed.connect(_on_tab_closed)
@@ -47,12 +40,20 @@ func _ready():
 	# Add an initial tab
 	_add_initial_tab()
 	set_process_input(true)
+	%ObjectViewing.set_galaxy_details(objects[obj_index])
+	DataManager.connect("updated_data", %ObjectViewing.tick)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("next"):
 		print("NEXT")
 		next_object()
 		get_viewport().set_input_as_handled()
+
+
+func save_galaxy(vals: Dictionary):
+	var gal_id = objects[obj_index]['id']
+	DataManager.update_gal(gal_id, vals['status'], vals['comments'])
+
 
 func next_object() -> void:
 	# for ch in $VBoxContainer/MarginContainer.get_children():
@@ -62,7 +63,8 @@ func next_object() -> void:
 	obj_index += 1
 	if obj_index >= objects.size():
 		obj_index = 0
-	gal_display.set_object_id(objects[obj_index][1])
+	gal_display.set_object_id(objects[obj_index]['id'])
+	%ObjectViewing.set_galaxy_details(objects[obj_index])
 
 	# newbox.path = objects[obj_index][0]
 	# newbox.object_id = objects[obj_index][1]
