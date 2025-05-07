@@ -8,11 +8,11 @@ signal save_galaxy(vals: Dictionary)
 func set_galaxy_details(details: Dictionary):
 	comments.text = details['comments'] if details['comments'] else ""
 	status.select(details['status'])
-	%TickRect.visible = false
+	%TickRect.text = ""
 
 
 func tick(on: bool):
-	%TickRect.visible = on
+	%TickRect.text = "Saved."
 
 
 func save():

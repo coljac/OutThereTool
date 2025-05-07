@@ -28,25 +28,25 @@ func _ready() -> void:
 func pofz_pressed(pos):
 	print(pos)
 	
-func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("next"):
-		print("NEXT")
-		next_object()
-		get_viewport().set_input_as_handled()
+# func _unhandled_input(event: InputEvent) -> void:
+# 	if event.is_action_pressed("next"):
+# 		print("NEXT")
+# 		next_object()
+# 		get_viewport().set_input_as_handled()
 
 
-func next_object() -> void:
-	for ch in $VBoxContainer/MarginContainer.get_children():
-		ch.queue_free()
-	#if $VBoxContainer/MarginContainer/GalaxyDisplay:
-		#$VBoxContainer/MarginContainer/GalaxyDisplay.queue_free()
-	var newbox = gal_display.instantiate()
-	obj_index += 1
-	if obj_index >= objects.size():
-		obj_index = 0
-	newbox.path = objects[obj_index][0]
-	newbox.object_id = objects[obj_index][1]
-	#newbox.object_id = "uma-03_02122"
-	newbox.name = "GalaxyDisplay"
-	$VBoxContainer/MarginContainer.add_child(newbox)
-	newbox.load_object()
+# func next_object() -> void:
+# 	for ch in $VBoxContainer/MarginContainer.get_children():
+# 		ch.queue_free()
+# 	#if $VBoxContainer/MarginContainer/GalaxyDisplay:
+# 		#$VBoxContainer/MarginContainer/GalaxyDisplay.queue_free()
+# 	var newbox = gal_display.instantiate()
+# 	obj_index += 1
+# 	if obj_index >= objects.size():
+# 		obj_index = 0
+# 	newbox.path = objects[obj_index][0]
+# 	newbox.object_id = objects[obj_index][1]
+# 	#newbox.object_id = "uma-03_02122"
+# 	newbox.name = "GalaxyDisplay"
+# 	$VBoxContainer/MarginContainer.add_child(newbox)
+# 	newbox.load_object()

@@ -29,6 +29,7 @@ var current_hdu = 1
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
+	set_process(false)  # Disable _process by default
 	# region_manager = RegionManager.new()
 	#add_child(region_manager)
 	gui_input.connect(_on_gui_input)
@@ -117,7 +118,8 @@ func _set_file(file: String):
 	fits_path = file
 	_load_fits()
 	
-func set_image(file_path: String):
+func set_image(file_path: String, image_hdu: int = 1):
+	hdu = image_hdu
 	fits_path = file_path
 	_load_fits()
 	

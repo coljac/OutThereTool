@@ -93,6 +93,7 @@ func _ready():
 	# Create child nodes if they don't exist
 	if Engine.is_editor_hint():
 		return
+	set_process(false)  # Disable _process by default
 		
 	# Create plot area
 	if not has_node("PlotArea"):

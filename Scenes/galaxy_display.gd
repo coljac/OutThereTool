@@ -31,6 +31,8 @@ func set_object_id(new_id: String) -> void:
 	# Reload the object with the new ID
 	if is_inside_tree():
 		load_object()
+	
+	
 # Flag to prevent multiple loads
 var _is_loading = false
 
@@ -70,6 +72,11 @@ func _ready():
 		n.call_deferred("position_textures")
 	# %Spec2Ds.call_deferred("position_textures")
 
+func _exit_tree() -> void:
+	print_debug("Exiting tree")
+	$CanvasLayer/RedshiftLabel.text = ""
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("flag_bad"):
 		print("BAD")
@@ -95,6 +102,7 @@ func set_redshift(z: float) -> void:
 	#load_object()
 	
 func load_object() -> void:
+	redshift_label.text = "" # TODO figure this out, why it duplicates after a new object
 	if _is_loading or not is_inside_tree():
 		return
 	if object_id == "":
@@ -114,7 +122,7 @@ func load_object() -> void:
 	var logp = Array(pz[1]).map(func(i): return FitsHelper.log10(i))
 	var peaks = FitsHelper.peak_finding(logp, 50)
 	
-	# REDSHIFTevent
+	# REDSHIFT
 	var series = FitsHelper.zip_arr([Array(pz[0]), logp])
 	pofz.add_series(series, Color(0.2, 0.4, 0.8), 2.0, false, 3.0)
 	var z_maxes = [] as Array[Vector2]
@@ -151,11 +159,11 @@ func load_object() -> void:
 			var spec_display = spec2d.get_node("Spec2D_" + k) as FitsImage
 			spec_display.visible = k in data2d
 			if k in data2d:
+				print("Setting k ", k, " ", data2d[k])
 				spec_display.hdu = data2d[k]
-				spec_display.set_image(path + object_id + ".stack.fits")
+				spec_display.set_image(path + object_id + ".stack.fits", data2d[k])
 				spec_display.visible = true
 				spec_display.set_label(k)
-				# print("Loaded image ", k, " with scale ", spec_display.scaling)
 		
 	# Directs
 	var x = FitsHelper.get_directs(path + object_id + ".beams.fits")
@@ -181,6 +189,7 @@ func load_object() -> void:
 	
 	# Reset the loading flag
 	_is_loading = false
+	set_redshift(redshift)
 	print("Finished loading object: ", object_id)
 
 

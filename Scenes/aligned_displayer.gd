@@ -87,7 +87,6 @@ func position_textures():
 	for child in get_children():
 		var f = child as FitsImage
 		if f and f.visible:
-			print("Component width: ", f.width)
 			
 			# Calculate the pixel positions for the left and right boundaries of the image
 			var left_pixel = _microns_to_pixels(f.scaling['left'])
@@ -97,16 +96,16 @@ func position_textures():
 			# Calculate the scale factor to make the image fit the pixel width
 			var scale = float(f.fits_img.texture.get_width()) / max(1, pixel_width)
 			
-			print(f.fits_img.texture.get_width())
-			print(f.scaling['left'], " -> ", f.scaling['right'])
-			print(_microns_to_pixels(1.0), ",", _microns_to_pixels(1.7), ",", _microns_to_pixels(2.5))
-			print("Scale: ", scale, "  ", 1.0 / scale)
+			# print(f.fits_img.texture.get_width())
+			# print(f.scaling['left'], " -> ", f.scaling['right'])
+			# print(_microns_to_pixels(1.0), ",", _microns_to_pixels(1.7), ",", _microns_to_pixels(2.5))
+			# print("Scale: ", scale, "  ", 1.0 / scale)
 			
 			# Apply the scale and position
 			f.scale.x = 1.0 / scale
 			f.position.x = left_pixel
 			
-			print("Texture width: ", f.fits_img.texture.get_width())
+			# print("Texture width: ", f.fits_img.texture.get_width())
 	#
 	## Define your x positions
 	#var x1 = 100  # Left boundary

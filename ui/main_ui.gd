@@ -20,6 +20,7 @@ var objects = []
 var obj_index = 0
 
 func _ready():
+	# Connect signals from the left panel	
 	# Connect signals from the top bar
 	top_bar.more_options_pressed.connect(_on_more_options_pressed)
 	top_bar.settings_pressed.connect(_on_settings_pressed)
@@ -42,6 +43,8 @@ func _ready():
 	set_process_input(true)
 	%ObjectViewing.set_galaxy_details(objects[obj_index])
 	DataManager.connect("updated_data", %ObjectViewing.tick)
+	set_process(false) # Disable _process by default
+
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("next"):
