@@ -110,6 +110,7 @@ layout_mode = 2
 text = "Apply Filters"
 
 [node name="ObjectViewing" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer" instance=ExtResource("4_186kx")]
+unique_name_in_owner = true
 layout_mode = 2
 
 [node name="Spacer" type="Control" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
@@ -128,3 +129,5 @@ layout_mode = 2
 [node name="SimpleTab" parent="VBoxContainer/HSplitContainer/MainPanel" instance=ExtResource("5_186kx")]
 unique_name_in_owner = true
 layout_mode = 2
+
+[connection signal="save_galaxy" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/ObjectViewing" to="." method="save_galaxy"]

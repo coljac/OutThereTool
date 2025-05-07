@@ -155,7 +155,7 @@ func load_object() -> void:
 				spec_display.set_image(path + object_id + ".stack.fits")
 				spec_display.visible = true
 				spec_display.set_label(k)
-				print("Loaded image ", k, " with scale ", spec_display.scaling)
+				# print("Loaded image ", k, " with scale ", spec_display.scaling)
 		
 	# Directs
 	var x = FitsHelper.get_directs(path + object_id + ".beams.fits")

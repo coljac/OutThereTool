@@ -1,19 +1,28 @@
-[gd_scene format=3 uid="uid://c7rq6fiqo8bv4"]
+[gd_scene load_steps=4 format=3 uid="uid://c7rq6fiqo8bv4"]
+
+[ext_resource type="Script" uid="uid://5xpj01f7ifae" path="res://Scenes/object_viewing.gd" id="1_7ghqj"]
+[ext_resource type="Script" uid="uid://bsgbevyk3eujk" path="res://Scenes/comments.gd" id="2_gb2lq"]
+[ext_resource type="Texture2D" uid="uid://dsf673g0efjlc" path="res://tick3.png" id="2_ye23l"]
 
 [node name="ObjectViewing" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 8.0
+offset_bottom = 8.0
 grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+script = ExtResource("1_7ghqj")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+offset_right = 177.0
+offset_bottom = 300.0
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
 layout_mode = 2
@@ -33,12 +42,61 @@ columns = 2
 layout_mode = 2
 text = "Spurious source"
 
-[node name="CheckBox" type="CheckBox" parent="MarginContainer/VBoxContainer/GridContainer"]
+[node name="Spurious" type="CheckBox" parent="MarginContainer/VBoxContainer/GridContainer"]
 layout_mode = 2
 
 [node name="Label2" type="Label" parent="MarginContainer/VBoxContainer/GridContainer"]
 layout_mode = 2
 text = "Definitely wrong"
 
-[node name="CheckBox2" type="CheckBox" parent="MarginContainer/VBoxContainer/GridContainer"]
+[node name="Definitely" type="CheckBox" parent="MarginContainer/VBoxContainer/GridContainer"]
 layout_mode = 2
+
+[node name="Label3" type="Label" parent="MarginContainer/VBoxContainer/GridContainer"]
+layout_mode = 2
+text = "Status"
+
+[node name="Status" type="OptionButton" parent="MarginContainer/VBoxContainer/GridContainer"]
+layout_mode = 2
+selected = 1
+item_count = 3
+popup/item_0/text = "Good"
+popup/item_0/id = 1
+popup/item_1/text = "OK"
+popup/item_1/id = 0
+popup/item_2/text = "Bad"
+popup/item_2/id = 2
+
+[node name="Label3" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Comments"
+
+[node name="Comments" type="TextEdit" parent="MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+placeholder_text = "Comments about this object"
+wrap_mode = 1
+script = ExtResource("2_gb2lq")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Button" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Save status"
+
+[node name="TickRectIcon" type="TextureRect" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+visible = false
+layout_mode = 2
+texture = ExtResource("2_ye23l")
+
+[node name="TickRect" type="Label" parent="MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.461028, 1, 0.429352, 1)
+theme_override_font_sizes/font_size = 12
+text = "Saved."
+
+[connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer/Button" to="." method="save"]
