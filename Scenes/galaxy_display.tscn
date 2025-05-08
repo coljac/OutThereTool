@@ -63,13 +63,6 @@ horizontal_alignment = 1
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 2
-black_level = null
-white_level = null
-scale_percent = null
-invert_color = null
-is_2d_spectrum = null
-scaling = null
-color_map = null
 
 [node name="ICF200W" type="VBoxContainer" parent="VBoxContainer/MarginContainer3/Imaging"]
 layout_mode = 2
@@ -86,13 +79,6 @@ horizontal_alignment = 1
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 2
-black_level = null
-white_level = null
-scale_percent = null
-invert_color = null
-is_2d_spectrum = null
-scaling = null
-color_map = null
 
 [node name="Seg" type="VBoxContainer" parent="VBoxContainer/MarginContainer3/Imaging"]
 layout_mode = 2
@@ -110,12 +96,6 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 2
-black_level = null
-white_level = null
-scale_percent = null
-invert_color = null
-is_2d_spectrum = null
-scaling = null
 color_map = 3
 
 [node name="MarginContainer4" type="MarginContainer" parent="VBoxContainer"]
@@ -147,12 +127,7 @@ offset_left = -20.0
 offset_top = -20.0
 offset_right = 20.0
 offset_bottom = 20.0
-black_level = null
-white_level = null
-scale_percent = null
-invert_color = null
 is_2d_spectrum = true
-scaling = null
 color_map = 5
 
 [node name="Spec2D_F200W" parent="VBoxContainer/MarginContainer4/Spec2DContainer/Spec2Ds" instance=ExtResource("2_01ug0")]
@@ -161,12 +136,7 @@ offset_left = -20.0
 offset_top = -20.0
 offset_right = 20.0
 offset_bottom = 20.0
-black_level = null
-white_level = null
-scale_percent = null
-invert_color = null
 is_2d_spectrum = true
-scaling = null
 color_map = 5
 
 [node name="Spec2D_F150W" parent="VBoxContainer/MarginContainer4/Spec2DContainer/Spec2Ds" instance=ExtResource("2_01ug0")]
@@ -175,12 +145,7 @@ offset_left = -20.0
 offset_top = -20.0
 offset_right = 20.0
 offset_bottom = 20.0
-black_level = null
-white_level = null
-scale_percent = null
-invert_color = null
 is_2d_spectrum = true
-scaling = null
 color_map = 5
 
 [node name="Spec2Ds2" parent="VBoxContainer/MarginContainer4/Spec2DContainer" instance=ExtResource("3_tc3t6")]
@@ -199,12 +164,7 @@ offset_left = -20.0
 offset_top = -20.0
 offset_right = 20.0
 offset_bottom = 20.0
-black_level = null
-white_level = null
-scale_percent = null
-invert_color = null
 is_2d_spectrum = true
-scaling = null
 color_map = 5
 
 [node name="Spec2D_F200W" parent="VBoxContainer/MarginContainer4/Spec2DContainer/Spec2Ds2" instance=ExtResource("2_01ug0")]
@@ -213,12 +173,7 @@ offset_left = -20.0
 offset_top = -20.0
 offset_right = 20.0
 offset_bottom = 20.0
-black_level = null
-white_level = null
-scale_percent = null
-invert_color = null
 is_2d_spectrum = true
-scaling = null
 color_map = 5
 
 [node name="Spec2D_F150W" parent="VBoxContainer/MarginContainer4/Spec2DContainer/Spec2Ds2" instance=ExtResource("2_01ug0")]
@@ -227,12 +182,7 @@ offset_left = -20.0
 offset_top = -20.0
 offset_right = 20.0
 offset_bottom = 20.0
-black_level = null
-white_level = null
-scale_percent = null
-invert_color = null
 is_2d_spectrum = true
-scaling = null
 color_map = 5
 
 [node name="Spec2Ds3" parent="VBoxContainer/MarginContainer4/Spec2DContainer" instance=ExtResource("3_tc3t6")]
@@ -251,12 +201,7 @@ offset_left = -20.0
 offset_top = -20.0
 offset_right = 20.0
 offset_bottom = 20.0
-black_level = null
-white_level = null
-scale_percent = null
-invert_color = null
 is_2d_spectrum = true
-scaling = null
 color_map = 5
 
 [node name="Spec2D_F200W" parent="VBoxContainer/MarginContainer4/Spec2DContainer/Spec2Ds3" instance=ExtResource("2_01ug0")]
@@ -265,12 +210,7 @@ offset_left = -20.0
 offset_top = -20.0
 offset_right = 20.0
 offset_bottom = 20.0
-black_level = null
-white_level = null
-scale_percent = null
-invert_color = null
 is_2d_spectrum = true
-scaling = null
 color_map = 5
 
 [node name="Spec2D_F150W" parent="VBoxContainer/MarginContainer4/Spec2DContainer/Spec2Ds3" instance=ExtResource("2_01ug0")]
@@ -279,12 +219,7 @@ offset_left = -20.0
 offset_top = -20.0
 offset_right = 20.0
 offset_bottom = 20.0
-black_level = null
-white_level = null
-scale_percent = null
-invert_color = null
 is_2d_spectrum = true
-scaling = null
 color_map = 5
 
 [node name="MarginContainer5" type="MarginContainer" parent="VBoxContainer"]

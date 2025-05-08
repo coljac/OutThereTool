@@ -9,7 +9,7 @@ signal mouse_coords(Vector2)
 @export_range(90, 99.5, 0.5) var scale_percent: float = 99.5: set = _set_scale_pc
 @export var invert_color: bool = false: set = _set_invert
 @export var is_2d_spectrum: bool = false
-@export var scaling = {"left": - 1.0, "right": 10.0}
+@export var scaling: Dictionary = {"left": -1.0, "right": 10.0}
 enum ColorMap {GRAYSCALE, VIRIDIS, PLASMA, INFERNO, MAGMA, JET, HOT, COOL, RAINBOW}
 @export var color_map: ColorMap = ColorMap.GRAYSCALE: set = _set_colormap
 
@@ -123,9 +123,19 @@ func set_image(file_path: String, image_hdu: int = 1):
 	fits_path = file_path
 	_load_fits()
 	
+# Set texture directly (for pre-processed data)
+func set_texture(texture: ImageTexture):
+	if texture:
+		fits_img.texture = texture
+	
 func _make_texture():
 	if fits:
 		fits_img.texture = display_fits_image(fits.get_image_data_normalized(hdu), width, height, black_level, white_level)
+	elif fits_img.texture == null:
+		# Create a default texture if none exists
+		var img = Image.create(100, 100, false, Image.FORMAT_RGBAF)
+		img.fill(Color(0, 0, 0, 1))
+		fits_img.texture = ImageTexture.create_from_image(img)
 	
 func _set_scale_pc(p: float):
 	scale_percent = p

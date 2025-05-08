@@ -1,6 +1,18 @@
 extends Node
 var c_log10 = log(10)
 
+## Check if pre-processed data exists for an object
+##
+## @param object_id The ID of the object to check
+## @param processed_data_path The path to the processed data directory
+## @return True if pre-processed data exists, false otherwise
+func check_preprocessed_data_exists(object_id: String, processed_data_path: String) -> bool:
+	if not processed_data_path.ends_with("/"):
+		processed_data_path += "/"
+	
+	var manifest_path = processed_data_path + object_id + "_manifest.tres"
+	return FileAccess.file_exists(manifest_path)
+
 
 func zip_p32(inputs: Array[PackedFloat32Array]) -> Array[Vector2]:
 	var output = [] as Array[Vector2]

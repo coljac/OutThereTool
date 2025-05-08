@@ -16,6 +16,8 @@ signal next()
 #var path = "./data/Good_example/"
 @export var object_id: String = "uma-03_02484" # 2122"
 var path = "./data/"
+@export var processed_data_path: String = "./processed/"
+@export var use_preprocessed_data: bool = true
 
 @onready var redshift_label: Label = $CanvasLayer/RedshiftLabel
 @onready var tab_toolbar = $VBoxContainer/TabToolbar
@@ -25,6 +27,11 @@ var path = "./data/"
 @onready var slider = $VBoxContainer/MarginContainer6/VBoxContainer/MarginContainer/HSlider
 var redshift = 1.0
 
+# Data loader for pre-processed data
+var data_loader: PreprocessedDataLoader
+
+# Pre-processor for creating pre-processed data
+var preprocessor = null
 
 func set_object_id(new_id: String) -> void:
 	object_id = new_id
@@ -42,6 +49,13 @@ func _ready():
 		tab_toolbar.zoom_in_pressed.connect(_on_zoom_in_pressed)
 		tab_toolbar.zoom_out_pressed.connect(_on_zoom_out_pressed)
 	set_process_input(true)
+	
+	# Initialize the data loader for pre-processed data
+	data_loader = PreprocessedDataLoader.new()
+	data_loader.initialize(processed_data_path)
+	
+	# Initialize the pre-processor
+	preprocessor = load("res://Server/preprocess.gd").new()
 	
 	# Connect the aligned_displayer to the plot_display
 	var aligned_container = %Spec2DContainer
@@ -118,6 +132,190 @@ func load_object() -> void:
 		spec_1d.clear_series()
 		
 	get_node("VBoxContainer/MarginContainer/Label").text = object_id
+	
+	# Try to load pre-processed data first if enabled
+	if use_preprocessed_data:
+		# Check if pre-processed data exists
+		var preprocessed_exists = FitsHelper.check_preprocessed_data_exists(object_id, processed_data_path)
+		
+		if preprocessed_exists:
+			# Pre-processed data exists, load it
+			if load_preprocessed_data():
+				_is_loading = false
+				print("Finished loading pre-processed data for object: ", object_id)
+				return
+		else:
+			# Pre-processed data doesn't exist, create it
+			print("No pre-processed data found, pre-processing and caching...")
+			if preprocess_and_cache():
+				# Now try to load the pre-processed data
+				if load_preprocessed_data():
+					_is_loading = false
+					print("Finished loading pre-processed data for object: ", object_id)
+					return
+	
+	# Fall back to loading from FITS files if pre-processing failed or is disabled
+	print("Loading from FITS files...")
+	load_from_fits()
+	
+	# Reset the loading flag
+	_is_loading = false
+	print("Finished loading object: ", object_id)
+
+# Load data from pre-processed files
+func load_preprocessed_data() -> bool:
+	# Load manifest
+	var manifest = data_loader.load_manifest(object_id)
+	if not manifest:
+		print("No pre-processed manifest found for object: ", object_id)
+		return false
+	
+	print("Found pre-processed data for object: ", object_id)
+	
+	var success = true
+	var loaded_components = []
+	
+	# Load redshift data
+	var redshift_resource = data_loader.load_redshift(object_id)
+	if redshift_resource:
+		# Display redshift data
+		var series = data_loader.convert_redshift_for_plot(redshift_resource)
+		pofz.add_series(series, Color(0.2, 0.4, 0.8), 2.0, false, 3.0)
+		
+		var peaks = data_loader.get_redshift_peaks_for_plot(redshift_resource)
+		pofz.add_series(peaks, Color(1.0, 0.0, 0.0), 0.0, true, 7.0)
+		
+		redshift = redshift_resource.best_redshift
+		slider.value = redshift
+		loaded_components.append("redshift")
+	else:
+		print("Warning: Failed to load redshift data for object: ", object_id)
+		# Continue anyway, as we can display partial data
+	
+	# Load 1D spectra
+	var loaded_1d = false
+	for filter_name in manifest.spectrum_1d_paths:
+		var spectrum = data_loader.load_1d_spectrum(object_id, filter_name)
+		if spectrum:
+			loaded_1d = true
+			var points = data_loader.convert_1d_spectrum_for_plot(spectrum)
+			var color = Color(0.4, 0.6, 0.8)
+			if filter_name == "F150W":
+				color = Color(0.6, 0.4, 0.8)
+			elif filter_name == "F200W":
+				color = Color(0.8, 0.4, 0.6)
+			
+			spec_1d.add_series(points, color, 2.0, false, 3.0, [],
+				spectrum.errors, Color(1.0, 0.0, 0.0), 1.0, 5.0, true)
+	
+	if loaded_1d:
+		loaded_components.append("1D spectra")
+	else:
+		print("Warning: Failed to load any 1D spectra for object: ", object_id)
+		# Continue anyway, as we can display partial data
+	
+	# Load 2D spectra
+	var loaded_2d = false
+	for filter_name in manifest.spectrum_2d_paths:
+		for spec2d in get_tree().get_nodes_in_group("spec2ds"):
+			var spec_display = spec2d.get_node("Spec2D_" + filter_name) as FitsImage
+			if spec_display:
+				var spectrum = data_loader.load_2d_spectrum(object_id, filter_name)
+				var texture = data_loader.load_2d_spectrum_texture(object_id, filter_name)
+				
+				if spectrum and texture:
+					spec_display.fits_img.texture = texture
+					spec_display.scaling = spectrum.scaling
+					spec_display.visible = true
+					spec_display.set_label(filter_name)
+					loaded_2d = true
+	
+	if loaded_2d:
+		loaded_components.append("2D spectra")
+	
+	# Load direct images
+	var loaded_images = false
+	for filter_name in manifest.direct_image_paths:
+		var nd = get_node("VBoxContainer/MarginContainer3/Imaging/IC" + filter_name + "/" + filter_name) as FitsImage
+		if nd:
+			var texture = data_loader.load_direct_image_texture(object_id, filter_name)
+			if texture:
+				nd.fits_img.texture = texture
+				nd.visible = true
+				nd.set_label(filter_name)
+				loaded_images = true
+			
+			if filter_name == "F200W":
+				nd = %SegMap
+				var segmap_texture = data_loader.load_segmap_texture(object_id)
+				if segmap_texture:
+					nd.fits_img.texture = segmap_texture
+					nd.visible = true
+					nd.set_label("SegMap")
+	
+	if loaded_images:
+		loaded_components.append("direct images")
+	
+	# Position textures and set redshift
+	%Spec2Ds.position_textures()
+	set_redshift(redshift)
+	
+	# Check if we loaded enough components to consider it a success
+	if loaded_components.size() == 0:
+		print("Error: Failed to load any data components for object: ", object_id)
+		return false
+	
+	print("Successfully loaded components: ", ", ".join(loaded_components))
+	return true
+
+# Pre-process and cache data for the current object
+func preprocess_and_cache() -> bool:
+	if not preprocessor:
+		print("Error: Pre-processor not initialized")
+		return false
+	
+	print("Pre-processing object: ", object_id)
+	
+	# Check if input files exist
+	var spec_1d_path = path + object_id + ".1D.fits"
+	var spec_2d_path = path + object_id + ".stack.fits"
+	var direct_path = path + object_id + ".beams.fits"
+	var redshift_path = path + object_id + ".full.fits"
+	
+	var missing_files = []
+	if not FileAccess.file_exists(spec_1d_path):
+		missing_files.append("1D spectrum")
+	if not FileAccess.file_exists(spec_2d_path):
+		missing_files.append("2D spectrum")
+	if not FileAccess.file_exists(direct_path):
+		missing_files.append("Direct images")
+	if not FileAccess.file_exists(redshift_path):
+		missing_files.append("Redshift data")
+	
+	if missing_files.size() > 0:
+		print("Warning: Missing input files for object ", object_id, ": ", ", ".join(missing_files))
+		# Continue anyway, as we can process partial data
+	
+	# Ensure the processed data directory exists
+	var dir = DirAccess.open(processed_data_path)
+	if not dir:
+		var result = DirAccess.make_dir_recursive_absolute(processed_data_path)
+		if result != OK:
+			print("Error: Failed to create processed data directory: ", processed_data_path)
+			return false
+	
+	# Run the pre-processor
+	var manifest_path = preprocessor.preprocess_object(object_id, path, processed_data_path)
+	
+	if manifest_path.is_empty():
+		print("Error: Failed to pre-process object: ", object_id)
+		return false
+	
+	print("Successfully pre-processed object: ", object_id)
+	return true
+
+# Load data directly from FITS files
+func load_from_fits() -> void:
 	var pz = FitsHelper.get_pz(path + object_id + ".full.fits")
 	var logp = Array(pz[1]).map(func(i): return FitsHelper.log10(i))
 	var peaks = FitsHelper.peak_finding(logp, 50)
@@ -142,12 +340,6 @@ func load_object() -> void:
 	var oned_spec = FitsHelper.get_1d_spectrum(path + object_id + ".1D.fits", true)
 	var xx = 0.2
 	for f in oned_spec:
-		# print(f, " <<")
-		#func add_series(points: Array, color: Color = Color(0, 0, 1), line_width: float = 2.0,
-				#drawevent_points: bool = false, point_size: float = 4.0,
-				#x_errors: Array = [], y_errors: Array = [],
-				#error_color: Color = Color.TRANSPARENT, error_line_width: float = 1.0,
-				#error_cap_size: float = 5.0, draw_as_steps: bool = false) -> int:
 		spec_1d.add_series(oned_spec[f]['fluxes'], Color(0.4 + xx, xx, 0.8), 2.0, false, 3.0, [],
 		oned_spec[f]['err'], Color(1.0, 0.0, 0.0), 1.0, 5.0, true)
 		xx += 0.2
@@ -184,13 +376,7 @@ func load_object() -> void:
 				
 			
 	%Spec2Ds.position_textures()
-	#$VBoxContainer/MarginContainer4/Spec2Ds._on_plot_display_x_limits_changed(spec_1d.x_min, spec_1d.x_max)
-	# spec_1d.emit_signal("x_limits_changed", spec_1d.x_min, spec_1d.x_max)
-	
-	# Reset the loading flag
-	_is_loading = false
 	set_redshift(redshift)
-	print("Finished loading object: ", object_id)
 
 
 func toggle_lines(on: bool = true):
