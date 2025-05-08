@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://biwtif1e8fvo2"]
 
-[ext_resource type="Texture2D" uid="uid://d2lgadrp1sqoo" path="res://data/example.exr" id="1_tkbqm"]
 [ext_resource type="Script" uid="uid://dolk382f8r1ap" path="res://Scenes/fits_image.gd" id="2_b5gq6"]
+[ext_resource type="Texture2D" uid="uid://duoyey75onrqo" path="res://processed/outthere-hudfn_04375_2d_F200W.exr" id="2_tkbqm"]
 
 [node name="FitsImage" type="MarginContainer"]
 custom_minimum_size = Vector2(100, 100)
@@ -13,7 +13,7 @@ script = ExtResource("2_b5gq6")
 
 [node name="FitsImageShow" type="TextureRect" parent="."]
 layout_mode = 2
-texture = ExtResource("1_tkbqm")
+texture = ExtResource("2_tkbqm")
 stretch_mode = 5
 
 [node name="Label" type="Label" parent="."]

@@ -13,8 +13,8 @@ signal next()
 	# Comtam model unsubtracted
 
 #@export var object_id: String = "uma-03_03269" #2122"
-#var path = "./data/Good_example/"
-@export var object_id: String = "uma-03_02484" # 2122"
+#var path = "./data/Good_example/outthere-hudfn_04375"
+@export var object_id: String = "outthere-hudfn_04375" # 2122"
 var path = "./data/"
 @export var processed_data_path: String = "./processed/"
 @export var use_preprocessed_data: bool = true

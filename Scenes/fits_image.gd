@@ -77,7 +77,7 @@ func _handle_mouse_motion(event: InputEventMouseMotion):
 	
 		#if event is InputEventMouseMotion:
 		#var local_pos = to_local(event.position)
-	if get_rect().has_point(local_pos):
+	if get_rect().has_point(local_pos) and fits:
 		#print(local_pos, fits.pixel_to_world(0, 0))
 		var sky_pos: Vector2 = fits.pixel_to_world(local_pos.x + width / 2, height / 2 - local_pos.y)
 		emit_signal("mouse_coords", sky_pos)
