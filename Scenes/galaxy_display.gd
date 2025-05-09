@@ -1,5 +1,5 @@
 extends Control
-signal next()
+# signal next()
 # TODO: Fits images not the right size up top
 # TODO: Scaling
 # TODO: COlor map
@@ -80,7 +80,10 @@ func _exit_tree() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("flag_bad"):
-		print("BAD")
+		get_viewport().set_input_as_handled()
+	if event.is_action_pressed("flag_good"):
+		get_viewport().set_input_as_handled()
+	if event.is_action_pressed("flag_ok"):
 		get_viewport().set_input_as_handled()
 	
 # func _unhandled_input(event: InputEvent) -> void:
@@ -142,6 +145,7 @@ func load_object() -> void:
 	# SPEC 1D
 	var oned_spec = FitsHelper.get_1d_spectrum(path + object_id + ".1D.fits", true)
 	var xx = 0.2
+	var max = 0.0
 	for f in oned_spec:
 		# f = f['data']
 		# print(f, " <<")
@@ -153,6 +157,8 @@ func load_object() -> void:
 		spec_1d.add_series(oned_spec[f]['fluxes'], Color(0.4 + xx, xx, 0.8), 2.0, false, 3.0, [], oned_spec[f]['err'], Color(1.0, 0.0, 0.0), 1.0, 5.0, true)
 		spec_1d.add_series(oned_spec[f]['bestfit'], Color(0.0, 1.0, 0.0, 0.5), 2.0, false, 3.0, [])
 		xx += 0.2
+		max = max(oned_spec[f]['max'], max)
+	%Spec1d.y_max = max
 		
 	# Spec2D
 	var data2d = FitsHelper.get_2d_spectrum(path + object_id + ".stack.fits")
@@ -205,6 +211,11 @@ func load_object() -> void:
 		print("Finished loading object: ", object_id)
 
 
+# func _unhandled_input(event: InputEvent) -> void:
+# 	if Input.is_action_just_pressed("flag_bad"):
+# 		print("Flag bad")
+	
+		
 func toggle_lines(on: bool = true):
 	if on:
 		var lines = {

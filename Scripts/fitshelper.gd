@@ -57,30 +57,62 @@ func get_1d_spectrum(object: String, microns: bool = false) -> Dictionary: # Arr
 		var bestfit = data['data']['line']
 		var cont = data['data']['cont']
 		var err = data['data']['err']
-		## Nancy
-		# var bestfit = data['data']['line'] # <--- l
-		# var cont = data['data']['cont'] # <--- continuum
-# spec1d = Table(spec1d_hdul[filters[i]].data)
-#             if 'pscale' in spec1d.colnames:
-#                 pscale= spec1d['pscale']
-#             if 'pscale' not in spec1d.colnames:
-#                 pscale=1.0
-#             flux =(spec1d['flux']/spec1d['flat'])/(1.e-19 )/pscale # 1D spectra
-#             err = (spec1d['err']/spec1d['flat'])/(1.e-19 ) /pscale
-#             cont=(spec1d['cont']/spec1d['flat'])/(1.e-19 ) # continuum model
-#             line = (spec1d['line']/spec1d['flat'])/(1.e-19 )
-#             contam= (spec1d['contam']/spec1d['flat'])/(1.e-19 )/pscale  # contamination mode
+		var flat = data['data']['flat'] if 'flat' in data['data'] else PackedFloat32Array([1.0] * fluxes.size())
+		var contam = data['data']['contam'] if 'contam' in data['data'] else PackedFloat32Array([0.0] * fluxes.size())
+		
+		# Check if pscale exists in the data columns
+		var pscale = 1.0
+		if 'pscale' in data['data']:
+			pscale = data['data']['pscale']
+		
+		# Normalize the data
+		# Convert to Array for processing
+		var flux_arr = Array(fluxes)
+		var err_arr = Array(err)
+		var cont_arr = Array(cont)
+		var bestfit_arr = Array(bestfit)
+		var contam_arr = Array(contam)
+		var flat_arr = Array(flat)
+		
+		# Apply normalization: (value/flat)/(1.0e-19)/pscale
+		for i in range(flux_arr.size()):
+			var ps = pscale
+			# Avoid division by zero
+			var flat_val = flat_arr[i] if flat_arr[i] != 0 else 1.0
+		
+			if not ps is float:
+				ps = pscale[i]
 
-# sci_i = hdu['SCI', '{0},{1}'.format(g, pa)]
-			# wht_i = hdu['WHT', '{0},{1}'.format(g, pa)]
-			# contam_i = hdu['CONTAM', '{0},{1}'.format(g, pa)]
-			# model_i = hdu['MODEL', '{0},{1}'.format(g, pa)]
-	
+			# Normalize flux and err with pscale
+			flux_arr[i] = (flux_arr[i] / flat_val) / (1.0e-19) / ps
+			err_arr[i] = (err_arr[i] / flat_val) / (1.0e-19) / ps
+			
+			# Normalize cont and bestfit (line)
+			cont_arr[i] = (cont_arr[i] / flat_val) / (1.0e-19)
+			bestfit_arr[i] = (bestfit_arr[i] / flat_val) / (1.0e-19)
+			
+			# Normalize contam with pscale
+			contam_arr[i] = (contam_arr[i] / flat_val) / (1.0e-19) / ps
+		
+		# Convert back to PackedFloat32Array
+		fluxes = PackedFloat32Array(flux_arr)
+		err = PackedFloat32Array(err_arr)
+		cont = PackedFloat32Array(cont_arr)
+		bestfit = PackedFloat32Array(bestfit_arr)
+		contam = PackedFloat32Array(contam_arr)
+		var max = Array(fluxes).max()
 		if microns:
 			waves = Array(waves).map(func d(x): return x / 10000)
 			waves = PackedFloat32Array(waves)
-		res[filt] = {"fluxes": zip_p32([waves, fluxes]), "err": err, "bestfit": zip_p32([waves, bestfit]), "cont": zip_p32([waves, cont])} # zip_p32([waves, err])}
-	# errors
+			
+		res[filt] = {
+			"fluxes": zip_p32([waves, fluxes]),
+			"err": err,
+			"bestfit": zip_p32([waves, bestfit]),
+			"cont": zip_p32([waves, cont]),
+			"contam": zip_p32([waves, contam]),
+			"max": max
+		}
 	
 	return res
 

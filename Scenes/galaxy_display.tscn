@@ -294,6 +294,7 @@ layout_mode = 2
 size_flags_vertical = 3
 
 [node name="Spec1d" parent="VBoxContainer/MarginContainer5" instance=ExtResource("2_oanb5")]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 300)
 layout_mode = 2
 x_min = 1.1
@@ -308,7 +309,7 @@ x_tick_spacing = 0.2
 x_tick_decimals = 2
 axis_color = Color(0.2, 0.905882, 0.2, 1)
 x_label = "wavelength (μm)"
-y_label = "Flux ()"
+y_label = "Fλ(10⁻¹⁹ ergs/s/cm²)"
 
 [node name="MarginContainer6" type="MarginContainer" parent="VBoxContainer"]
 custom_minimum_size = Vector2(0, 220)

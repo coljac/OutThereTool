@@ -10,6 +10,9 @@ func set_galaxy_details(details: Dictionary):
 	status.select(details['status'])
 	%TickRect.text = ""
 
+func set_status(new_status: int):
+	status.select(new_status)
+	save()
 
 func tick(on: bool):
 	%TickRect.text = "Saved."
