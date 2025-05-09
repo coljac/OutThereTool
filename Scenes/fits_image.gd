@@ -36,7 +36,7 @@ var current_hdu = 1
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	set_process(false)  # Disable _process by default
+	set_process(false) # Disable _process by default
 	# region_manager = RegionManager.new()
 	#add_child(region_manager)
 	gui_input.connect(_on_gui_input)
@@ -98,7 +98,6 @@ func _on_gui_input(event):
 func _handle_mouse_motion(event: InputEventMouseMotion):
 	# if is_2d_spectrum:
 		# return
-		
 	# Get local mouse position relative to the TextureRect
 	var local_pos = event.position
 	
@@ -130,9 +129,10 @@ func _handle_mouse_motion(event: InputEventMouseMotion):
 			var sky_pos: Vector2 = fits.pixel_to_world(local_pos.x + width / 2, height / 2 - local_pos.y)
 			emit_signal("mouse_coords", sky_pos)
 	
-func _load_fits():
-	if fits_path:
-		fits = FITSReader.new()
+func _load_fits(fits: FITSReader = null) -> void:
+	if fits_path or fits:
+		if not fits:
+			fits = FITSReader.new()
 		
 		if fits.load_fits(str(fits_path)): # .substr(6, -1)): # TODO res://
 			#print("FITS file loaded")
@@ -166,7 +166,15 @@ func set_image(file_path: String, image_hdu: int = 1):
 	hdu = image_hdu
 	fits_path = file_path
 	_load_fits()
-	
+
+func set_image_data(image_data: PackedFloat32Array, image_hdu: int = 1):
+	hdu = image_hdu
+	width = int(fits.get_header_info(hdu)['NAXIS1'])
+	height = int(fits.get_header_info(hdu)['NAXIS2'])
+	white_level = get_percentile(fits.get_image_data_normalized(hdu), 95.5)
+	_make_texture()
+
+
 func _make_texture():
 	if fits:
 		fits_img.texture = display_fits_image(fits.get_image_data_normalized(hdu), width, height, black_level, white_level)

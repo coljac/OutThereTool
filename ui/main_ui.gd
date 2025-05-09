@@ -25,7 +25,7 @@ func _ready():
 	top_bar.more_options_pressed.connect(_on_more_options_pressed)
 	top_bar.settings_pressed.connect(_on_settings_pressed)
 	
-	objects = DataManager.get_gals()
+	_set_objects(DataManager.get_gals())
 
 	# Connect signals from the tab container
 	tab_container.tab_added.connect(_on_tab_added)
@@ -41,7 +41,8 @@ func _ready():
 	# Add an initial tab
 	_add_initial_tab()
 	set_process_input(true)
-	%ObjectViewing.set_galaxy_details(objects[obj_index])
+	if objects.size() > 0:
+		%ObjectViewing.set_galaxy_details(objects[obj_index])
 	DataManager.connect("updated_data", %ObjectViewing.tick)
 	set_process(false) # Disable _process by default
 
@@ -57,6 +58,14 @@ func save_galaxy(vals: Dictionary):
 	var gal_id = objects[obj_index]['id']
 	DataManager.update_gal(gal_id, vals['status'], vals['comments'])
 
+
+func get_object(obj: String) -> void:
+	var gal_display = %SimpleTab.get_tab_control(0)
+	obj_index += 1
+	gal_display.set_object_id(obj)
+	var index: int = %ObjectsList.selected - 1
+	obj_index = index
+	%ObjectViewing.set_galaxy_details(objects[index])
 
 func next_object() -> void:
 	# for ch in $VBoxContainer/MarginContainer.get_children():
@@ -120,11 +129,39 @@ func _on_search_button_pressed():
 	if galaxy_display and galaxy_display.has_method("set_object_id"):
 		galaxy_display.set_object_id(object_id)
 
+func _set_objects(new_objects: Array) -> void:
+	# Set the objects to be displayed
+	objects = new_objects
+	%ObjectsList.clear()
+	%ObjectsList.add_item("%d objects" % objects.size())
+	# get_item_index(0).set_text("%d objects" % objects.size())
+	for i in range(min(objects.size(), 100)):
+		%ObjectsList.add_item(objects[i]['id'])
+
+	# Update the GalaxyDisplay with the new objects
+	var current_tab_index = tab_container.current_tab
+	var galaxy_display = tab_container.get_tab_control(current_tab_index)
+	if galaxy_display and galaxy_display.has_method("set_galaxy_details"):
+		galaxy_display.set_galaxy_details(objects[obj_index])
+
+
 func _on_apply_filters_button_pressed():
 	# Get the redshift range
 	var min_z = min_redshift.value
 	var max_z = max_redshift.value
-	print("Applyingfilters - Redshiftrange: ", min_z, "to", max_z)
+	var filters = %FiltersSelect.selected + 1
+	print("Applying filters - Redshift range: ", min_z, "to", max_z, " with filters: ", filters)
+	_set_objects(DataManager.get_gals(min_z, max_z, filters))
+	# refresh_objects()
+	# print("Applying filters - Redshiftrange: ", min_z, "to", max_z)
+	# print("Applying filters - num filters: ", %FiltersSelect.selected)
 	
 	# Here you would apply the filters to the GalaxyDisplay
 	# This is a placeholder for future implementation
+
+
+func _on_objects_list_item_selected(index: int) -> void:
+	if index == 0:
+		return
+	var obj = %ObjectsList.get_item_text(index)
+	get_object(obj)

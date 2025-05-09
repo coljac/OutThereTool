@@ -142,6 +142,7 @@ func load_object() -> void:
 	var oned_spec = FitsHelper.get_1d_spectrum(path + object_id + ".1D.fits", true)
 	var xx = 0.2
 	for f in oned_spec:
+		f = f['data']
 		# print(f, " <<")
 		#func add_series(points: Array, color: Color = Color(0, 0, 1), line_width: float = 2.0,
 				#drawevent_points: bool = false, point_size: float = 4.0,
@@ -159,7 +160,7 @@ func load_object() -> void:
 			var spec_display = spec2d.get_node("Spec2D_" + k) as FitsImage
 			spec_display.visible = k in data2d
 			if k in data2d:
-				print("Setting k ", k, " ", data2d[k])
+				# print("Setting k ", k, " ", data2d[k])
 				spec_display.hdu = data2d[k]
 				spec_display.set_image(path + object_id + ".stack.fits", data2d[k])
 				spec_display.visible = true

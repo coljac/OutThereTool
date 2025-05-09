@@ -60,6 +60,14 @@ horizontal_alignment = 1
 [node name="HSeparator" type="HSeparator" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
 
+[node name="ObjectsList" type="OptionButton" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+selected = 0
+item_count = 1
+popup/item_0/text = "0 objects"
+popup/item_0/id = 0
+
 [node name="ObjectIDLabel" type="Label" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
 text = "Object ID:"
@@ -76,9 +84,28 @@ text = "Search"
 [node name="HSeparator2" type="HSeparator" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="FiltersLabel" type="Label" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+[node name="HSeparator3" type="HSeparator" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
-text = "Filters:"
+
+[node name="FiltersBox" type="HBoxContainer" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="FiltersLabel" type="Label" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/FiltersBox"]
+layout_mode = 2
+text = "Bands:"
+
+[node name="FiltersSelect" type="OptionButton" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/FiltersBox"]
+unique_name_in_owner = true
+layout_mode = 2
+selected = 0
+allow_reselect = true
+item_count = 3
+popup/item_0/text = "Any"
+popup/item_0/id = 0
+popup/item_1/text = "F150W+F200W"
+popup/item_1/id = 1
+popup/item_2/text = "115+150+200"
+popup/item_2/id = 2
 
 [node name="RedshiftRangeLabel" type="Label" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
@@ -109,6 +136,17 @@ prefix = "Max:"
 layout_mode = 2
 text = "Apply Filters"
 
+[node name="Spacer2" type="Control" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 25.445)
+layout_mode = 2
+
+[node name="Label2" type="Label" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 0.866667, 1)
+theme_override_font_sizes/font_size = 18
+text = "Object properties"
+horizontal_alignment = 1
+
 [node name="ObjectViewing" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer" instance=ExtResource("4_186kx")]
 unique_name_in_owner = true
 layout_mode = 2
@@ -130,4 +168,6 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 
+[connection signal="item_selected" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/ObjectsList" to="." method="_on_objects_list_item_selected"]
+[connection signal="pressed" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/ApplyFiltersButton" to="." method="_on_apply_filters_button_pressed"]
 [connection signal="save_galaxy" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/ObjectViewing" to="." method="save_galaxy"]

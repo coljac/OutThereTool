@@ -45,6 +45,7 @@ func get_1d_spectrum(object: String, microns: bool = false) -> Dictionary: # Arr
 	var fits_table = FITSReader.new()
 	fits_table.load_fits(object)
 	var res = {}
+
 	for filt in ["F115W", "F150W", "F200W"]:
 		var h = get_hdu_by_name_ver(fits_table, filt)
 		if not h:
@@ -53,13 +54,32 @@ func get_1d_spectrum(object: String, microns: bool = false) -> Dictionary: # Arr
 		var data = fits_table.get_table_data(h['index'])
 		var waves = data['data']['wave']
 		var fluxes = data['data']['flux']
+		var bestfit = data['data']['line']
+		var cont = data['data']['cont']
 		var err = data['data']['err']
+		## Nancy
+		# var bestfit = data['data']['line'] # <--- l
+		# var cont = data['data']['cont'] # <--- continuum
+# spec1d = Table(spec1d_hdul[filters[i]].data)
+#             if 'pscale' in spec1d.colnames:
+#                 pscale= spec1d['pscale']
+#             if 'pscale' not in spec1d.colnames:
+#                 pscale=1.0
+#             flux =(spec1d['flux']/spec1d['flat'])/(1.e-19 )/pscale # 1D spectra
+#             err = (spec1d['err']/spec1d['flat'])/(1.e-19 ) /pscale
+#             cont=(spec1d['cont']/spec1d['flat'])/(1.e-19 ) # continuum model
+#             line = (spec1d['line']/spec1d['flat'])/(1.e-19 )
+#             contam= (spec1d['contam']/spec1d['flat'])/(1.e-19 )/pscale  # contamination mode
 
-
+# sci_i = hdu['SCI', '{0},{1}'.format(g, pa)]
+			# wht_i = hdu['WHT', '{0},{1}'.format(g, pa)]
+			# contam_i = hdu['CONTAM', '{0},{1}'.format(g, pa)]
+			# model_i = hdu['MODEL', '{0},{1}'.format(g, pa)]
+	
 		if microns:
 			waves = Array(waves).map(func d(x): return x / 10000)
 			waves = PackedFloat32Array(waves)
-		res[filt] = {"fluxes": zip_p32([waves, fluxes]), "err": err} # zip_p32([waves, err])}
+		res['filt'] = {"fluxes": zip_p32([waves, fluxes]), "err": err, "bestfit": zip_p32([waves, bestfit]), "cont": zip_p32([waves, cont])} # zip_p32([waves, err])}
 	# errors
 	
 	return res
@@ -86,8 +106,8 @@ func get_directs(object: String) -> Dictionary:
 			var filt = fits_file.get_header_info(h['index'])['PUPIL']
 			if filt not in filter_dict:
 				filter_dict[filt] = h['index'] # fits_file.get_image_data(h['index'])
-			if filt == "F200W":
-				print(h['index'], " +1! ")
+			# if filt == "F200W":
+				# print(h['index'], " +1! ")
 
 	return filter_dict
 
@@ -101,10 +121,47 @@ func get_hdu_by_name_ver(fits_file: FITSReader, name: String, ver: String = ""):
 			else:
 				return hdu
 
-func get_2d_spectrum(object: String) -> Dictionary:
+
+func get_emission_line_maps(object: String) -> Dictionary:
+	# full.fits
 	var fits_file = FITSReader.new()
 	fits_file.load_fits(object)
 	var res = {}
+	var ext = "LINE"
+	# AI hallucinations!
+	# for hdu in fits_file.get_info()['hdus']:
+		# if "name" in hdu and hdu['name'] == "REF":
+			# var hdr = fits_file.get_header_info(hdu['index'])
+			# if "PUPIL" in hdr:
+				# res[hdr['PUPIL']] = hdu['index']
+	return res
+
+
+func get_2d_spectrum(object: String) -> Dictionary:
+	var fits_file = FITSReader.new()
+	fits_file.load_fits(object)
+	var res = {"F115W": [], "F150W": [], "F200W": []}
+	var res2 = {}
+	for hdu in fits_file.get_info()['hdus']:
+		if "name" in hdu and hdu['name'] == "SCI":
+			var deets = {}
+			var hdr = fits_file.get_header_info(hdu['index'])
+			var extname = hdr['EXTVER']
+			var filter = hdr['GRISM']
+			deets['index'] = hdu['index']
+			deets['extname'] = extname
+			deets['fits'] = fits_file
+			var pa = ""
+			deets['pa'] = null
+			if "PA" in hdr:
+				pa = String(hdr['PA'])
+				deets['pa'] = hdr['PA']
+			res[filter].append(deets)
+			res2[pa] = res2[pa] if pa in res2 else {}
+			res2[pa][filter] = deets
+
+	return res2
+	# OLD	
 	var f200w = get_hdu_by_name_ver(fits_file, "SCI", "F200W")
 	if f200w:
 		res['F200W'] = f200w['index']
@@ -116,6 +173,11 @@ func get_2d_spectrum(object: String) -> Dictionary:
 		res['F115W'] = f115w['index']
 	return res
 	#return f200w['index']
+	## Nancy
+	# sci_i = hdu['SCI', '{0},{1}'.format(g, pa)]
+			# wht_i = hdu['WHT', '{0},{1}'.format(g, pa)]
+			# contam_i = hdu['CONTAM', '{0},{1}'.format(g, pa)]
+			# model_i = hdu['MODEL', '{0},{1}'.format(g, pa)]
 	
 func log10(f: float):
 	return log(f) / c_log10
