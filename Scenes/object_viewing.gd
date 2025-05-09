@@ -5,6 +5,9 @@ extends Control
 
 signal save_galaxy(vals: Dictionary)
 
+func _ready():
+	mouse_filter = MOUSE_FILTER_PASS
+
 func set_galaxy_details(details: Dictionary):
 	comments.text = details['comments'] if details['comments'] else ""
 	status.select(details['status'])

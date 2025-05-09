@@ -1,13 +1,8 @@
 extends TextEdit
 
-func _ready():
-	# Connect to text_changed signal
-	# text_changed.connect(_on_text_changed)
-	# For the button
-	# $YourButton.pressed.connect(_on_button_pressed)
-	pass
-
 func _unhandled_input(event):
+	if not event is InputEventKey:
+		return
 	if has_focus():
 		get_viewport().set_input_as_handled()
 

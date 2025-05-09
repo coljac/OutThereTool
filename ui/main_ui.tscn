@@ -74,8 +74,8 @@ layout_mode = 2
 text = "Object ID:"
 
 [node name="ObjectIDEdit" type="LineEdit" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
 layout_mode = 2
-text = "uma-03_02484"
 placeholder_text = "Enter object ID"
 
 [node name="SearchButton" type="Button" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
@@ -174,5 +174,6 @@ visible = false
 layout_mode = 1
 
 [connection signal="item_selected" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/ObjectsList" to="." method="_on_objects_list_item_selected"]
+[connection signal="pressed" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/SearchButton" to="." method="_on_search_button_pressed"]
 [connection signal="pressed" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/ApplyFiltersButton" to="." method="_on_apply_filters_button_pressed"]
 [connection signal="save_galaxy" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/ObjectViewing" to="." method="save_galaxy"]

@@ -17,7 +17,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_01ug0")
 script = ExtResource("1_3fprc")
-object_id = "outthere-hudfn_04375"
+object_id = "1"
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 2
@@ -295,7 +295,7 @@ size_flags_vertical = 3
 
 [node name="Spec1d" parent="VBoxContainer/MarginContainer5" instance=ExtResource("2_oanb5")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 300)
+custom_minimum_size = Vector2(0, 250)
 layout_mode = 2
 x_min = 1.1
 x_max = 2.5

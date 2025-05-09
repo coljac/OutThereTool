@@ -37,7 +37,6 @@ func _ready():
 	
 	# Set the tab scene for the tab container
 	tab_container.set_tab_scene(GALAXY_DISPLAY_SCENE)
-	
 	# Add an initial tab
 	_add_initial_tab()
 	set_process_input(true)
@@ -45,6 +44,7 @@ func _ready():
 		%ObjectViewing.set_galaxy_details(objects[obj_index])
 	DataManager.connect("updated_data", %ObjectViewing.tick)
 	set_process(false) # Disable _process by default
+	_goto_object(0)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -85,9 +85,11 @@ func get_object(obj: String) -> void:
 	var gal_display = %SimpleTab.get_tab_control(0)
 	obj_index += 1
 	gal_display.set_object_id(obj)
+	gal_display.name = obj
 	var index: int = %ObjectsList.selected - 1
 	obj_index = index
 	%ObjectViewing.set_galaxy_details(objects[index])
+	%ObjectsList.selected = 0
 
 
 func next_object():
@@ -110,6 +112,7 @@ func _goto_object(step: int = 1) -> void:
 		obj_index = objects.size() - 1
 	gal_display.set_object_id(objects[obj_index]['id'])
 	%ObjectViewing.set_galaxy_details(objects[obj_index])
+	gal_display.name = objects[obj_index]['id']
 
 	# newbox.path = objects[obj_index][0]
 	# newbox.object_id = objects[obj_index][1]
@@ -152,15 +155,21 @@ func _on_tab_closed(tab_index):
 func _on_search_button_pressed():
 	# Get the object ID from the text field
 	var object_id = object_id_edit.text
+	if object_id.length() == 0:
+		return
 	print("Searching for object: ", object_id)
+	for obj in objects:
+		if obj['id'].contains(object_id):
+			get_object(obj['id'])
+			object_id_edit.text = ""
+			break
+	# # Get the current tab's GalaxyDisplay
+	# var current_tab_index = tab_container.current_tab
+	# var galaxy_display = tab_container.get_tab_control(current_tab_index)
 	
-	# Get the current tab's GalaxyDisplay
-	var current_tab_index = tab_container.current_tab
-	var galaxy_display = tab_container.get_tab_control(current_tab_index)
-	
-	# Set the object ID
-	if galaxy_display and galaxy_display.has_method("set_object_id"):
-		galaxy_display.set_object_id(object_id)
+	# # Set the object ID
+	# if galaxy_display and galaxy_display.has_method("set_object_id"):
+	# 	galaxy_display.set_object_id(object_id)
 
 func _set_objects(new_objects: Array) -> void:
 	# Set the objects to be displayed
