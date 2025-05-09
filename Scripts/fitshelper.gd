@@ -79,7 +79,7 @@ func get_1d_spectrum(object: String, microns: bool = false) -> Dictionary: # Arr
 		if microns:
 			waves = Array(waves).map(func d(x): return x / 10000)
 			waves = PackedFloat32Array(waves)
-		res['filt'] = {"fluxes": zip_p32([waves, fluxes]), "err": err, "bestfit": zip_p32([waves, bestfit]), "cont": zip_p32([waves, cont])} # zip_p32([waves, err])}
+		res[filt] = {"fluxes": zip_p32([waves, fluxes]), "err": err, "bestfit": zip_p32([waves, bestfit]), "cont": zip_p32([waves, cont])} # zip_p32([waves, err])}
 	# errors
 	
 	return res
@@ -105,7 +105,7 @@ func get_directs(object: String) -> Dictionary:
 		if "name" in h and h['name'] == "REF":
 			var filt = fits_file.get_header_info(h['index'])['PUPIL']
 			if filt not in filter_dict:
-				filter_dict[filt] = h['index'] # fits_file.get_image_data(h['index'])
+				filter_dict[filt] = {"index": h['index'], "fits": fits_file} # fits_file.get_image_data(h['index'])
 			# if filt == "F200W":
 				# print(h['index'], " +1! ")
 

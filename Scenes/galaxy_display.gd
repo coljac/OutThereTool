@@ -21,7 +21,8 @@ var path = "./data/"
 @onready var tab_toolbar = $VBoxContainer/TabToolbar
 @onready var spec_1d = get_node("VBoxContainer/MarginContainer5/Spec1d") as PlotDisplay
 @onready var pofz = get_node("VBoxContainer/MarginContainer6/VBoxContainer/Redshift") as PlotDisplay
-@onready var spec2d = $VBoxContainer/MarginContainer4/Spec2Ds/Spec2D_1 as FitsImage
+# @onready var spec2d = $VBoxContainer/MarginContainer4/Spec2Ds/Spec2D_1 as FitsImage
+@onready var spec2d: VBoxContainer = %Spec2DContainer
 @onready var slider = $VBoxContainer/MarginContainer6/VBoxContainer/MarginContainer/HSlider
 var redshift = 1.0
 
@@ -142,56 +143,66 @@ func load_object() -> void:
 	var oned_spec = FitsHelper.get_1d_spectrum(path + object_id + ".1D.fits", true)
 	var xx = 0.2
 	for f in oned_spec:
-		f = f['data']
+		# f = f['data']
 		# print(f, " <<")
 		#func add_series(points: Array, color: Color = Color(0, 0, 1), line_width: float = 2.0,
 				#drawevent_points: bool = false, point_size: float = 4.0,
 				#x_errors: Array = [], y_errors: Array = [],
 				#error_color: Color = Color.TRANSPARENT, error_line_width: float = 1.0,
 				#error_cap_size: float = 5.0, draw_as_steps: bool = false) -> int:
-		spec_1d.add_series(oned_spec[f]['fluxes'], Color(0.4 + xx, xx, 0.8), 2.0, false, 3.0, [],
-		oned_spec[f]['err'], Color(1.0, 0.0, 0.0), 1.0, 5.0, true)
+		spec_1d.add_series(oned_spec[f]['fluxes'], Color(0.4 + xx, xx, 0.8), 2.0, false, 3.0, [], oned_spec[f]['err'], Color(1.0, 0.0, 0.0), 1.0, 5.0, true)
+		spec_1d.add_series(oned_spec[f]['bestfit'], Color(0.0, 1.0, 0.0, 0.5), 2.0, false, 3.0, [])
 		xx += 0.2
 		
 	# Spec2D
 	var data2d = FitsHelper.get_2d_spectrum(path + object_id + ".stack.fits")
-	for k in ['F115W', 'F150W', 'F200W']:
-		for spec2d in get_tree().get_nodes_in_group("spec2ds"):
-			var spec_display = spec2d.get_node("Spec2D_" + k) as FitsImage
-			spec_display.visible = k in data2d
-			if k in data2d:
+	var row: int = 1
+	for pa in data2d.keys():
+		var aligned = spec2d.get_node("Spec2Ds%d"%row)
+		row += 1
+		for f in ['F115W', 'F150W', 'F200W']:
+			var spec_display = aligned.get_node("Spec2D_" + f) as FitsImage
+			spec_display.visible = false
+			if f not in data2d[pa]:
+				continue
+			spec_display.visible = false
 				# print("Setting k ", k, " ", data2d[k])
-				spec_display.hdu = data2d[k]
-				spec_display.set_image(path + object_id + ".stack.fits", data2d[k])
-				spec_display.visible = true
-				spec_display.set_label(k)
+			spec_display.fits = data2d[pa][f]['fits']
+			spec_display.hdu = data2d[pa][f]['index']
+			spec_display.set_image(path + object_id + ".stack.fits", data2d[pa][f]['index'])
+			spec_display.visible = true
+			spec_display.set_label(data2d[pa][f]['extname'])
 		
-	# Directs
-	var x = FitsHelper.get_directs(path + object_id + ".beams.fits")
-	for filt in x:
-		var nd = get_node("VBoxContainer/MarginContainer3/Imaging/IC" + filt + "/" + filt) as FitsImage
-		nd.hdu = x[filt]
-		nd._set_file(path + object_id + ".beams.fits")
-		nd._set_scale_pc(99.5)
-		nd.visible = true
-		nd.set_label(filt)
-		if filt == "F200W":
-			nd = %SegMap
-			nd.hdu = x[filt] + 1
+		# Directs
+		var x = FitsHelper.get_directs(path + object_id + ".beams.fits")
+		for filt in x:
+			var nd = get_node("VBoxContainer/MarginContainer3/Imaging/IC" + filt + "/Direct" + filt) as FitsImage
+			nd.hdu = x[filt]['index']
+			nd.fits = x[filt]['fits']
 			nd._set_file(path + object_id + ".beams.fits")
-			# nd._set_scale_pc(99.5)
+			nd._set_scale_pc(99.5)
 			nd.visible = true
-			nd.set_label("SegMap")
+			nd.set_label(filt)
+			if filt == "F200W":
+				nd = %SegMap
+				nd.hdu = x[filt]['index'] + 1
+				nd.fits = x[filt]['fits']
+				nd._set_file(path + object_id + ".beams.fits")
+				# nd._set_scale_pc(99.5)
+				nd.visible = true
+				nd.set_label("SegMap")
+					
 				
-			
-	%Spec2Ds.position_textures()
-	#$VBoxContainer/MarginContainer4/Spec2Ds._on_plot_display_x_limits_changed(spec_1d.x_min, spec_1d.x_max)
-	# spec_1d.emit_signal("x_limits_changed", spec_1d.x_min, spec_1d.x_max)
-	
-	# Reset the loading flag
-	_is_loading = false
-	set_redshift(redshift)
-	print("Finished loading object: ", object_id)
+		%Spec2Ds1.position_textures()
+		%Spec2Ds2.position_textures()
+		%Spec2Ds3.position_textures()
+		#$VBoxContainer/MarginContainer4/Spec2Ds._on_plot_display_x_limits_changed(spec_1d.x_min, spec_1d.x_max)
+		# spec_1d.emit_signal("x_limits_changed", spec_1d.x_min, spec_1d.x_max)
+		
+		# Reset the loading flag
+		_is_loading = false
+		set_redshift(redshift)
+		print("Finished loading object: ", object_id)
 
 
 func toggle_lines(on: bool = true):

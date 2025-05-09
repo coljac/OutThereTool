@@ -19,6 +19,7 @@ script = ExtResource("2_b5gq6")
 
 [node name="FitsImageShow" type="TextureRect" parent="."]
 material = SubResource("ShaderMaterial_lvlw1")
+custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
 texture = ExtResource("1_tkbqm")
 stretch_mode = 5
