@@ -53,7 +53,7 @@ text = "Keyboard shortcuts:
 
 [b]a[/b]: prev
 [b]d[/b]: next
-[b]/[/b]: comment
+[b]/[/b]: focus comment (ctrl+Enter to save)
 [b]?[/b]: toggle this help
 
 

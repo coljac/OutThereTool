@@ -48,10 +48,32 @@ func _ready():
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("next"):
-		print("NEXT")
+	if event.is_action_released("next"):
 		next_object()
 		get_viewport().set_input_as_handled()
+	if event.is_action_pressed("prev"):
+		prev_object()
+		get_viewport().set_input_as_handled()
+	if event.is_action_pressed("help"):
+		if $HelpPanel.visible:
+			$HelpPanel.hide()
+		else:
+			$HelpPanel.show()
+	if event.is_action("flag_bad"): # is_action_pressed("flag_bad"):
+		update_status(2)
+		get_viewport().set_input_as_handled()
+	if event.is_action("flag_good"):
+		update_status(0)
+		get_viewport().set_input_as_handled()
+	if event.is_action("flag_ok"):
+		update_status(1)
+		get_viewport().set_input_as_handled()
+	if event.is_action("comment"):
+		%ObjectViewing.get_node("%Comments").grab_focus()
+
+
+func update_status(status: int):
+	%ObjectViewing.set_status(status)
 
 
 func save_galaxy(vals: Dictionary):
@@ -67,14 +89,25 @@ func get_object(obj: String) -> void:
 	obj_index = index
 	%ObjectViewing.set_galaxy_details(objects[index])
 
-func next_object() -> void:
+
+func next_object():
+	_goto_object(1)
+
+
+func prev_object():
+	_goto_object(-1)
+
+
+func _goto_object(step: int = 1) -> void:
 	# for ch in $VBoxContainer/MarginContainer.get_children():
 		# ch.queue_free()
 	var gal_display = %SimpleTab.get_tab_control(0)
 	# var newbox = gal_display.instantiate()
-	obj_index += 1
+	obj_index += step
 	if obj_index >= objects.size():
 		obj_index = 0
+	if obj_index < 0:
+		obj_index = objects.size() - 1
 	gal_display.set_object_id(objects[obj_index]['id'])
 	%ObjectViewing.set_galaxy_details(objects[obj_index])
 
