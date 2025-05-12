@@ -23,5 +23,17 @@ web.release.wasm32 = "res://addons/godot-sqlite/bin/libgdsqlite.web.template_rel
 [dependencies]
 
 linux.debug = {
+<<<<<<< HEAD
    "res://lib/libgdsqlite.linux.template_debug.x86_64.so": "" 
 }
+=======
+    "res://lib/libgdsqlite.linux.template_debug.x86_64.so" : ""
+}
+macos.debug = {
+    "res://addons/godot-sqlite/bin/libgdsqlite.macos.template_debug.framework": "Contents/Frameworks"
+}
+macos.release = {
+    "res://addons/godot-sqlite/bin/libgdsqlite.macos.template_release.framework": ""
+}
+
+>>>>>>> 27f26de
