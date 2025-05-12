@@ -5,7 +5,7 @@ signal updated_data(success: bool)
 
 func _ready() -> void:
     database = SQLite.new()
-    database.path = "res://data/data.sqlite"
+    database.path = "./data/data.sqlite"
     database.open_db()
 
 func get_gals(redshift_min: float = 0.0, redshift_max: float = 10.0, bands: int = 0) -> Array:
