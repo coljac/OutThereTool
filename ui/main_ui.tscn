@@ -6,7 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://c7rq6fiqo8bv4" path="res://Scenes/object_viewing.tscn" id="4_186kx"]
 [ext_resource type="Texture2D" uid="uid://cpg7bchl457ac" path="res://theme/assets/icons/theme/SplitGrabber2.svg" id="4_podmt"]
 [ext_resource type="PackedScene" uid="uid://75flqcgsoecp" path="res://Scenes/simple_tab.tscn" id="5_186kx"]
-[ext_resource type="PackedScene" uid="uid://cubtixgrjj65y" path="res://Scenes/help.tscn" id="7_ti1yg"]
+[ext_resource type="PackedScene" uid="uid://cqf5ln3uctomv" path="res://Scenes/help.tscn" id="7_ti1yg"]
 
 [node name="MainUI" type="Control"]
 layout_mode = 3

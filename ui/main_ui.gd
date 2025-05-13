@@ -32,8 +32,8 @@ func _ready():
 	tab_container.tab_closed.connect(_on_tab_closed)
 	
 	# Connect signals from the left panel
-	search_button.pressed.connect(_on_search_button_pressed)
-	apply_filters_button.pressed.connect(_on_apply_filters_button_pressed)
+	# search_button.pressed.connect(_on_search_button_pressed)
+	# apply_filters_button.pressed.connect(_on_apply_filters_button_pressed)
 	
 	# Set the tab scene for the tab container
 	tab_container.set_tab_scene(GALAXY_DISPLAY_SCENE)

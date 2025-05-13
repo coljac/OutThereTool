@@ -15,7 +15,8 @@ extends Control
 #@export var object_id: String = "uma-03_03269" #2122"
 #var path = "./data/Good_example/"
 @export var object_id: String = "uma-03_02484" # 2122"
-var path = "./data/"
+var path = "./processed/" # Path to processed data directory
+var data_loader = PreprocessedDataLoader.new()
 
 @onready var redshift_label: Label = $CanvasLayer/RedshiftLabel
 @onready var tab_toolbar = $VBoxContainer/TabToolbar
@@ -38,6 +39,9 @@ func set_object_id(new_id: String) -> void:
 var _is_loading = false
 
 func _ready():
+	# Initialize the data loader
+	data_loader.initialize(path)
+	
 	# Connect to the tab toolbar signals
 	if tab_toolbar:
 		tab_toolbar.zoom_in_pressed.connect(_on_zoom_in_pressed)
@@ -122,93 +126,135 @@ func load_object() -> void:
 		spec_1d.clear_series()
 		
 	get_node("VBoxContainer/MarginContainer/Label").text = object_id
-	var pz = FitsHelper.get_pz(path + object_id + ".full.fits")
-	var logp = Array(pz[1]).map(func(i): return FitsHelper.log10(i))
-	var peaks = FitsHelper.peak_finding(logp, 50)
+	
+	# Load manifest
+	var manifest = data_loader.load_manifest(object_id)
+	if not manifest:
+		print("Error: Failed to load manifest for object: ", object_id)
+		_is_loading = false
+		return
 	
 	# REDSHIFT
-	var series = FitsHelper.zip_arr([Array(pz[0]), logp])
-	pofz.add_series(series, Color(0.2, 0.4, 0.8), 2.0, false, 3.0)
-	var z_maxes = [] as Array[Vector2]
-	var max_peak = -1.0
-	for peak in peaks:
-		z_maxes.append(
-			Vector2(pz[0][peak['x']], float(peak['max']))
-		)
-		if peak['max'] > max_peak:
-			redshift = pz[0][peak['x']]
-	slider.value = redshift
-	pofz.add_series(
-		z_maxes, Color(1.0, 0.0, 0.0), 0.0, true, 7.0
-	)
+	var redshift_resource = data_loader.load_redshift(object_id)
+	if redshift_resource:
+		# Plot redshift data
+		var points = data_loader.convert_redshift_for_plot(redshift_resource)
+		pofz.add_series(points, Color(0.2, 0.4, 0.8), 2.0, false, 3.0)
+		
+		# Plot peaks
+		var peak_points = data_loader.get_redshift_peaks_for_plot(redshift_resource)
+		pofz.add_series(peak_points, Color(1.0, 0.0, 0.0), 0.0, true, 7.0)
+		
+		# Set redshift to best value
+		redshift = redshift_resource.best_redshift
+		slider.value = redshift
 	
 	# SPEC 1D
-	var oned_spec = FitsHelper.get_1d_spectrum(path + object_id + ".1D.fits", true)
+	var max_flux = 0.0
 	var xx = 0.2
-	var max = 0.0
-	for f in oned_spec:
-		# f = f['data']
-		# print(f, " <<")
-		#func add_series(points: Array, color: Color = Color(0, 0, 1), line_width: float = 2.0,
-				#drawevent_points: bool = false, point_size: float = 4.0,
-				#x_errors: Array = [], y_errors: Array = [],
-				#error_color: Color = Color.TRANSPARENT, error_line_width: float = 1.0,
-				#error_cap_size: float = 5.0, draw_as_steps: bool = false) -> int:
-		spec_1d.add_series(oned_spec[f]['fluxes'], Color(0.4 + xx, xx, 0.8), 2.0, false, 3.0, [], oned_spec[f]['err'], Color(1.0, 0.0, 0.0), 1.0, 5.0, true)
-		spec_1d.add_series(oned_spec[f]['bestfit'], Color(0.0, 1.0, 0.0, 0.5), 2.0, false, 3.0, [])
-		xx += 0.2
-		max = max(oned_spec[f]['max'], max)
-	%Spec1d.y_max = max
-		
-	# Spec2D
-	var data2d = FitsHelper.get_2d_spectrum(path + object_id + ".stack.fits")
+	for filter_name in manifest.spectrum_1d_paths.keys():
+		var spectrum = data_loader.load_1d_spectrum(object_id, filter_name)
+		if spectrum:
+			# Plot flux data
+			var points = data_loader.convert_1d_spectrum_for_plot(spectrum)
+			
+			# Create error data
+			var y_errors = []
+			for i in range(spectrum.errors.size()):
+				y_errors.append(spectrum.errors[i])
+			
+			# Add series with errors
+			spec_1d.add_series(points, Color(0.4 + xx, xx, 0.8), 2.0, false, 3.0,
+				[], y_errors, Color(1.0, 0.0, 0.0), 1.0, 5.0, true)
+			
+			# Find max flux for scaling
+			for flux in spectrum.fluxes:
+				max_flux = max(max_flux, flux)
+			
+			xx += 0.2
+	
+	%Spec1d.y_max = max_flux
+	
+	# SPEC 2D
 	var row: int = 1
-	for pa in data2d.keys():
-		var aligned = spec2d.get_node("Spec2Ds%d"%row)
-		row += 1
-		for f in ['F115W', 'F150W', 'F200W']:
-			var spec_display = aligned.get_node("Spec2D_" + f) as FitsImage
-			spec_display.visible = false
-			if f not in data2d[pa]:
+	var filters = ['F115W', 'F150W', 'F200W']
+	
+	# We need to handle the PA (position angle) structure differently
+	# Since we don't have the same structure as the FITS data
+	for i in range(1, 4): # Assuming 3 PAs as in the original code
+		var aligned = spec2d.get_node("Spec2Ds%d"%i)
+		if not aligned:
+			continue
+			
+		for filter_name in filters:
+			var spec_display = aligned.get_node("Spec2D_" + filter_name) as FitsImage
+			if not spec_display:
 				continue
+				
 			spec_display.visible = false
-				# print("Setting k ", k, " ", data2d[k])
-			spec_display.fits = data2d[pa][f]['fits']
-			spec_display.hdu = data2d[pa][f]['index']
-			spec_display.set_image(path + object_id + ".stack.fits", data2d[pa][f]['index'])
+			
+			# Check if we have this spectrum
+			if not filter_name in manifest.spectrum_2d_paths:
+				continue
+				
+			# Load the 2D spectrum
+			var spectrum = data_loader.load_2d_spectrum(object_id, filter_name)
+			if not spectrum:
+				continue
+				
+			# Load the texture
+			var texture = data_loader.load_2d_spectrum_texture(object_id, filter_name)
+			if not texture:
+				continue
+				
+			# Set the texture on the TextureRect inside FitsImage
+			spec_display.fits_img.texture = texture
+			
+			# Set scaling information for 2D spectrum alignment
+			spec_display.scaling = spectrum.scaling
+			
 			spec_display.visible = true
-			spec_display.set_label(data2d[pa][f]['extname'])
-		
-		# Directs
-		var x = FitsHelper.get_directs(path + object_id + ".beams.fits")
-		for filt in x:
-			var nd = get_node("VBoxContainer/MarginContainer3/Imaging/IC" + filt + "/Direct" + filt) as FitsImage
-			nd.hdu = x[filt]['index']
-			nd.fits = x[filt]['fits']
-			nd._set_file(path + object_id + ".beams.fits")
+			spec_display.set_label(filter_name)
+	
+	# DIRECT IMAGES
+	for filter_name in manifest.direct_image_paths.keys():
+		# Load direct image
+		var direct_image = data_loader.load_direct_image(object_id, filter_name)
+		if not direct_image:
+			continue
+			
+		# Load texture
+		var texture = data_loader.load_direct_image_texture(object_id, filter_name)
+		if not texture:
+			continue
+			
+		# Set texture on the FitsImage
+		var nd = get_node("VBoxContainer/MarginContainer3/Imaging/IC" + filter_name + "/Direct" + filter_name) as FitsImage
+		if nd:
+			nd.fits_img.texture = texture
 			nd._set_scale_pc(99.5)
 			nd.visible = true
-			nd.set_label(filt)
-			if filt == "F200W":
-				nd = %SegMap
-				nd.hdu = x[filt]['index'] + 1
-				nd.fits = x[filt]['fits']
-				nd._set_file(path + object_id + ".beams.fits")
-				# nd._set_scale_pc(99.5)
-				nd.visible = true
-				nd.set_label("SegMap")
-					
-				
-		%Spec2Ds1.position_textures()
-		%Spec2Ds2.position_textures()
-		%Spec2Ds3.position_textures()
-		#$VBoxContainer/MarginContainer4/Spec2Ds._on_plot_display_x_limits_changed(spec_1d.x_min, spec_1d.x_max)
-		# spec_1d.emit_signal("x_limits_changed", spec_1d.x_min, spec_1d.x_max)
-		
-		# Reset the loading flag
-		_is_loading = false
-		set_redshift(redshift)
-		print("Finished loading object: ", object_id)
+			nd.set_label(filter_name)
+			
+		# Handle segmentation map for F200W
+		if filter_name == "F200W" and not direct_image.segmap_path.is_empty():
+			var segmap_texture = data_loader.load_segmap_texture(object_id)
+			if segmap_texture:
+				var segmap = %SegMap
+				if segmap:
+					segmap.fits_img.texture = segmap_texture
+					segmap.visible = true
+					segmap.set_label("SegMap")
+	
+	# Position textures
+	%Spec2Ds1.position_textures()
+	%Spec2Ds2.position_textures()
+	%Spec2Ds3.position_textures()
+	
+	# Reset the loading flag
+	_is_loading = false
+	set_redshift(redshift)
+	print("Finished loading object: ", object_id)
 
 
 # func _unhandled_input(event: InputEvent) -> void:

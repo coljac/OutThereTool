@@ -20,7 +20,7 @@ func _ready():
 func _create_add_tab_button():
 	# Create a button to add new tabs
 	add_tab_button = Button.new()
-	add_tab_button.icon = load("res://GodSVG/assets/icons/CreateTab.svg")
+	# add_tab_button.icon = load("res://GodSVG/assets/icons/CreateTab.svg")
 	add_tab_button.tooltip_text = "Add Tab"
 	add_tab_button.focus_mode = Control.FOCUS_NONE
 	add_tab_button.flat = true

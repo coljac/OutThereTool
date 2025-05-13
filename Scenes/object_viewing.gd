@@ -1,7 +1,7 @@
 extends Control
 @onready var comments: TextEdit = $MarginContainer/VBoxContainer/Comments
 @onready var status: OptionButton = $MarginContainer/VBoxContainer/GridContainer/Status
-@onready var check_box: CheckBox = $MarginContainer/VBoxContainer/GridContainer/CheckBox
+# @onready var check_box: CheckBox = $MarginContainer/VBoxContainer/GridContainer/CheckBox
 
 signal save_galaxy(vals: Dictionary)
 
