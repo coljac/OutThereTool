@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://cvip6m8f24inr"]
+[gd_scene load_steps=8 format=3 uid="uid://cvip6m8f24inr"]
 
 [ext_resource type="Script" uid="uid://ds6nukonfixo4" path="res://ui/main_ui.gd" id="1_78d5d"]
 [ext_resource type="PackedScene" path="res://ui/top_bar.tscn" id="2_852uu"]
@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://c7rq6fiqo8bv4" path="res://Scenes/object_viewing.tscn" id="4_186kx"]
 [ext_resource type="Texture2D" uid="uid://cpg7bchl457ac" path="res://theme/assets/icons/theme/SplitGrabber2.svg" id="4_podmt"]
 [ext_resource type="PackedScene" uid="uid://75flqcgsoecp" path="res://Scenes/simple_tab.tscn" id="5_186kx"]
+[ext_resource type="PackedScene" uid="uid://cubtixgrjj65y" path="res://Scenes/help.tscn" id="7_ti1yg"]
 
 [node name="MainUI" type="Control"]
 layout_mode = 3
@@ -60,13 +61,21 @@ horizontal_alignment = 1
 [node name="HSeparator" type="HSeparator" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
 
+[node name="ObjectsList" type="OptionButton" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+selected = 0
+item_count = 1
+popup/item_0/text = "0 objects"
+popup/item_0/id = 0
+
 [node name="ObjectIDLabel" type="Label" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
 text = "Object ID:"
 
 [node name="ObjectIDEdit" type="LineEdit" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
 layout_mode = 2
-text = "uma-03_02484"
 placeholder_text = "Enter object ID"
 
 [node name="SearchButton" type="Button" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
@@ -76,9 +85,28 @@ text = "Search"
 [node name="HSeparator2" type="HSeparator" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="FiltersLabel" type="Label" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+[node name="HSeparator3" type="HSeparator" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
-text = "Filters:"
+
+[node name="FiltersBox" type="HBoxContainer" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="FiltersLabel" type="Label" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/FiltersBox"]
+layout_mode = 2
+text = "Bands:"
+
+[node name="FiltersSelect" type="OptionButton" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/FiltersBox"]
+unique_name_in_owner = true
+layout_mode = 2
+selected = 0
+allow_reselect = true
+item_count = 3
+popup/item_0/text = "Any"
+popup/item_0/id = 0
+popup/item_1/text = "F150W+F200W"
+popup/item_1/id = 1
+popup/item_2/text = "115+150+200"
+popup/item_2/id = 2
 
 [node name="RedshiftRangeLabel" type="Label" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
@@ -109,6 +137,17 @@ prefix = "Max:"
 layout_mode = 2
 text = "Apply Filters"
 
+[node name="Spacer2" type="Control" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 25.445)
+layout_mode = 2
+
+[node name="Label2" type="Label" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 0.866667, 1)
+theme_override_font_sizes/font_size = 18
+text = "Object properties"
+horizontal_alignment = 1
+
 [node name="ObjectViewing" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer" instance=ExtResource("4_186kx")]
 unique_name_in_owner = true
 layout_mode = 2
@@ -130,4 +169,11 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="HelpPanel" parent="." instance=ExtResource("7_ti1yg")]
+visible = false
+layout_mode = 1
+
+[connection signal="item_selected" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/ObjectsList" to="." method="_on_objects_list_item_selected"]
+[connection signal="pressed" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/SearchButton" to="." method="_on_search_button_pressed"]
+[connection signal="pressed" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/ApplyFiltersButton" to="." method="_on_apply_filters_button_pressed"]
 [connection signal="save_galaxy" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/ObjectViewing" to="." method="save_galaxy"]

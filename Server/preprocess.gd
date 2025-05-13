@@ -25,17 +25,19 @@ func _init():
 ## @param output_dir The directory to save processed data to
 ## @return The path to the generated manifest file
 func preprocess_object(object_id: String, input_dir: String, output_dir: String) -> String:
-	print("Processing object: " + object_id)
+	log_message("Processing object: " + object_id)
 	
 	# Create output directory if it doesn't exist
-	var dir = DirAccess.open(output_dir)
-	if not dir:
-		DirAccess.make_dir_recursive_absolute(output_dir)
+	if not DirAccess.dir_exists_absolute(output_dir):
+		var dir_result = DirAccess.make_dir_recursive_absolute(output_dir)
+		if dir_result != OK:
+			log_message("Error creating output directory: " + str(dir_result))
+			return ""
 	
 	# Create manifest
 	var manifest = ObjectManifest.new()
 	manifest.object_id = object_id
-	manifest.object_name = object_id  # Default to ID, may be updated later
+	manifest.object_name = object_id # Default to ID, may be updated later
 	manifest.spectrum_1d_paths = {}
 	manifest.spectrum_2d_paths = {}
 	manifest.direct_image_paths = {}
@@ -53,7 +55,7 @@ func preprocess_object(object_id: String, input_dir: String, output_dir: String)
 		for filter_name in spec_1d_result:
 			manifest.spectrum_1d_paths[filter_name] = spec_1d_result[filter_name]
 	else:
-		print("Warning: 1D spectrum file not found: " + spec_1d_path)
+		log_message("Warning: 1D spectrum file not found: " + spec_1d_path)
 	
 	# Process 2D spectra
 	var spec_2d_path = input_dir + object_id + ".stack.fits"
@@ -62,7 +64,7 @@ func preprocess_object(object_id: String, input_dir: String, output_dir: String)
 		for filter_name in spec_2d_result:
 			manifest.spectrum_2d_paths[filter_name] = spec_2d_result[filter_name]
 	else:
-		print("Warning: 2D spectrum file not found: " + spec_2d_path)
+		log_message("Warning: 2D spectrum file not found: " + spec_2d_path)
 	
 	# Process direct images
 	var direct_path = input_dir + object_id + ".beams.fits"
@@ -71,7 +73,7 @@ func preprocess_object(object_id: String, input_dir: String, output_dir: String)
 		for filter_name in direct_result:
 			manifest.direct_image_paths[filter_name] = direct_result[filter_name]
 	else:
-		print("Warning: Direct image file not found: " + direct_path)
+		log_message("Warning: Direct image file not found: " + direct_path)
 	
 	# Process redshift data
 	var redshift_path = input_dir + object_id + ".full.fits"
@@ -83,7 +85,7 @@ func preprocess_object(object_id: String, input_dir: String, output_dir: String)
 		if redshift_resource:
 			manifest.redshift = redshift_resource.best_redshift
 	else:
-		print("Warning: Redshift file not found: " + redshift_path)
+		log_message("Warning: Redshift file not found: " + redshift_path)
 	
 	# Count bands
 	manifest.band_count = manifest.get_available_filters().size()
@@ -91,17 +93,24 @@ func preprocess_object(object_id: String, input_dir: String, output_dir: String)
 	# Try to extract observation date from headers
 	manifest.observation_date = extract_observation_date(object_id, input_dir)
 	
+	# Add metadata
+	manifest.metadata = {
+		"processing_date": Time.get_datetime_string_from_system(),
+		"input_directory": input_dir,
+		"output_directory": output_dir
+	}
+	
 	# Save manifest
 	var manifest_path = output_dir + object_id + "_manifest.tres"
 	var save_result = ResourceSaver.save(manifest, manifest_path)
 	if save_result != OK:
-		print("Error saving manifest: " + str(save_result))
+		log_message("Error saving manifest: " + str(save_result))
 		return ""
 	
 	# Write metadata to the metadata file
 	write_object_metadata(manifest)
 	
-	print("Finished processing object: " + object_id)
+	log_message("Finished processing object: " + object_id)
 	return manifest_path
 
 ## Process 1D spectra from a FITS file
@@ -111,11 +120,14 @@ func preprocess_object(object_id: String, input_dir: String, output_dir: String)
 ## @param output_dir The directory to save processed data to
 ## @return Dictionary mapping filter names to resource paths
 func preprocess_1d_spectra(object_id: String, fits_path: String, output_dir: String) -> Dictionary:
-	print("  Processing 1D spectra from: " + fits_path)
+	log_message("  Processing 1D spectra from: " + fits_path)
 	var result = {}
 	
 	# Get 1D spectrum data using FitsHelper
 	var spectrum_data = fits_helper.get_1d_spectrum(fits_path, true)
+	if spectrum_data.is_empty():
+		log_message("    Error: Failed to extract 1D spectrum data from " + fits_path)
+		return result
 	
 	# Process each filter
 	for filter_name in spectrum_data:
@@ -132,17 +144,35 @@ func preprocess_1d_spectra(object_id: String, fits_path: String, output_dir: Str
 		
 		resource.wavelengths = wavelengths
 		resource.fluxes = fluxes
-		resource.errors = spectrum_data[filter_name]["err"]
+		
+		# Properly handle error data - ensure it's a PackedFloat32Array
+		var errors = PackedFloat32Array()
+		var err_data = spectrum_data[filter_name]["err"]
+		if err_data is PackedFloat32Array:
+			errors = err_data
+		else:
+			# If errors are in a different format, convert them
+			for err_value in err_data:
+				errors.append(float(err_value))
+		
+		resource.errors = errors
+		
+		# Add metadata
+		resource.metadata = {
+			"source_file": fits_path,
+			"processing_date": Time.get_datetime_string_from_system(),
+			"filter": filter_name
+		}
 		
 		# Save resource
 		var resource_path = output_dir + object_id + "_1d_" + filter_name + ".tres"
 		var save_result = ResourceSaver.save(resource, resource_path)
 		if save_result != OK:
-			print("    Error saving 1D spectrum resource: " + str(save_result))
+			log_message("    Error saving 1D spectrum resource: " + str(save_result))
 			continue
 		
 		result[filter_name] = resource_path
-		print("    Saved 1D spectrum for filter: " + filter_name)
+		log_message("    Saved 1D spectrum for filter: " + filter_name)
 	
 	return result
 
@@ -153,15 +183,20 @@ func preprocess_1d_spectra(object_id: String, fits_path: String, output_dir: Str
 ## @param output_dir The directory to save processed data to
 ## @return Dictionary mapping filter names to resource paths
 func preprocess_2d_spectra(object_id: String, fits_path: String, output_dir: String) -> Dictionary:
-	print("  Processing 2D spectra from: " + fits_path)
+	log_message("  Processing 2D spectra from: " + fits_path)
 	var result = {}
 	
 	# Get 2D spectrum data using FitsHelper
 	var spectrum_indices = fits_helper.get_2d_spectrum(fits_path)
+	if spectrum_indices.is_empty():
+		log_message("    Error: Failed to extract 2D spectrum indices from " + fits_path)
+		return result
 	
 	# Create a FITS reader to access the data
 	var fits_reader = FITSReader.new()
-	fits_reader.load_fits(fits_path)
+	if not fits_reader.load_fits(fits_path):
+		log_message("    Error: Failed to load FITS file: " + fits_path)
+		return result
 	
 	# Process each filter
 	for filter_name in spectrum_indices:
@@ -169,16 +204,27 @@ func preprocess_2d_spectra(object_id: String, fits_path: String, output_dir: Str
 		var header = fits_reader.get_header_info(hdu_index)
 		var image_data = fits_reader.get_image_data(hdu_index)
 		
+		if image_data.size() == 0:
+			log_message("    Error: Failed to extract image data for filter " + filter_name)
+			continue
+		
 		# Get dimensions
-		var width = int(header["NAXIS1"])
-		var height = int(header["NAXIS2"])
+		var width = int(header.get("NAXIS1", 0))
+		var height = int(header.get("NAXIS2", 0))
+		
+		if width == 0 or height == 0:
+			log_message("    Error: Invalid dimensions for filter " + filter_name)
+			continue
 		
 		# Calculate wavelength scaling
-		var crpix = float(header["CRPIX1"])
-		var crval = float(header["CRVAL1"])
-		var cdelt = float(header["CD1_1"])
+		var crpix = float(header.get("CRPIX1", 1.0))
+		var crval = float(header.get("CRVAL1", 0.0))
+		var cdelt = float(header.get("CD1_1", 0.0))
+		if cdelt == 0.0 and header.has("CDELT1"):
+			cdelt = float(header["CDELT1"])
+		
 		var scaling = {
-			"left": -crpix * cdelt + crval,
+			"left": - crpix * cdelt + crval,
 			"right": (width - crpix) * cdelt + crval
 		}
 		
@@ -196,15 +242,23 @@ func preprocess_2d_spectra(object_id: String, fits_path: String, output_dir: Str
 		resource.height = height
 		resource.header_info = header
 		
+		# Add metadata
+		resource.metadata = {
+			"source_file": fits_path,
+			"processing_date": Time.get_datetime_string_from_system(),
+			"wavelength_unit": header.get("CUNIT1", "Angstrom"),
+			"filter": filter_name
+		}
+		
 		# Save resource
 		var resource_path = output_dir + object_id + "_2d_" + filter_name + ".tres"
 		var save_result = ResourceSaver.save(resource, resource_path)
 		if save_result != OK:
-			print("    Error saving 2D spectrum resource: " + str(save_result))
+			log_message("    Error saving 2D spectrum resource: " + str(save_result))
 			continue
 		
 		result[filter_name] = resource_path
-		print("    Saved 2D spectrum for filter: " + filter_name)
+		log_message("    Saved 2D spectrum for filter: " + filter_name)
 	
 	return result
 
@@ -215,15 +269,20 @@ func preprocess_2d_spectra(object_id: String, fits_path: String, output_dir: Str
 ## @param output_dir The directory to save processed data to
 ## @return Dictionary mapping filter names to resource paths
 func preprocess_direct_images(object_id: String, fits_path: String, output_dir: String) -> Dictionary:
-	print("  Processing direct images from: " + fits_path)
+	log_message("  Processing direct images from: " + fits_path)
 	var result = {}
 	
 	# Get direct image data using FitsHelper
 	var direct_indices = fits_helper.get_directs(fits_path)
+	if direct_indices.is_empty():
+		log_message("    Error: Failed to extract direct image indices from " + fits_path)
+		return result
 	
 	# Create a FITS reader to access the data
 	var fits_reader = FITSReader.new()
-	fits_reader.load_fits(fits_path)
+	if not fits_reader.load_fits(fits_path):
+		log_message("    Error: Failed to load FITS file: " + fits_path)
+		return result
 	
 	# Process each filter
 	for filter_name in direct_indices:
@@ -231,13 +290,23 @@ func preprocess_direct_images(object_id: String, fits_path: String, output_dir: 
 		var header = fits_reader.get_header_info(hdu_index)
 		var image_data = fits_reader.get_image_data(hdu_index)
 		
+		if image_data.size() == 0:
+			log_message("    Error: Failed to extract image data for filter " + filter_name)
+			continue
+		
 		# Get dimensions
-		var width = int(header["NAXIS1"])
-		var height = int(header["NAXIS2"])
+		var width = int(header.get("NAXIS1", 0))
+		var height = int(header.get("NAXIS2", 0))
+		
+		if width == 0 or height == 0:
+			log_message("    Error: Invalid dimensions for filter " + filter_name)
+			continue
 		
 		# Save image data as EXR
 		var exr_path = output_dir + object_id + "_direct_" + filter_name + ".exr"
-		save_as_exr(image_data, width, height, exr_path)
+		if not save_as_exr(image_data, width, height, exr_path):
+			log_message("    Error: Failed to save EXR file for filter " + filter_name)
+			continue
 		
 		# Create resource
 		var resource = DirectImageResource.new()
@@ -255,23 +324,42 @@ func preprocess_direct_images(object_id: String, fits_path: String, output_dir: 
 				wcs_info[key] = header[key]
 		resource.wcs_info = wcs_info
 		
-		# Check for segmentation map (for F200W)
-		if filter_name == "F200W" and hdu_index + 1 < fits_reader.get_info()["hdus"].size():
-			var segmap_data = fits_reader.get_image_data(hdu_index + 1)
-			var segmap_path = output_dir + object_id + "_segmap.exr"
-			save_as_exr(segmap_data, width, height, segmap_path)
-			resource.segmap_path = segmap_path
-			print("    Saved segmentation map for F200W")
+		# Add metadata
+		resource.metadata = {
+			"source_file": fits_path,
+			"processing_date": Time.get_datetime_string_from_system(),
+			"filter": filter_name
+		}
+		
+		# Check for segmentation map (for all filters, not just F200W)
+		if hdu_index + 1 < fits_reader.get_info()["hdus"].size():
+			# Try to determine if the next HDU is a segmentation map
+			var next_header = fits_reader.get_header_info(hdu_index + 1)
+			var is_segmap = false
+			
+			# Check if it's a segmentation map based on header info
+			if next_header.has("EXTNAME") and next_header["EXTNAME"] == "SEG":
+				is_segmap = true
+			elif filter_name == "F200W":  # Keep original behavior for F200W
+				is_segmap = true
+			
+			if is_segmap:
+				var segmap_data = fits_reader.get_image_data(hdu_index + 1)
+				if segmap_data.size() > 0:
+					var segmap_path = output_dir + object_id + "_segmap_" + filter_name + ".exr"
+					if save_as_exr(segmap_data, width, height, segmap_path):
+						resource.segmap_path = segmap_path
+						log_message("    Saved segmentation map for " + filter_name)
 		
 		# Save resource
 		var resource_path = output_dir + object_id + "_direct_" + filter_name + ".tres"
 		var save_result = ResourceSaver.save(resource, resource_path)
 		if save_result != OK:
-			print("    Error saving direct image resource: " + str(save_result))
+			log_message("    Error saving direct image resource: " + str(save_result))
 			continue
 		
 		result[filter_name] = resource_path
-		print("    Saved direct image for filter: " + filter_name)
+		log_message("    Saved direct image for filter: " + filter_name)
 	
 	return result
 
@@ -282,17 +370,24 @@ func preprocess_direct_images(object_id: String, fits_path: String, output_dir: 
 ## @param output_dir The directory to save processed data to
 ## @return Path to the saved redshift resource
 func preprocess_redshift(object_id: String, fits_path: String, output_dir: String) -> String:
-	print("  Processing redshift data from: " + fits_path)
+	log_message("  Processing redshift data from: " + fits_path)
 	
 	# Get redshift data using FitsHelper
 	var pz_data = fits_helper.get_pz(fits_path)
+	if pz_data.size() < 2 or pz_data[0].size() == 0 or pz_data[1].size() == 0:
+		log_message("    Error: Failed to extract redshift data from " + fits_path)
+		return ""
+	
 	var z_grid = pz_data[0]
 	var pdf = pz_data[1]
 	
 	# Calculate log10 of PDF
 	var log_pdf = PackedFloat32Array()
 	for p in pdf:
-		log_pdf.append(fits_helper.log10(p))
+		if p <= 0:  # Avoid log of zero or negative values
+			log_pdf.append(-INF)
+		else:
+			log_pdf.append(fits_helper.log10(p))
 	
 	# Find peaks
 	var peaks = fits_helper.peak_finding(log_pdf, 50)
@@ -301,11 +396,18 @@ func preprocess_redshift(object_id: String, fits_path: String, output_dir: Strin
 	var best_redshift = 0.0
 	var max_pdf = -INF
 	for peak in peaks:
-		var z = z_grid[peak["x"]]
-		var p = peak["max"]
-		if p > max_pdf:
-			max_pdf = p
-			best_redshift = z
+		if peak["x"] < z_grid.size():  # Ensure index is valid
+			var z = z_grid[peak["x"]]
+			var p = peak["max"]
+			if p > max_pdf:
+				max_pdf = p
+				best_redshift = z
+	
+	# Create a FITS reader to access header information
+	var fits_reader = FITSReader.new()
+	var header_info = {}
+	if fits_reader.load_fits(fits_path):
+		header_info = fits_reader.get_header_info(0)
 	
 	# Create resource
 	var resource = RedshiftResource.new()
@@ -315,15 +417,23 @@ func preprocess_redshift(object_id: String, fits_path: String, output_dir: Strin
 	resource.log_pdf = log_pdf
 	resource.peaks = peaks
 	resource.best_redshift = best_redshift
+	resource.header_info = header_info
+	
+	# Add metadata
+	resource.metadata = {
+		"source_file": fits_path,
+		"processing_date": Time.get_datetime_string_from_system(),
+		"peak_count": peaks.size()
+	}
 	
 	# Save resource
 	var resource_path = output_dir + object_id + "_redshift.tres"
 	var save_result = ResourceSaver.save(resource, resource_path)
 	if save_result != OK:
-		print("    Error saving redshift resource: " + str(save_result))
+		log_message("    Error saving redshift resource: " + str(save_result))
 		return ""
 	
-	print("    Saved redshift data with best z = " + str(best_redshift))
+	log_message("    Saved redshift data with best z = " + str(best_redshift))
 	return resource_path
 
 ## Save image data as an EXR file
@@ -332,7 +442,12 @@ func preprocess_redshift(object_id: String, fits_path: String, output_dir: Strin
 ## @param width The width of the image
 ## @param height The height of the image
 ## @param path The path to save the EXR file to
-func save_as_exr(data: PackedFloat32Array, width: int, height: int, path: String) -> void:
+## @return True if the file was saved successfully, false otherwise
+func save_as_exr(data: PackedFloat32Array, width: int, height: int, path: String) -> bool:
+	if data.size() == 0 or width <= 0 or height <= 0:
+		log_message("    Error: Invalid data or dimensions for EXR file")
+		return false
+	
 	var img = Image.create(width, height, false, Image.FORMAT_RF)
 	
 	for y in range(height):
@@ -341,9 +456,20 @@ func save_as_exr(data: PackedFloat32Array, width: int, height: int, path: String
 			if idx < data.size():
 				img.set_pixel(x, y, Color(data[idx], 0, 0, 0))
 	
+	# Ensure the directory exists
+	var dir_path = path.get_base_dir()
+	if not DirAccess.dir_exists_absolute(dir_path):
+		var dir_result = DirAccess.make_dir_recursive_absolute(dir_path)
+		if dir_result != OK:
+			log_message("    Error creating directory for EXR file: " + str(dir_result))
+			return false
+	
 	var save_result = img.save_exr(path)
 	if save_result != OK:
-		print("    Error saving EXR file: " + str(save_result))
+		log_message("    Error saving EXR file: " + str(save_result))
+		return false
+	
+	return true
 
 ## Extract observation date from FITS headers
 ##
@@ -357,13 +483,13 @@ func extract_observation_date(object_id: String, input_dir: String) -> String:
 	var direct_path = input_dir + object_id + ".beams.fits"
 	if FileAccess.file_exists(direct_path):
 		var fits_reader = FITSReader.new()
-		fits_reader.load_fits(direct_path)
-		var header = fits_reader.get_header_info(0)
-		
-		if "DATE-OBS" in header:
-			date = header["DATE-OBS"]
-		elif "DATE" in header:
-			date = header["DATE"]
+		if fits_reader.load_fits(direct_path):
+			var header = fits_reader.get_header_info(0)
+			
+			if "DATE-OBS" in header:
+				date = header["DATE-OBS"]
+			elif "DATE" in header:
+				date = header["DATE"]
 	
 	# If not found, try other files
 	if date.is_empty():
@@ -376,15 +502,15 @@ func extract_observation_date(object_id: String, input_dir: String) -> String:
 		for file_path in files:
 			if FileAccess.file_exists(file_path):
 				var fits_reader = FITSReader.new()
-				fits_reader.load_fits(file_path)
-				var header = fits_reader.get_header_info(0)
-				
-				if "DATE-OBS" in header:
-					date = header["DATE-OBS"]
-					break
-				elif "DATE" in header:
-					date = header["DATE"]
-					break
+				if fits_reader.load_fits(file_path):
+					var header = fits_reader.get_header_info(0)
+					
+					if "DATE-OBS" in header:
+						date = header["DATE-OBS"]
+						break
+					elif "DATE" in header:
+						date = header["DATE"]
+						break
 	
 	return date
 
@@ -395,20 +521,28 @@ func init_metadata_file(output_dir: String) -> void:
 	if not output_dir.ends_with("/"):
 		output_dir += "/"
 	
+	# Ensure the directory exists
+	if not DirAccess.dir_exists_absolute(output_dir):
+		var dir_result = DirAccess.make_dir_recursive_absolute(output_dir)
+		if dir_result != OK:
+			log_message("Error creating directory for metadata file: " + str(dir_result))
+			return
+	
 	var file_path = output_dir + "object_metadata.txt"
 	metadata_file = FileAccess.open(file_path, FileAccess.WRITE)
 	
 	if metadata_file:
 		metadata_file.store_line("object_id\tobject_name\tband_count\tobservation_date\tredshift")
+		log_message("Initialized metadata file at " + file_path)
 	else:
-		print("Error: Could not create metadata file at " + file_path)
+		log_message("Error: Could not create metadata file at " + file_path)
 
 ## Write object metadata to the metadata file
 ##
 ## @param manifest The object manifest containing metadata
 func write_object_metadata(manifest: ObjectManifest) -> void:
 	if not metadata_file:
-		print("Error: Metadata file not initialized")
+		log_message("Error: Metadata file not initialized")
 		return
 	
 	var line = manifest.object_id + "\t" + \
@@ -426,6 +560,13 @@ func init_log_file(output_dir: String) -> void:
 	if not output_dir.ends_with("/"):
 		output_dir += "/"
 	
+	# Ensure the directory exists
+	if not DirAccess.dir_exists_absolute(output_dir):
+		var dir_result = DirAccess.make_dir_recursive_absolute(output_dir)
+		if dir_result != OK:
+			print("Error creating directory for log file: " + str(dir_result))
+			return
+	
 	var file_path = output_dir + "preprocess_log.txt"
 	log_file = FileAccess.open(file_path, FileAccess.WRITE)
 	
@@ -436,6 +577,7 @@ func init_log_file(output_dir: String) -> void:
 			datetime["hour"], datetime["minute"], datetime["second"]
 		]
 		log_file.store_line("Pre-processing started at " + date_str)
+		print("Initialized log file at " + file_path)
 	else:
 		print("Error: Could not create log file at " + file_path)
 

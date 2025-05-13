@@ -78,6 +78,10 @@ func read_object_list(file_path: String) -> Array:
         file.close()
     else:
         print("Error: Could not open object list file: " + file_path)
+        # Ensure the directory exists for the file path
+        var dir_path = file_path.get_base_dir()
+        if not DirAccess.dir_exists_absolute(dir_path):
+            print("Note: Directory does not exist: " + dir_path)
     
     return object_ids
 

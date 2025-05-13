@@ -1,7 +1,12 @@
-[gd_scene load_steps=3 format=3 uid="uid://biwtif1e8fvo2"]
+[gd_scene load_steps=4 format=3 uid="uid://biwtif1e8fvo2"]
 
+[ext_resource type="Shader" uid="uid://beafejh066cfs" path="res://Resources/zscale.gdshader" id="2_48rgr"]
 [ext_resource type="Script" uid="uid://dolk382f8r1ap" path="res://Scenes/fits_image.gd" id="2_b5gq6"]
-[ext_resource type="Texture2D" uid="uid://duoyey75onrqo" path="res://processed/outthere-hudfn_04375_2d_F200W.exr" id="2_tkbqm"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_lvlw1"]
+shader = ExtResource("2_48rgr")
+shader_parameter/z_min = 0.0
+shader_parameter/z_max = 1.0
 
 [node name="FitsImage" type="MarginContainer"]
 custom_minimum_size = Vector2(100, 100)
@@ -12,8 +17,9 @@ size_flags_vertical = 3
 script = ExtResource("2_b5gq6")
 
 [node name="FitsImageShow" type="TextureRect" parent="."]
+material = SubResource("ShaderMaterial_lvlw1")
+custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
-texture = ExtResource("2_tkbqm")
 stretch_mode = 5
 
 [node name="Label" type="Label" parent="."]

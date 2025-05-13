@@ -9,7 +9,7 @@ signal mouse_coords(Vector2)
 @export_range(90, 99.5, 0.5) var scale_percent: float = 99.5: set = _set_scale_pc
 @export var invert_color: bool = false: set = _set_invert
 @export var is_2d_spectrum: bool = false
-@export var scaling: Dictionary = {"left": -1.0, "right": 10.0}
+@export var scaling = {"left": - 1.0, "right": 10.0}
 enum ColorMap {GRAYSCALE, VIRIDIS, PLASMA, INFERNO, MAGMA, JET, HOT, COOL, RAINBOW}
 @export var color_map: ColorMap = ColorMap.GRAYSCALE: set = _set_colormap
 
@@ -21,6 +21,13 @@ var width: int = 0
 var height: int = 0
 var hdu: int = 1
 
+# Variables for shader control
+var is_dragging: bool = false
+var drag_start_position: Vector2 = Vector2.ZERO
+var shader_material: ShaderMaterial
+var z_min: float = 0.0
+var z_max: float = 1.0
+
 
 var RA: float = 0.0
 var dec: float = 0.0
@@ -29,13 +36,16 @@ var current_hdu = 1
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	set_process(false)  # Disable _process by default
+	set_process(false) # Disable _process by default
 	# region_manager = RegionManager.new()
 	#add_child(region_manager)
 	gui_input.connect(_on_gui_input)
 	if fits_path:
 		_load_fits()
 	$Label.text = ""
+	
+	# Initialize shader
+	_init_shader()
 
 # func _on_mouse_entered():
 	# print("Mouse entered the TextureRect")
@@ -45,29 +55,68 @@ func _ready() -> void:
 
 func set_label(s: String):
 	$Label.text = s
+
+func _init_shader() -> void:
+	# Create shader material if it doesn't exist
+	if not shader_material:
+		shader_material = ShaderMaterial.new()
+		shader_material.shader = load("res://Resources/zscale.gdshader")
+		shader_material.set_shader_parameter("z_min", z_min)
+		shader_material.set_shader_parameter("z_max", z_max)
+		
+	# Apply shader to the texture rect
+	fits_img.material = shader_material
+
+func _reset_shader() -> void:
+	z_min = 0.0
+	z_max = 1.0
+	if shader_material:
+		shader_material.set_shader_parameter("z_min", z_min)
+		shader_material.set_shader_parameter("z_max", z_max)
+
 func _on_gui_input(event):
 	if event is InputEventMouseMotion:
 		# Handle mouse movement
 		_handle_mouse_motion(event)
 	elif event is InputEventMouseButton:
-		if event.pressed:
-			if event.button_index == MOUSE_BUTTON_LEFT:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
 				if event.is_double_click():
 					_set_scale_pc(99.5)
+					_reset_shader()
 				else:
-					scale_percent += 0.5
-					if scale_percent > 99.5:
-						scale_percent = 90
-					_set_scale_pc(scale_percent)
-			elif event.button_index == MOUSE_BUTTON_RIGHT:
-				invert_color = not invert_color
-				
-				
+					# Start dragging
+					is_dragging = true
+					drag_start_position = event.position
+			else:
+				# Stop dragging on release
+				is_dragging = false
+		elif event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
+			invert_color = not invert_color
+
+
 func _handle_mouse_motion(event: InputEventMouseMotion):
-	if is_2d_spectrum:
-		return
+	# if is_2d_spectrum:
+		# return
 	# Get local mouse position relative to the TextureRect
 	var local_pos = event.position
+	
+	# Handle shader parameter adjustment if dragging
+	if is_dragging and shader_material:
+		var delta = local_pos - drag_start_position
+		
+		# Adjust z_max based on horizontal movement (right increases, left decreases)
+		z_max = clamp(z_max + delta.x * 0.001, 0.0, 1.0)
+		
+		# Adjust z_min based on vertical movement (up decreases, down increases)
+		z_min = clamp(z_min - delta.y * 0.001, 0.0, 1.0)
+		
+		# Update shader parameters
+		shader_material.set_shader_parameter("z_min", z_min)
+		shader_material.set_shader_parameter("z_max", z_max)
+		
+		# Update drag start position for next frame
+		drag_start_position = local_pos
 	
 	# Get the coordinates as a ratio of the texture size (0-1 range)
 	var normalized_pos = Vector2(
@@ -75,20 +124,15 @@ func _handle_mouse_motion(event: InputEventMouseMotion):
 		local_pos.y / size.y
 	)
 	
-		#if event is InputEventMouseMotion:
-		#var local_pos = to_local(event.position)
-	if get_rect().has_point(local_pos) and fits:
-		#print(local_pos, fits.pixel_to_world(0, 0))
-		var sky_pos: Vector2 = fits.pixel_to_world(local_pos.x + width / 2, height / 2 - local_pos.y)
-		emit_signal("mouse_coords", sky_pos)
-			
+	if get_rect().has_point(local_pos):
+		if fits:
+			var sky_pos: Vector2 = fits.pixel_to_world(local_pos.x + width / 2, height / 2 - local_pos.y)
+			emit_signal("mouse_coords", sky_pos)
 	
-	#print("Mouse position: ", local_pos, " Normalized: ", normalized_pos)
-	
-	
-func _load_fits():
-	if fits_path:
-		fits = FITSReader.new()
+func _load_fits(fits: FITSReader = null) -> void:
+	if fits_path or fits:
+		if not fits:
+			fits = FITSReader.new()
 		
 		if fits.load_fits(str(fits_path)): # .substr(6, -1)): # TODO res://
 			#print("FITS file loaded")
@@ -122,20 +166,20 @@ func set_image(file_path: String, image_hdu: int = 1):
 	hdu = image_hdu
 	fits_path = file_path
 	_load_fits()
-	
-# Set texture directly (for pre-processed data)
-func set_texture(texture: ImageTexture):
-	if texture:
-		fits_img.texture = texture
-	
+
+func set_image_data(image_data: PackedFloat32Array, image_hdu: int = 1):
+	hdu = image_hdu
+	width = int(fits.get_header_info(hdu)['NAXIS1'])
+	height = int(fits.get_header_info(hdu)['NAXIS2'])
+	white_level = get_percentile(fits.get_image_data_normalized(hdu), 95.5)
+	_make_texture()
+
+
 func _make_texture():
 	if fits:
 		fits_img.texture = display_fits_image(fits.get_image_data_normalized(hdu), width, height, black_level, white_level)
-	elif fits_img.texture == null:
-		# Create a default texture if none exists
-		var img = Image.create(100, 100, false, Image.FORMAT_RGBAF)
-		img.fill(Color(0, 0, 0, 1))
-		fits_img.texture = ImageTexture.create_from_image(img)
+		# Re-apply shader after texture update
+		_init_shader()
 	
 func _set_scale_pc(p: float):
 	scale_percent = p
