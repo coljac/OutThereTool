@@ -241,6 +241,7 @@ plot_area_color = Color(0.0977035, 0.0977035, 0.148989, 1)
 axes_area_color = Color(0.0977035, 0.0977035, 0.148989, 1)
 show_crosshair = true
 x_tick_spacing = 0.2
+y_tick_spacing = 2.0
 x_tick_decimals = 2
 axis_color = Color(0.2, 0.905882, 0.2, 1)
 x_label = "wavelength (μm)"
@@ -290,5 +291,6 @@ theme_override_colors/font_color = Color(0, 0.780392, 0, 1)
 theme_override_font_sizes/font_size = 44
 text = "z  = 1.0"
 
+[connection signal="zoomed" from="VBoxContainer/MarginContainer5/Spec1d" to="." method="oned_zoomed"]
 [connection signal="plot_left_clicked" from="VBoxContainer/MarginContainer6/VBoxContainer/Redshift" to="." method="_on_redshift_plot_left_clicked"]
 [connection signal="value_changed" from="VBoxContainer/MarginContainer6/VBoxContainer/MarginContainer/HSlider" to="." method="_on_h_slider_value_changed"]

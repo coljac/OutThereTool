@@ -86,7 +86,7 @@ func _microns_to_pixels(microns: float) -> int:
 func position_textures():
 	for child in get_children():
 		var f = child as FitsImage
-		if f and f.visible and f.scaling:
+		if f and f.visible and f.scaling and f.fits_img.texture:
 
 			# Calculate the pixel positions for the left and right boundaries of the image
 			var left_pixel = _microns_to_pixels(f.scaling['left'])

@@ -15,6 +15,7 @@ enum ColorMap {GRAYSCALE, VIRIDIS, PLASMA, INFERNO, MAGMA, JET, HOT, COOL, RAINB
 
 @onready var fits_img: TextureRect = $FitsImageShow
 
+var show_scales = [90.0, 92.0, 93.0, 94.0, 95.0, 96.0, 97.0, 98.0, 99.0, 99.5]
 var fits: FITSReader
 var region_manager: RegionManager
 var width: int = 0
@@ -27,6 +28,13 @@ var drag_start_position: Vector2 = Vector2.ZERO
 var shader_material: ShaderMaterial
 var z_min: float = 0.0
 var z_max: float = 1.0
+
+# Variables for drag timer
+var drag_timer: Timer
+var potential_drag: bool = false
+var drag_threshold: float = 0.10  # Time in seconds before considering it a drag
+var click_position: Vector2 = Vector2.ZERO
+var current_scale_index: int = 0  # Index to track position in show_scales array
 
 
 var RA: float = 0.0
@@ -46,6 +54,12 @@ func _ready() -> void:
 	
 	# Initialize shader
 	_init_shader()
+	
+	# Initialize drag timer
+	drag_timer = Timer.new()
+	drag_timer.one_shot = true
+	drag_timer.timeout.connect(_on_drag_timer_timeout)
+	add_child(drag_timer)
 
 # func _on_mouse_entered():
 	# print("Mouse entered the TextureRect")
@@ -78,18 +92,37 @@ func _on_gui_input(event):
 	if event is InputEventMouseMotion:
 		# Handle mouse movement
 		_handle_mouse_motion(event)
+		
+		# If we're in potential drag state and mouse has moved significantly, start actual drag
+		if potential_drag and event.position.distance_to(click_position) > 5:
+			potential_drag = false
+			is_dragging = true
+			drag_start_position = click_position  # Use the original click position
+			drag_timer.stop()
+			
 	elif event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			if event.pressed:
 				if event.is_double_click():
 					_set_scale_pc(99.5)
 					_reset_shader()
+					current_scale_index = show_scales.size() - 1  # Reset index to last element (99.5)
 				else:
-					# Start dragging
-					is_dragging = true
-					drag_start_position = event.position
+					# Start potential drag
+					potential_drag = true
+					is_dragging = false
+					click_position = event.position
+					drag_timer.start(drag_threshold)
 			else:
-				# Stop dragging on release
+				# On release
+				drag_timer.stop()
+				
+				# If we're still in potential drag state, it was a quick click
+				if potential_drag:
+					_handle_quick_click(event.position)
+				
+				# Reset states
+				potential_drag = false
 				is_dragging = false
 		elif event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
 			invert_color = not invert_color
@@ -346,3 +379,21 @@ func clear_regions() -> void:
 	print("clr")
 	if region_manager:
 		region_manager.clear_regions()
+
+# Timer timeout function for drag detection
+func _on_drag_timer_timeout() -> void:
+	# If we're still in potential drag state after the timer expires,
+	# convert to actual drag
+	if potential_drag:
+		potential_drag = false
+		is_dragging = true
+		drag_start_position = click_position
+
+# Handle quick click (non-drag) action
+func _handle_quick_click(position: Vector2) -> void:
+	# Cycle through the show_scales list
+	current_scale_index = (current_scale_index + 1) % show_scales.size()
+	var new_scale = show_scales[current_scale_index]
+	
+	# Set the new scale
+	_set_scale_pc(new_scale)

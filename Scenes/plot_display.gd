@@ -1,13 +1,13 @@
 @tool
 extends Control
 class_name PlotDisplay
-
 # Signals for mouse clicks in plot space
 signal plot_left_clicked(position: Vector2)
 signal plot_right_clicked(position: Vector2)
 # Signal for when x-axis limits change
 signal crosshair_moved(position: Vector2)
 signal x_limits_changed(x_min: float, x_max: float)
+signal zoomed
 
 @export_category("Limits")
 # Plot space limits
@@ -93,7 +93,7 @@ func _ready():
 	# Create child nodes if they don't exist
 	if Engine.is_editor_hint():
 		return
-	set_process(false)  # Disable _process by default
+	set_process(false) # Disable _process by default
 		
 	# Create plot area
 	if not has_node("PlotArea"):
@@ -199,6 +199,7 @@ func _input(event):
 						
 						if selection_size.x > min_size and selection_size.y > min_size:
 							zoom_to_selection()
+							zoomed.emit()
 						
 						queue_redraw()
 			

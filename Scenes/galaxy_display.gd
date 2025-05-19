@@ -90,7 +90,11 @@ func _unhandled_input(event: InputEvent) -> void:
 # 	if Input.is_action_just_pressed("flag_bad"):
 # 		print("Flag bad")
 	
-		
+func oned_zoomed():
+	toggle_lines(false)
+	toggle_lines(true)
+
+
 func set_redshift(z: float) -> void:
 	if z == redshift:
 		return
@@ -158,7 +162,7 @@ func load_object() -> void:
 		spec_1d.add_series(oned_spec[f]['bestfit'], Color(0.0, 1.0, 0.0, 0.5), 2.0, false, 3.0, [])
 		xx += 0.2
 		max = max(oned_spec[f]['max'], max)
-	%Spec1d.y_max = max
+	%Spec1d.set_limits(%Spec1d.x_min, %Spec1d.x_max, %Spec1d.y_min, max, true)
 		
 	# Spec2D
 	var data2d = FitsHelper.get_2d_spectrum(path + object_id + ".stack.fits")
@@ -208,7 +212,8 @@ func load_object() -> void:
 		# Reset the loading flag
 		_is_loading = false
 		set_redshift(redshift)
-		print("Finished loading object: ", object_id)
+		call_deferred("oned_zoomed")
+		# print("Finished loading object: ", object_id)
 
 
 # func _unhandled_input(event: InputEvent) -> void:
@@ -316,8 +321,9 @@ func toggle_lines(on: bool = true):
 			var lambda = lines[ln] / 10000
 			lambda = lambda * (1 + redshift)
 			spec_1d.add_constant_line(lambda, true, Color.RED, 2.0, false)
-			spec_1d.add_annotation(Vector2(lambda, (y_off * 0.075) + spec_1d.original_x_max * 0.7),
-				ln, Color.WHEAT, 12)
+			# spec_1d.add_annotation(Vector2(lambda, (y_off * 0.075) + spec_1d.original_x_max * 0.7),
+			var yval = (spec_1d.y_max * 0.9) + (y_off * spec_1d.y_max * 0.05)
+			spec_1d.add_annotation(Vector2(lambda, yval), ln, Color.WHEAT, 12)
 			y_off += 1
 			y_off = y_off % 4
 	 
