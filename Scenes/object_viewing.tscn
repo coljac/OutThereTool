@@ -58,14 +58,17 @@ text = "Status"
 
 [node name="Status" type="OptionButton" parent="MarginContainer/VBoxContainer/GridContainer"]
 layout_mode = 2
-selected = 1
-item_count = 3
-popup/item_0/text = "Good"
+item_count = 5
+popup/item_0/text = "1"
 popup/item_0/id = 1
-popup/item_1/text = "OK"
+popup/item_1/text = "2"
 popup/item_1/id = 0
-popup/item_2/text = "Bad"
+popup/item_2/text = "3"
 popup/item_2/id = 2
+popup/item_3/text = "4"
+popup/item_3/id = 3
+popup/item_4/text = "5"
+popup/item_4/id = 4
 
 [node name="Label3" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2

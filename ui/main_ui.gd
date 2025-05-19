@@ -59,6 +59,24 @@ func _unhandled_input(event: InputEvent) -> void:
 			$HelpPanel.hide()
 		else:
 			$HelpPanel.show()
+	if event.is_action("qop_1"):
+		update_status(0)
+		get_viewport().set_input_as_handled()
+	if event.is_action("qop_2"):
+		update_status(1)
+		get_viewport().set_input_as_handled()
+	if event.is_action("qop_3"):
+		update_status(2)
+		get_viewport().set_input_as_handled()
+	if event.is_action("qop_4"):
+		update_status(3)
+		get_viewport().set_input_as_handled()
+	if event.is_action("qop_5"):
+		update_status(4)
+		get_viewport().set_input_as_handled()
+	if event.is_action("qop_1"):
+		update_status(0)
+		get_viewport().set_input_as_handled()
 	if event.is_action("flag_bad"): # is_action_pressed("flag_bad"):
 		update_status(2)
 		get_viewport().set_input_as_handled()
