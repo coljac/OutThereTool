@@ -47,7 +47,7 @@ theme_override_font_sizes/bold_font_size = 34
 bbcode_enabled = true
 text = "Keyboard shortcuts:
 
-[b]1[/b] - [b]5[/b]: Set qualit flag
+[b]1[/b] - [b]5[/b]: Set quality flag
 
 [b]b[/b]: prev spectrum
 [b]n[/b]: next spectrum

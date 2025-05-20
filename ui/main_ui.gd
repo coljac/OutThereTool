@@ -43,9 +43,13 @@ func _ready():
 	if objects.size() > 0:
 		%ObjectViewing.set_galaxy_details(objects[obj_index])
 	DataManager.connect("updated_data", %ObjectViewing.tick)
+	DataManager.connect("updated_data", update_cache)
 	set_process(false) # Disable _process by default
 	_goto_object(0)
 
+func update_cache(success: bool):
+	if success:
+		_set_objects(DataManager.get_gals())
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_released("next"):
