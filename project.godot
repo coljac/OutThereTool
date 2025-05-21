@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="OutThere"
-run/main_scene="res://Scenes/new_main.tscn"
+run/main_scene="uid://bnc8mpa7i4lnj"
 config/features=PackedStringArray("4.4", "Mobile")
 run/max_fps=30
 run/low_processor_mode=true
@@ -23,6 +23,7 @@ Helpers="*res://Scripts/helpers.gd"
 FitsHelper="*res://Scripts/fitshelper.gd"
 ThemeManager="*res://theme/ThemeManager.gd"
 DataManager="*res://Scripts/data_manager.gd"
+AssetHelper="*res://Scripts/asset_helper.gd"
 
 [display]
 

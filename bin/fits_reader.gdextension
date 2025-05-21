@@ -4,7 +4,7 @@ compatibility_minimum = "4.1"
 reloadable = true
 
 [libraries]
-linux.debug = "res://lib/libfits_reader.linux.template_debug.x86_64.so"
+linux.debug = "res://bin/libfits_reader.linux.template_debug.x86_64.so"
 macos.debug = "res://bin/libfits_reader.macos.debug.framework"
 
 [dependencies]

@@ -214,6 +214,8 @@ func load_object() -> void:
 		set_redshift(redshift)
 		call_deferred("oned_zoomed")
 		# print("Finished loading object: ", object_id)
+		AssetHelper.set_object(object_id)
+
 
 
 # func _unhandled_input(event: InputEvent) -> void:
