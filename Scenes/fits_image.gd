@@ -32,9 +32,9 @@ var z_max: float = 1.0
 # Variables for drag timer
 var drag_timer: Timer
 var potential_drag: bool = false
-var drag_threshold: float = 0.10  # Time in seconds before considering it a drag
+var drag_threshold: float = 0.10 # Time in seconds before considering it a drag
 var click_position: Vector2 = Vector2.ZERO
-var current_scale_index: int = 0  # Index to track position in show_scales array
+var current_scale_index: int = 0 # Index to track position in show_scales array
 
 
 var RA: float = 0.0
@@ -97,7 +97,7 @@ func _on_gui_input(event):
 		if potential_drag and event.position.distance_to(click_position) > 5:
 			potential_drag = false
 			is_dragging = true
-			drag_start_position = click_position  # Use the original click position
+			drag_start_position = click_position # Use the original click position
 			drag_timer.stop()
 			
 	elif event is InputEventMouseButton:
@@ -106,7 +106,7 @@ func _on_gui_input(event):
 				if event.is_double_click():
 					_set_scale_pc(99.5)
 					_reset_shader()
-					current_scale_index = show_scales.size() - 1  # Reset index to last element (99.5)
+					current_scale_index = show_scales.size() - 1 # Reset index to last element (99.5)
 				else:
 					# Start potential drag
 					potential_drag = true

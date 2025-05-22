@@ -203,7 +203,7 @@ func preprocess_2d_spectra(object_id: String, fits_path: String, output_dir: Str
 		for filter_name in spectrum_indices[pa]:
 			var hdu_index = spectrum_indices[pa][filter_name]['index']
 			var header = fits_reader.get_header_info(hdu_index)
-			var image_data = fits_reader.get_image_data(hdu_index)
+			var image_data = fits_reader.get_image_data_normalized(hdu_index)
 			
 			if image_data.size() == 0:
 				log_message("    Error: Failed to extract image data for filter " + filter_name)
@@ -289,7 +289,7 @@ func preprocess_direct_images(object_id: String, fits_path: String, output_dir: 
 	for filter_name in direct_indices:
 		var hdu_index = direct_indices[filter_name]['index']
 		var header = fits_reader.get_header_info(hdu_index)
-		var image_data = fits_reader.get_image_data(hdu_index)
+		var image_data = fits_reader.get_image_data_normalized(hdu_index)
 		
 		if image_data.size() == 0:
 			log_message("    Error: Failed to extract image data for filter " + filter_name)

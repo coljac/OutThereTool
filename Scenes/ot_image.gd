@@ -171,6 +171,8 @@ func _load_object() -> void:
 		white_level = get_percentile(95.5)
 		var wcs: Dictionary
 		if is_2d_spectrum:
+			# print(fits_img.texture.get_image().get_data())
+			# print("--------------------")
 			if "wcs_info" in res:
 				wcs = res['wcs_info']
 			else:
