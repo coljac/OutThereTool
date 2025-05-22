@@ -19,34 +19,34 @@ var manifest_cache: Dictionary = {}
 ##
 ## @param dir The base directory containing pre-processed data
 func initialize(dir: String) -> void:
-    base_dir = dir
-    if not base_dir.ends_with("/"):
-        base_dir += "/"
+	base_dir = dir
+	if not base_dir.ends_with("/"):
+		base_dir += "/"
 
 ## Load an object manifest
 ##
 ## @param object_id The ID of the object to load
 ## @return The object manifest, or null if not found
 func load_manifest(object_id: String) -> ObjectManifest:
-    # Check cache first
-    if object_id in manifest_cache:
-        return manifest_cache[object_id]
-    
-    # Load manifest
-    var manifest_path = base_dir + object_id + "_manifest.tres"
-    if not FileAccess.file_exists(manifest_path):
-        print("Error: Manifest not found for object: " + object_id)
-        return null
-    
-    var manifest = load(manifest_path) as ObjectManifest
-    if not manifest:
-        print("Error: Failed to load manifest for object: " + object_id)
-        return null
-    
-    # Cache manifest
-    manifest_cache[object_id] = manifest
-    
-    return manifest
+	# Check cache first
+	if object_id in manifest_cache:
+		return manifest_cache[object_id]
+	
+	# Load manifest
+	var manifest_path = base_dir + object_id + "_manifest.tres"
+	if not FileAccess.file_exists(manifest_path):
+		print("Error: Manifest not found for object: " + object_id)
+		return null
+	
+	var manifest = load(manifest_path) as ObjectManifest
+	if not manifest:
+		print("Error: Failed to load manifest for object: " + object_id)
+		return null
+	
+	# Cache manifest
+	manifest_cache[object_id] = manifest
+	
+	return manifest
 
 ## Load 1D spectrum data for an object
 ##
@@ -54,21 +54,21 @@ func load_manifest(object_id: String) -> ObjectManifest:
 ## @param filter_name The filter name (e.g., F115W, F150W, F200W)
 ## @return The 1D spectrum resource, or null if not found
 func load_1d_spectrum(object_id: String, filter_name: String) -> Spectrum1DResource:
-    var manifest = load_manifest(object_id)
-    if not manifest:
-        return null
-    
-    if not filter_name in manifest.spectrum_1d_paths:
-        print("Error: 1D spectrum not found for filter: " + filter_name)
-        return null
-    
-    var resource_path = manifest.spectrum_1d_paths[filter_name]
-    var resource = load(resource_path) as Spectrum1DResource
-    if not resource:
-        print("Error: Failed to load 1D spectrum for filter: " + filter_name)
-        return null
-    
-    return resource
+	var manifest = load_manifest(object_id)
+	if not manifest:
+		return null
+	
+	if not filter_name in manifest.spectrum_1d_paths:
+		print("Error: 1D spectrum not found for filter: " + filter_name)
+		return null
+	
+	var resource_path = manifest.spectrum_1d_paths[filter_name]
+	var resource = load(resource_path) as Spectrum1DResource
+	if not resource:
+		print("Error: Failed to load 1D spectrum for filter: " + filter_name)
+		return null
+	
+	return resource
 
 ## Load 2D spectrum data for an object
 ##
@@ -76,21 +76,50 @@ func load_1d_spectrum(object_id: String, filter_name: String) -> Spectrum1DResou
 ## @param filter_name The filter name (e.g., F115W, F150W, F200W)
 ## @return The 2D spectrum resource, or null if not found
 func load_2d_spectrum(object_id: String, filter_name: String) -> Spectrum2DResource:
-    var manifest = load_manifest(object_id)
-    if not manifest:
-        return null
-    
-    if not filter_name in manifest.spectrum_2d_paths:
-        print("Error: 2D spectrum not found for filter: " + filter_name)
-        return null
-    
-    var resource_path = manifest.spectrum_2d_paths[filter_name]
-    var resource = load(resource_path) as Spectrum2DResource
-    if not resource:
-        print("Error: Failed to load 2D spectrum for filter: " + filter_name)
-        return null
-    
-    return resource
+	var manifest = load_manifest(object_id)
+	if not manifest:
+		return null
+	
+	if not filter_name in manifest.spectrum_2d_paths:
+		print("Error: 2D spectrum not found for filter: " + filter_name)
+		return null
+	
+	var resource_path = manifest.spectrum_2d_paths[filter_name]
+	var resource = load(resource_path) as Spectrum2DResource
+	if not resource:
+		print("Error: Failed to load 2D spectrum for filter: " + filter_name)
+		return null
+	
+	return resource
+
+## Load 2D spectrum data for an object by position angle and filter
+##
+## @param object_id The ID of the object
+## @param pa The position angle
+## @param filter_name The filter name (e.g., F115W, F150W, F200W)
+## @return The 2D spectrum resource, or null if not found
+func load_2d_spectrum_by_pa(object_id: String, pa: String, filter_name: String) -> Spectrum2DResource:
+	var manifest = load_manifest(object_id)
+	if not manifest:
+		return null
+	
+	# Check if the PA exists in the manifest
+	if not pa in manifest.spectrum_2d_paths_by_pa:
+		print("Error: 2D spectrum not found for PA: " + pa)
+		return null
+	
+	# Check if the filter exists for this PA
+	if not filter_name in manifest.spectrum_2d_paths_by_pa[pa]:
+		print("Error: 2D spectrum not found for PA " + pa + " and filter: " + filter_name)
+		return null
+	
+	var resource_path = manifest.spectrum_2d_paths_by_pa[pa][filter_name]
+	var resource = load(resource_path) as Spectrum2DResource
+	if not resource:
+		print("Error: Failed to load 2D spectrum for PA " + pa + " and filter: " + filter_name)
+		return null
+	
+	return resource
 
 ## Load direct image data for an object
 ##
@@ -98,41 +127,41 @@ func load_2d_spectrum(object_id: String, filter_name: String) -> Spectrum2DResou
 ## @param filter_name The filter name (e.g., F115W, F150W, F200W)
 ## @return The direct image resource, or null if not found
 func load_direct_image(object_id: String, filter_name: String) -> DirectImageResource:
-    var manifest = load_manifest(object_id)
-    if not manifest:
-        return null
-    
-    if not filter_name in manifest.direct_image_paths:
-        print("Error: Direct image not found for filter: " + filter_name)
-        return null
-    
-    var resource_path = manifest.direct_image_paths[filter_name]
-    var resource = load(resource_path) as DirectImageResource
-    if not resource:
-        print("Error: Failed to load direct image for filter: " + filter_name)
-        return null
-    
-    return resource
+	var manifest = load_manifest(object_id)
+	if not manifest:
+		return null
+	
+	if not filter_name in manifest.direct_image_paths:
+		print("Error: Direct image not found for filter: " + filter_name)
+		return null
+	
+	var resource_path = manifest.direct_image_paths[filter_name]
+	var resource = load(resource_path) as DirectImageResource
+	if not resource:
+		print("Error: Failed to load direct image for filter: " + filter_name)
+		return null
+	
+	return resource
 
 ## Load redshift data for an object
 ##
 ## @param object_id The ID of the object
 ## @return The redshift resource, or null if not found
 func load_redshift(object_id: String) -> RedshiftResource:
-    var manifest = load_manifest(object_id)
-    if not manifest:
-        return null
-    
-    if manifest.redshift_path.is_empty():
-        print("Error: Redshift data not found for object: " + object_id)
-        return null
-    
-    var resource = load(manifest.redshift_path) as RedshiftResource
-    if not resource:
-        print("Error: Failed to load redshift data for object: " + object_id)
-        return null
-    
-    return resource
+	var manifest = load_manifest(object_id)
+	if not manifest:
+		return null
+	
+	if manifest.redshift_path.is_empty():
+		print("Error: Redshift data not found for object: " + object_id)
+		return null
+	
+	var resource = load(manifest.redshift_path) as RedshiftResource
+	if not resource:
+		print("Error: Failed to load redshift data for object: " + object_id)
+		return null
+	
+	return resource
 
 ## Load 2D spectrum texture for an object
 ##
@@ -140,11 +169,24 @@ func load_redshift(object_id: String) -> RedshiftResource:
 ## @param filter_name The filter name (e.g., F115W, F150W, F200W)
 ## @return The texture, or null if not found
 func load_2d_spectrum_texture(object_id: String, filter_name: String) -> ImageTexture:
-    var spectrum = load_2d_spectrum(object_id, filter_name)
-    if not spectrum:
-        return null
-    
-    return create_texture_from_data(spectrum.image_data, spectrum.width, spectrum.height)
+	var spectrum = load_2d_spectrum(object_id, filter_name)
+	if not spectrum:
+		return null
+	
+	return create_texture_from_data(spectrum.image_data, spectrum.width, spectrum.height)
+
+## Load 2D spectrum texture for an object by position angle and filter
+##
+## @param object_id The ID of the object
+## @param pa The position angle
+## @param filter_name The filter name (e.g., F115W, F150W, F200W)
+## @return The texture, or null if not found
+func load_2d_spectrum_texture_by_pa(object_id: String, pa: String, filter_name: String) -> ImageTexture:
+	var spectrum = load_2d_spectrum_by_pa(object_id, pa, filter_name)
+	if not spectrum:
+		return null
+	
+	return create_texture_from_data(spectrum.image_data, spectrum.width, spectrum.height)
 
 ## Load direct image texture for an object
 ##
@@ -152,22 +194,22 @@ func load_2d_spectrum_texture(object_id: String, filter_name: String) -> ImageTe
 ## @param filter_name The filter name (e.g., F115W, F150W, F200W)
 ## @return The texture, or null if not found
 func load_direct_image_texture(object_id: String, filter_name: String) -> ImageTexture:
-    var image = load_direct_image(object_id, filter_name)
-    if not image:
-        return null
-    
-    return create_texture_from_data(image.image_data, image.width, image.height)
+	var image = load_direct_image(object_id, filter_name)
+	if not image:
+		return null
+	
+	return create_texture_from_data(image.image_data, image.width, image.height)
 
 ## Load segmentation map texture for an object
 ##
 ## @param object_id The ID of the object
 ## @return The texture, or null if not found
 func load_segmap_texture(object_id: String) -> ImageTexture:
-    var image = load_direct_image(object_id, "F200W")
-    if not image or image.segmap_data.size() == 0:
-        return null
-    
-    return create_texture_from_data(image.segmap_data, image.width, image.height)
+	var image = load_direct_image(object_id, "F200W")
+	if not image or image.segmap_data.size() == 0:
+		return null
+	
+	return create_texture_from_data(image.segmap_data, image.width, image.height)
 
 ## Create a texture from raw image data
 ##
@@ -176,95 +218,95 @@ func load_segmap_texture(object_id: String) -> ImageTexture:
 ## @param height The height of the image
 ## @return The texture, or null if creation failed
 func create_texture_from_data(data: PackedFloat32Array, width: int, height: int) -> ImageTexture:
-    if data.size() == 0 or width <= 0 or height <= 0:
-        print("Error: Invalid data or dimensions for texture creation")
-        return null
-    
-    var img = Image.create(width, height, false, Image.FORMAT_RF)
-    
-    for y in range(height):
-        for x in range(width):
-            var idx = y * width + x
-            if idx < data.size():
-                img.set_pixel(x, y, Color(data[idx], 0, 0, 0))
-    
-    var texture = ImageTexture.create_from_image(img)
-    return texture
+	if data.size() == 0 or width <= 0 or height <= 0:
+		print("Error: Invalid data or dimensions for texture creation")
+		return null
+	
+	var img = Image.create(width, height, false, Image.FORMAT_RF)
+	
+	for y in range(height):
+		for x in range(width):
+			var idx = y * width + x
+			if idx < data.size():
+				img.set_pixel(x, y, Color(data[idx], 0, 0, 0))
+	
+	var texture = ImageTexture.create_from_image(img)
+	return texture
 
 ## Get a list of all available objects
 ##
 ## @return Array of object IDs
 func get_available_objects() -> Array:
-    var objects = []
-    
-    var dir = DirAccess.open(base_dir)
-    if not dir:
-        print("Error: Could not open directory: " + base_dir)
-        return objects
-    
-    dir.list_dir_begin()
-    var file_name = dir.get_next()
-    while file_name != "":
-        if not dir.current_is_dir() and file_name.ends_with("_manifest.tres"):
-            var object_id = file_name.replace("_manifest.tres", "")
-            objects.append(object_id)
-        file_name = dir.get_next()
-    
-    return objects
+	var objects = []
+	
+	var dir = DirAccess.open(base_dir)
+	if not dir:
+		print("Error: Could not open directory: " + base_dir)
+		return objects
+	
+	dir.list_dir_begin()
+	var file_name = dir.get_next()
+	while file_name != "":
+		if not dir.current_is_dir() and file_name.ends_with("_manifest.tres"):
+			var object_id = file_name.replace("_manifest.tres", "")
+			objects.append(object_id)
+		file_name = dir.get_next()
+	
+	return objects
 
 ## Load metadata for all objects
 ##
 ## @return Dictionary mapping object IDs to metadata
 func load_all_metadata() -> Dictionary:
-    var metadata = {}
-    
-    var objects = get_available_objects()
-    for object_id in objects:
-        var manifest = load_manifest(object_id)
-        if manifest:
-            metadata[object_id] = {
-                "object_name": manifest.object_name,
-                "band_count": manifest.band_count,
-                "observation_date": manifest.observation_date,
-                "redshift": manifest.redshift
-            }
-    
-    return metadata
+	var metadata = {}
+	
+	var objects = get_available_objects()
+	for object_id in objects:
+		var manifest = load_manifest(object_id)
+		if manifest:
+			metadata[object_id] = {
+				"object_name": manifest.object_name,
+				"band_count": manifest.band_count,
+				"observation_date": manifest.observation_date,
+				"redshift": manifest.redshift
+			}
+	
+	return metadata
 
 ## Convert 1D spectrum data to a format suitable for PlotDisplay
 ##
 ## @param spectrum The 1D spectrum resource
 ## @return Array of Vector2 points for plotting
 func convert_1d_spectrum_for_plot(spectrum: Spectrum1DResource) -> Array[Vector2]:
-    var points = [] as Array[Vector2]
-    
-    for i in range(spectrum.wavelengths.size()):
-        points.append(Vector2(spectrum.wavelengths[i], spectrum.fluxes[i]))
-    
-    return points
+	var points = [] as Array[Vector2]
+	
+	for i in range(spectrum.wavelengths.size()):
+		points.append(Vector2(spectrum.wavelengths[i], spectrum.fluxes[i]))
+	
+	return points
 
 ## Convert redshift data to a format suitable for PlotDisplay
 ##
 ## @param redshift The redshift resource
 ## @return Array of Vector2 points for plotting
 func convert_redshift_for_plot(redshift: RedshiftResource) -> Array[Vector2]:
-    var points = [] as Array[Vector2]
-    
-    for i in range(redshift.z_grid.size()):
-        points.append(Vector2(redshift.z_grid[i], redshift.log_pdf[i]))
-    
-    return points
+	var points = [] as Array[Vector2]
+	
+	for i in range(redshift.z_grid.size()):
+		points.append(Vector2(redshift.z_grid[i], redshift.log_pdf[i]))
+	
+	return points
 
 ## Get redshift peaks in a format suitable for PlotDisplay
 ##
 ## @param redshift The redshift resource
 ## @return Array of Vector2 points for plotting peaks
 func get_redshift_peaks_for_plot(redshift: RedshiftResource) -> Array[Vector2]:
-    var points = [] as Array[Vector2]
-    
-    for peak in redshift.peaks:
-        var z = redshift.z_grid[peak["x"]]
-        var p = peak["max"]
-        points.append(Vector2(z, p))
-    
-    return points
+	var points = [] as Array[Vector2]
+	
+	for peak in redshift.peaks:
+		var z = redshift.z_grid[peak["x"]]
+		var p = peak["max"]
+		points.append(Vector2(z, p))
+	
+	return points

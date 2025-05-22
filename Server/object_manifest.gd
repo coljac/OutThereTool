@@ -27,6 +27,10 @@ extends Resource
 ## Paths to 2D spectrum resources, keyed by filter name
 @export var spectrum_2d_paths: Dictionary  # filter_name -> resource_path
 
+## Paths to 2D spectrum resources, organized by position angle and filter
+## This is a nested dictionary: {PA -> {filter_name -> resource_path}}
+@export var spectrum_2d_paths_by_pa: Dictionary  # pa -> filter_name -> resource_path
+
 ## Paths to direct image resources, keyed by filter name
 @export var direct_image_paths: Dictionary  # filter_name -> resource_path
 
@@ -49,3 +53,13 @@ func get_available_filters() -> Array:
         if not filter_name in filters:
             filters.append(filter_name)
     return filters
+
+## Returns a list of all available position angles for 2D spectra
+func get_available_position_angles() -> Array:
+    return spectrum_2d_paths_by_pa.keys()
+
+## Returns a list of filters available for a specific position angle
+func get_filters_for_position_angle(pa: String) -> Array:
+    if not pa in spectrum_2d_paths_by_pa:
+        return []
+    return spectrum_2d_paths_by_pa[pa].keys()

@@ -26,6 +26,8 @@ var path = "./data/"
 @onready var slider = $VBoxContainer/MarginContainer6/VBoxContainer/MarginContainer/HSlider
 var redshift = 1.0
 
+var asset_helper: AssetHelper
+# = AssetHelper.new()
 
 func set_object_id(new_id: String) -> void:
 	object_id = new_id
@@ -110,6 +112,11 @@ func set_redshift(z: float) -> void:
 	#load_object()
 	
 func load_object() -> void:
+	asset_helper = AssetHelper.new()
+	if not asset_helper.set_object(object_id):
+		print("Can't load " + object_id)
+		return
+
 	redshift_label.text = "" # TODO figure this out, why it duplicates after a new object
 	if _is_loading or not is_inside_tree():
 		return
@@ -118,7 +125,7 @@ func load_object() -> void:
 		
 	_is_loading = true
 	print("Loading object: ", object_id)
-	
+		
 	# Clear any existing data
 	if pofz:
 		pofz.clear_series()
@@ -126,21 +133,23 @@ func load_object() -> void:
 		spec_1d.clear_series()
 		
 	get_node("VBoxContainer/MarginContainer/Label").text = object_id
-	var pz = FitsHelper.get_pz(path + object_id + ".full.fits")
-	var logp = Array(pz[1]).map(func(i): return FitsHelper.log10(i))
-	var peaks = FitsHelper.peak_finding(logp, 50)
+	var pz = asset_helper.get_pz()
+	# var pz = FitsHelper.get_pz(path + object_id + ".full.fits")
+	var logp = Array(pz.pdf).map(func(i): return AssetHelper.log10(i))
+	# var logp = Array(pz[1]).map(func(i): return FitsHelper.log10(i))
+	var peaks = AssetHelper.peak_finding(logp, 50)
 	
 	# REDSHIFT
-	var series = FitsHelper.zip_arr([Array(pz[0]), logp])
+	var series = FitsHelper.zip_arr([Array(pz.z_grid), logp])
 	pofz.add_series(series, Color(0.2, 0.4, 0.8), 2.0, false, 3.0)
 	var z_maxes = [] as Array[Vector2]
 	var max_peak = -1.0
 	for peak in peaks:
 		z_maxes.append(
-			Vector2(pz[0][peak['x']], float(peak['max']))
+			Vector2(pz.zgrid[peak['x']], float(peak['max']))
 		)
 		if peak['max'] > max_peak:
-			redshift = pz[0][peak['x']]
+			redshift = pz.zgrid[peak['x']]
 	slider.value = redshift
 	pofz.add_series(
 		z_maxes, Color(1.0, 0.0, 0.0), 0.0, true, 7.0
@@ -215,7 +224,6 @@ func load_object() -> void:
 		call_deferred("oned_zoomed")
 		# print("Finished loading object: ", object_id)
 		AssetHelper.set_object(object_id)
-
 
 
 # func _unhandled_input(event: InputEvent) -> void:

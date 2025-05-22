@@ -86,20 +86,36 @@ func _init() -> void:
     
     # Verify 2D spectra
     print("\nVerifying 2D spectra...")
+    
+    # First, verify by filter (backward compatibility)
+    print("  Verifying by filter:")
     for filter_name in manifest.spectrum_2d_paths:
         var spectrum = data_loader.load_2d_spectrum(sample_object_id, filter_name)
         if spectrum:
-            print("  Loaded 2D spectrum for filter: " + filter_name)
-            print("  Dimensions: " + str(spectrum.width) + " x " + str(spectrum.height))
-            print("  Wavelength range: " + str(spectrum.scaling["left"]) + " - " + str(spectrum.scaling["right"]) + " microns")
+            print("    Loaded 2D spectrum for filter: " + filter_name)
+            print("    Dimensions: " + str(spectrum.width) + " x " + str(spectrum.height))
+            print("    Wavelength range: " + str(spectrum.scaling["left"]) + " - " + str(spectrum.scaling["right"]) + " microns")
+    
+    # Now, verify by position angle
+    print("\n  Verifying by position angle:")
+    for pa in manifest.spectrum_2d_paths_by_pa:
+        print("    Position Angle: " + pa)
+        for filter_name in manifest.spectrum_2d_paths_by_pa[pa]:
+            var spectrum = data_loader.load_2d_spectrum_by_pa(sample_object_id, pa, filter_name)
+            if spectrum:
+                print("      Loaded 2D spectrum for PA " + pa + ", filter: " + filter_name)
+                print("      Dimensions: " + str(spectrum.width) + " x " + str(spectrum.height))
+                print("      Wavelength range: " + str(spectrum.scaling["left"]) + " - " + str(spectrum.scaling["right"]) + " microns")
+                print("      Position Angle: " + spectrum.position_angle)
             
-            var texture = data_loader.load_2d_spectrum_texture(sample_object_id, filter_name)
-            if texture:
-                print("  Loaded 2D spectrum texture: " + str(texture.get_width()) + " x " + str(texture.get_height()))
+                # Load texture for this PA and filter
+                var texture = data_loader.load_2d_spectrum_texture_by_pa(sample_object_id, pa, filter_name)
+                if texture:
+                    print("      Loaded 2D spectrum texture: " + str(texture.get_width()) + " x " + str(texture.get_height()))
+                else:
+                    print("      Error: Failed to load 2D spectrum texture for PA " + pa + ", filter: " + filter_name)
             else:
-                print("  Error: Failed to load 2D spectrum texture for filter: " + filter_name)
-        else:
-            print("  Error: Failed to load 2D spectrum for filter: " + filter_name)
+                print("      Error: Failed to load 2D spectrum for PA " + pa + ", filter: " + filter_name)
     
     # Verify direct images
     print("\nVerifying direct images...")

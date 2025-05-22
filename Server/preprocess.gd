@@ -41,6 +41,7 @@ func preprocess_object(object_id: String, input_dir: String, output_dir: String)
 	manifest.spectrum_1d_paths = {}
 	manifest.spectrum_2d_paths = {}
 	manifest.direct_image_paths = {}
+	manifest.spectrum_2d_paths_by_pa = {}
 	
 	# Ensure paths end with a slash
 	if not input_dir.ends_with("/"):
@@ -61,8 +62,14 @@ func preprocess_object(object_id: String, input_dir: String, output_dir: String)
 	var spec_2d_path = input_dir + object_id + ".stack.fits"
 	if FileAccess.file_exists(spec_2d_path):
 		var spec_2d_result = preprocess_2d_spectra(object_id, spec_2d_path, output_dir)
-		for filter_name in spec_2d_result:
-			manifest.spectrum_2d_paths[filter_name] = spec_2d_result[filter_name]
+		
+		# Store 2D spectra paths organized by PA
+		manifest.spectrum_2d_paths_by_pa = spec_2d_result
+		
+		# Also maintain the old format for backward compatibility
+		for pa in spec_2d_result:
+			for filter_name in spec_2d_result[pa]:
+				manifest.spectrum_2d_paths[filter_name + "_PA" + pa] = spec_2d_result[pa][filter_name]
 	else:
 		log_message("Warning: 2D spectrum file not found: " + spec_2d_path)
 	
@@ -181,7 +188,7 @@ func preprocess_1d_spectra(object_id: String, fits_path: String, output_dir: Str
 ## @param object_id The ID of the object
 ## @param fits_path The path to the FITS file
 ## @param output_dir The directory to save processed data to
-## @return Dictionary mapping filter names to resource paths
+## @return Dictionary mapping PA and filter combinations to resource paths
 func preprocess_2d_spectra(object_id: String, fits_path: String, output_dir: String) -> Dictionary:
 	log_message("  Processing 2D spectra from: " + fits_path)
 	var result = {}
@@ -198,15 +205,19 @@ func preprocess_2d_spectra(object_id: String, fits_path: String, output_dir: Str
 		log_message("    Error: Failed to load FITS file: " + fits_path)
 		return result
 	
-	# Process each filter
+	# Process each PA and filter combination
 	for pa in spectrum_indices:
+		# Initialize PA entry in result dictionary if it doesn't exist
+		if not pa in result:
+			result[pa] = {}
+			
 		for filter_name in spectrum_indices[pa]:
 			var hdu_index = spectrum_indices[pa][filter_name]['index']
 			var header = fits_reader.get_header_info(hdu_index)
 			var image_data = fits_reader.get_image_data_normalized(hdu_index)
 			
 			if image_data.size() == 0:
-				log_message("    Error: Failed to extract image data for filter " + filter_name)
+				log_message("    Error: Failed to extract image data for PA " + pa + ", filter " + filter_name)
 				continue
 			
 			# Get dimensions
@@ -214,7 +225,7 @@ func preprocess_2d_spectra(object_id: String, fits_path: String, output_dir: Str
 			var height = int(header.get("NAXIS2", 0))
 			
 			if width == 0 or height == 0:
-				log_message("    Error: Invalid dimensions for filter " + filter_name)
+				log_message("    Error: Invalid dimensions for PA " + pa + ", filter " + filter_name)
 				continue
 			
 			# Calculate wavelength scaling
@@ -239,23 +250,28 @@ func preprocess_2d_spectra(object_id: String, fits_path: String, output_dir: Str
 			resource.height = height
 			resource.header_info = header
 			
+			# Add PA information to the resource
+			resource.position_angle = pa
+			
 			# Add metadata
 			resource.metadata = {
 				"source_file": fits_path,
 				"processing_date": Time.get_datetime_string_from_system(),
 				"wavelength_unit": header.get("CUNIT1", "Angstrom"),
-				"filter": filter_name
+				"filter": filter_name,
+				"position_angle": pa
 			}
 			
-			# Save resource
-			var resource_path = output_dir + object_id + "_2d_" + filter_name + ".tres"
+			# Save resource with PA in the filename
+			var resource_path = output_dir + object_id + "_2d_PA" + pa + "_" + filter_name + ".tres"
 			var save_result = ResourceSaver.save(resource, resource_path)
 			if save_result != OK:
 				log_message("    Error saving 2D spectrum resource: " + str(save_result))
 				continue
 			
-			result[filter_name] = resource_path
-			log_message("    Saved 2D spectrum for pa " + str(pa) + " and filter: " + filter_name)
+			# Store the resource path in the nested dictionary
+			result[pa][filter_name] = resource_path
+			log_message("    Saved 2D spectrum for PA " + pa + " and filter: " + filter_name)
 	
 	return result
 

@@ -12,6 +12,9 @@ extends Resource
 ## The filter name (e.g., F115W, F150W, F200W)
 @export var filter_name: String
 
+## The position angle (PA) of the observation
+@export var position_angle: String
+
 ## Raw image data as a PackedFloat32Array
 @export var image_data: PackedFloat32Array
 

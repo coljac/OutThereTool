@@ -20,6 +20,12 @@ extends Resource
 
 ## Error values for the flux measurements
 @export var errors: PackedFloat32Array
+@export var line: PackedFloat32Array
+@export var continuum: PackedFloat32Array
+@export var flat: PackedFloat32Array
+@export var contam: PackedFloat32Array
+
+
 
 ## Additional metadata about the spectrum
 @export var metadata: Dictionary
