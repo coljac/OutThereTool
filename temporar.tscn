@@ -2,8 +2,10 @@
 
 [ext_resource type="Script" uid="uid://bt80rk5e6hint" path="res://temporar.gd" id="1_qbccq"]
 [ext_resource type="PackedScene" uid="uid://cr74tp6o0s73g" path="res://Scenes/ot_image.tscn" id="2_wbr6t"]
-[ext_resource type="Resource" uid="uid://i33kg74mvvxv" path="res://processed/uma-03_09452_2d_F150W.tres" id="3_wbr6t"]
 [ext_resource type="PackedScene" uid="uid://biwtif1e8fvo2" path="res://Scenes/fits_image.tscn" id="4_03e4w"]
+
+[sub_resource type="Resource" id="Resource_wbr6t"]
+metadata/__load_path__ = "res://processed/uma-03_09452_2d_F150W.tres"
 
 [node name="Temporar" type="Control"]
 layout_mode = 3
@@ -31,7 +33,7 @@ offset_top = 43.0
 offset_right = 576.0
 offset_bottom = 318.0
 is_2d_spectrum = true
-res = ExtResource("3_wbr6t")
+res = SubResource("Resource_wbr6t")
 
 [node name="FitsImage" parent="." instance=ExtResource("4_03e4w")]
 visible = false

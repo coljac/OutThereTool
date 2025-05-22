@@ -1,7 +1,7 @@
 extends Control
-
-
 class_name Temporar
+@export var res: Resource
+
 @onready var fits_image: FitsImage = $FitsImage
 
 

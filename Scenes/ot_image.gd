@@ -20,6 +20,7 @@ var show_scales = [90.0, 92.0, 93.0, 94.0, 95.0, 96.0, 97.0, 98.0, 99.0, 99.5]
 var width: int = 0
 var height: int = 0
 var hdu: int = 1
+var segmap: bool = false
 
 # Variables for shader control
 var is_dragging: bool = false
@@ -170,7 +171,7 @@ func _load_object() -> void:
 		
 		if "image_data" in res and res.image_data.size() > 0:
 			# Normalise so there's something to see
-			image_data = res.image_data
+			image_data = res.segmap_data if segmap else res.image_data
 			var t = Array(image_data)
 			var m = t.max()
 			image_data = t.map(func(x): return x / m)
@@ -190,6 +191,8 @@ func _load_object() -> void:
 			var cdelt = float(wcs['CD1_1'])
 			scaling = {"left": - crpix * cdelt + crval, "right": (width - crpix) * cdelt + crval}
 	_make_texture()
+	if "position_angle" in res:
+		set_label(res.position_angle)
 
 func _make_texture():
 	if image_data:

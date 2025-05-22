@@ -105,12 +105,21 @@ func get_1d_spectrum(object: String, microns: bool = false) -> Dictionary: # Arr
 			waves = Array(waves).map(func d(x): return x / 10000)
 			waves = PackedFloat32Array(waves)
 			
+		# res[filt] = {
+		# 	"fluxes": zip_p32([waves, fluxes]),
+		# 	"err": err,
+		# 	"bestfit": zip_p32([waves, bestfit]),
+		# 	"cont": zip_p32([waves, cont]),
+		# 	"contam": zip_p32([waves, contam]),
+		# 	"max": max
+		# }
 		res[filt] = {
-			"fluxes": zip_p32([waves, fluxes]),
+			"fluxes": fluxes,
 			"err": err,
-			"bestfit": zip_p32([waves, bestfit]),
-			"cont": zip_p32([waves, cont]),
-			"contam": zip_p32([waves, contam]),
+			"waves": waves,
+			"bestfit": bestfit,
+			"cont": cont,
+			"contam": contam,
 			"max": max
 		}
 	

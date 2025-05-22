@@ -142,28 +142,31 @@ func preprocess_1d_spectra(object_id: String, fits_path: String, output_dir: Str
 		resource.object_id = object_id
 		resource.filter_name = filter_name
 		
-		# Extract wavelengths and fluxes from the Vector2 array
-		var wavelengths = PackedFloat32Array()
-		var fluxes = PackedFloat32Array()
-		for point in spectrum_data[filter_name]["fluxes"]:
-			wavelengths.append(point.x)
-			fluxes.append(point.y)
+		# Extract data from FITS table
+		var data = spectrum_data[filter_name]
+		# var data = fits_helper.get_table_data(h['index'])
+		var fluxes = data['fluxes']
+		var waves = data['waves']
+		var bestfit = data['bestfit']
+		var cont = data['cont']
+		var err = data['err']
+		var N = Array(fluxes).size()
+		var flat = PackedFloat32Array()
+		flat.resize(N)
+		for i in range(N):
+			flat[i] = 1.0
+
+		flat = data['flat'] if 'flat' in data else flat
+		var contam = data['contam'] if 'contam' in data else PackedFloat32Array([0.0] * fluxes.size())
 		
-		resource.wavelengths = wavelengths
+		resource.wavelengths = waves
 		resource.fluxes = fluxes
-		
-		# Properly handle error data - ensure it's a PackedFloat32Array
-		var errors = PackedFloat32Array()
-		var err_data = spectrum_data[filter_name]["err"]
-		if err_data is PackedFloat32Array:
-			errors = err_data
-		else:
-			# If errors are in a different format, convert them
-			for err_value in err_data:
-				errors.append(float(err_value))
-		
-		resource.errors = errors
-		
+		resource.bestfit = bestfit
+		resource.continuum = cont
+		resource.errors = err
+		resource.flat = flat
+		resource.contam = contam
+	
 		# Add metadata
 		resource.metadata = {
 			"source_file": fits_path,

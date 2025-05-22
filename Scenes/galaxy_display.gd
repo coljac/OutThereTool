@@ -135,9 +135,9 @@ func load_object() -> void:
 	get_node("VBoxContainer/MarginContainer/Label").text = object_id
 	var pz = asset_helper.get_pz()
 	# var pz = FitsHelper.get_pz(path + object_id + ".full.fits")
-	var logp = Array(pz.pdf).map(func(i): return AssetHelper.log10(i))
+	var logp = pz.log_pdf # Array(pz.pdf).map(func(i): log(i)/asset_helper.c_log10)
 	# var logp = Array(pz[1]).map(func(i): return FitsHelper.log10(i))
-	var peaks = AssetHelper.peak_finding(logp, 50)
+	var peaks = asset_helper.peak_finding(logp, 50)
 	
 	# REDSHIFT
 	var series = FitsHelper.zip_arr([Array(pz.z_grid), logp])
@@ -146,17 +146,18 @@ func load_object() -> void:
 	var max_peak = -1.0
 	for peak in peaks:
 		z_maxes.append(
-			Vector2(pz.zgrid[peak['x']], float(peak['max']))
+			Vector2(pz.z_grid[peak['x']], float(peak['max']))
 		)
 		if peak['max'] > max_peak:
-			redshift = pz.zgrid[peak['x']]
+			redshift = pz.z_grid[peak['x']]
 	slider.value = redshift
 	pofz.add_series(
 		z_maxes, Color(1.0, 0.0, 0.0), 0.0, true, 7.0
 	)
 	
 	# SPEC 1D
-	var oned_spec = FitsHelper.get_1d_spectrum(path + object_id + ".1D.fits", true)
+	var oned_spec = asset_helper.get_1d_spectrum(true)
+	# FitsHelper.get_1d_spectrum(path + object_id + ".1D.fits", true)
 	var xx = 0.2
 	var max = 0.0
 	for f in oned_spec:
@@ -174,41 +175,37 @@ func load_object() -> void:
 	%Spec1d.set_limits(%Spec1d.x_min, %Spec1d.x_max, %Spec1d.y_min, max, true)
 		
 	# Spec2D
-	var data2d = FitsHelper.get_2d_spectrum(path + object_id + ".stack.fits")
+	var data2d = asset_helper.get_2d_spectra()
+	# FitsHelper.get_2d_spectrum(path + object_id + ".stack.fits")
 	var row: int = 1
 	for pa in data2d.keys():
 		var aligned = spec2d.get_node("Spec2Ds%d"%row)
 		row += 1
 		for f in ['F115W', 'F150W', 'F200W']:
-			var spec_display = aligned.get_node("Spec2D_" + f) as FitsImage
+			var spec_display = aligned.get_node("Spec2D_" + f) as OTImage
 			spec_display.visible = false
 			if f not in data2d[pa]:
 				continue
-			spec_display.visible = false
-				# print("Setting k ", k, " ", data2d[k])
-			spec_display.fits = data2d[pa][f]['fits']
-			spec_display.hdu = data2d[pa][f]['index']
-			spec_display.set_image(path + object_id + ".stack.fits", data2d[pa][f]['index'])
+			spec_display.res = data2d[pa][f]
+			spec_display._load_object()
 			spec_display.visible = true
-			spec_display.set_label(data2d[pa][f]['extname'])
 		
 		# Directs
-		var x = FitsHelper.get_directs(path + object_id + ".beams.fits")
+		var x = asset_helper.get_directs()
+			# FitsHelper.get_directs(path + object_id + ".beams.fits")
 		for filt in x:
-			var nd = get_node("VBoxContainer/MarginContainer3/Imaging/IC" + filt + "/Direct" + filt) as FitsImage
-			nd.hdu = x[filt]['index']
-			nd.fits = x[filt]['fits']
-			nd._set_file(path + object_id + ".beams.fits")
+			var nd = get_node("VBoxContainer/MarginContainer3/Imaging/IC" + filt + "/Direct" + filt) as OTImage
+			nd.res = x[filt]
+			nd._load_object()
 			nd._set_scale_pc(99.5)
 			nd.visible = true
 			nd.set_label(filt)
 			if filt == "F200W":
 				nd = %SegMap
-				nd.hdu = x[filt]['index'] + 1
-				nd.fits = x[filt]['fits']
-				nd._set_file(path + object_id + ".beams.fits")
-				# nd._set_scale_pc(99.5)
+				nd.res = x[filt]
+				nd.segmap = true
 				nd.visible = true
+				nd._load_object()
 				nd.set_label("SegMap")
 					
 				
@@ -223,7 +220,7 @@ func load_object() -> void:
 		set_redshift(redshift)
 		call_deferred("oned_zoomed")
 		# print("Finished loading object: ", object_id)
-		AssetHelper.set_object(object_id)
+		# asset_helper.set_object(object_id)
 
 
 # func _unhandled_input(event: InputEvent) -> void:
