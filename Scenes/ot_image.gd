@@ -199,28 +199,28 @@ func _make_texture():
 	
 func _set_scale_pc(p: float):
 	scale_percent = p
-	if fits:
+	if image_data:
 		white_level = get_percentile(p)
 		_make_texture()
 	
 func _set_black(b: float):
 	black_level = b
-	if fits:
+	if image_data:
 		_make_texture()
 	
 func _set_white(w: float):
 	white_level = w
-	if fits:
+	if image_data:
 		_make_texture()
 
 func _set_invert(i: bool):
 	invert_color = i
-	if fits:
+	if image_data:
 		_make_texture()
 
 func _set_colormap(cm: ColorMap):
 	color_map = cm
-	if fits:
+	if image_data:
 		_make_texture()
 		
 func get_color_from_map(val: float) -> Color:

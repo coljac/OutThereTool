@@ -31,7 +31,6 @@ offset_top = 43.0
 offset_right = 576.0
 offset_bottom = 318.0
 is_2d_spectrum = true
-color_map = 1
 res = ExtResource("3_wbr6t")
 
 [node name="FitsImage" parent="." instance=ExtResource("4_03e4w")]

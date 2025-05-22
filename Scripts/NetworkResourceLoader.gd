@@ -2,7 +2,7 @@ extends Node
 class_name NetworkResourceLoader
 
 # Base URL for your resource server
-const BASE_URL = "https://outthere.s3.amazonawms.com/your-resource-server.com/resources/"
+const BASE_URL = "https://outthere.s3.us-east-1.amazonaws.com/processed/"
 
 # Signal emitted when a resource is loaded
 signal resource_loaded(resource_id, resource)
@@ -12,7 +12,7 @@ signal resource_failed(resource_id, error)
 var _resource_cache = {}
 
 # Load a resource by ID
-func load_resource(resource_id: String, resource_type: String = "") -> void:
+func load_resource(resource_id: String) -> void:
     # Check if resource is already cached
     if _resource_cache.has(resource_id):
         emit_signal("resource_loaded", resource_id, _resource_cache[resource_id])
@@ -26,7 +26,7 @@ func load_resource(resource_id: String, resource_type: String = "") -> void:
     add_child(http_request)
     
     # Connect to the completed signal
-    http_request.connect("request_completed", self, "_on_request_completed", [resource_id, resource_type, http_request])
+    http_request.connect("request_completed", _on_request_completed.bind(resource_id, http_request))
     
     # Make the request
     var error = http_request.request(url)
@@ -35,7 +35,7 @@ func load_resource(resource_id: String, resource_type: String = "") -> void:
         http_request.queue_free()
 
 # Handle the completed HTTP request
-func _on_request_completed(result, response_code, headers, body, resource_id, resource_type, request_node):
+func _on_request_completed(result, response_code, headers, body, resource_id, request_node):
     # Clean up the request node
     request_node.queue_free()
     
@@ -175,4 +175,3 @@ func clear_cache(resource_id = null):
             _resource_cache.erase(resource_id)
     else:
         _resource_cache.clear()
-
