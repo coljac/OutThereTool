@@ -40,7 +40,7 @@ var RA: float = 0.0
 var dec: float = 0.0
 
 var current_hdu = 1
-
+var image_data: PackedFloat32Array
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	set_process(false) # Disable _process by default
@@ -162,12 +162,19 @@ func _handle_mouse_motion(event: InputEventMouseMotion):
 	)
 	
 	
+# Set the canonical HDR data, read in metadata
 func _load_object() -> void:
-	if res and res.texture_path:
+	if res:
 		width = res.width
 		height = res.height
-		fits_img.texture = load(res['texture_path'])
-		fits = fits_img.texture
+		
+		if "image_data" in res and res.image_data.size() > 0:
+			# Normalise so there's something to see
+			image_data = res.image_data
+			var t = Array(image_data)
+			var m = t.max()
+			image_data = t.map(func(x): return x / m)
+
 		white_level = get_percentile(95.5)
 		var wcs: Dictionary
 		if is_2d_spectrum:
@@ -182,10 +189,10 @@ func _load_object() -> void:
 			var crval = float(wcs['CRVAL1'])
 			var cdelt = float(wcs['CD1_1'])
 			scaling = {"left": - crpix * cdelt + crval, "right": (width - crpix) * cdelt + crval}
-
+	_make_texture()
 
 func _make_texture():
-	if fits:
+	if image_data:
 		fits_img.texture = display_fits_image(width, height, black_level, white_level)
 		# Re-apply shader after texture update
 		_init_shader()
@@ -300,18 +307,29 @@ func rainbow_colormap(val: float) -> Color:
 	return Color(r, g, b)
 	
 func get_percentile(percentile: float) -> float:
-	var image = fits.get_image()
-	var sorted_data = image.get_data().duplicate()
+	var sorted_data = image_data.duplicate()
 	sorted_data.sort()
 	var idx = int(ceil(percentile / 100.0 * sorted_data.size())) - 1
 	return sorted_data[idx]
 
 func display_fits_image(width: int, height: int, black_level: float, white_level: float) -> ImageTexture:
-	var float_data = fits.get_image().data['data']
+	var float_data
+	
+	# Get the raw data from the resource
+	# if "image_data" in res and res.image_data.size() > 0:
+		# float_data = res.image_data
+	# else:
+		# Fallback to getting data from the texture if available
+		# float_data = fits.get_image().data['data']
+	float_data = image_data
+
 	var img = Image.create(width, height, false, Image.FORMAT_RGBAF)
 	var inv_range = 1.0 / max(0.000001, white_level - black_level)
 
 	for i in range(width * height):
+		if i >= float_data.size():
+			break
+			
 		var val = (float_data[i] - black_level) * inv_range
 		val = clamp(val, 0.0, 1.0)
 		if invert_color:

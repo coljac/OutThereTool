@@ -144,7 +144,7 @@ func load_2d_spectrum_texture(object_id: String, filter_name: String) -> ImageTe
     if not spectrum:
         return null
     
-    return load_exr_as_texture(spectrum.texture_path)
+    return create_texture_from_data(spectrum.image_data, spectrum.width, spectrum.height)
 
 ## Load direct image texture for an object
 ##
@@ -156,7 +156,7 @@ func load_direct_image_texture(object_id: String, filter_name: String) -> ImageT
     if not image:
         return null
     
-    return load_exr_as_texture(image.texture_path)
+    return create_texture_from_data(image.image_data, image.width, image.height)
 
 ## Load segmentation map texture for an object
 ##
@@ -164,27 +164,31 @@ func load_direct_image_texture(object_id: String, filter_name: String) -> ImageT
 ## @return The texture, or null if not found
 func load_segmap_texture(object_id: String) -> ImageTexture:
     var image = load_direct_image(object_id, "F200W")
-    if not image or image.segmap_path.is_empty():
+    if not image or image.segmap_data.size() == 0:
         return null
     
-    return load_exr_as_texture(image.segmap_path)
+    return create_texture_from_data(image.segmap_data, image.width, image.height)
 
-## Load an EXR file as a texture
+## Create a texture from raw image data
 ##
-## @param path The path to the EXR file
-## @return The texture, or null if not found
-func load_exr_as_texture(path: String) -> ImageTexture:
-    if not FileAccess.file_exists(path):
-        print("Error: EXR file not found: " + path)
+## @param data The image data as a PackedFloat32Array
+## @param width The width of the image
+## @param height The height of the image
+## @return The texture, or null if creation failed
+func create_texture_from_data(data: PackedFloat32Array, width: int, height: int) -> ImageTexture:
+    if data.size() == 0 or width <= 0 or height <= 0:
+        print("Error: Invalid data or dimensions for texture creation")
         return null
     
-    var image = Image.new()
-    var error = image.load(path)
-    if error != OK:
-        print("Error loading EXR file: " + path + " (error: " + str(error) + ")")
-        return null
+    var img = Image.create(width, height, false, Image.FORMAT_RF)
     
-    var texture = ImageTexture.create_from_image(image)
+    for y in range(height):
+        for x in range(width):
+            var idx = y * width + x
+            if idx < data.size():
+                img.set_pixel(x, y, Color(data[idx], 0, 0, 0))
+    
+    var texture = ImageTexture.create_from_image(img)
     return texture
 
 ## Get a list of all available objects

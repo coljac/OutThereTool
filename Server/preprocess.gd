@@ -229,15 +229,11 @@ func preprocess_2d_spectra(object_id: String, fits_path: String, output_dir: Str
 				"right": (width - crpix) * cdelt + crval
 			}
 			
-			# Save image data as EXR
-			var exr_path = output_dir + object_id + "_2d_" + filter_name + ".exr"
-			save_as_exr(image_data, width, height, exr_path)
-			
-			# Create resource
+			# Create resource with raw image data
 			var resource = Spectrum2DResource.new()
 			resource.object_id = object_id
 			resource.filter_name = filter_name
-			resource.texture_path = exr_path
+			resource.image_data = image_data
 			resource.scaling = scaling
 			resource.width = width
 			resource.height = height
@@ -303,17 +299,11 @@ func preprocess_direct_images(object_id: String, fits_path: String, output_dir: 
 			log_message("    Error: Invalid dimensions for filter " + filter_name)
 			continue
 		
-		# Save image data as EXR
-		var exr_path = output_dir + object_id + "_direct_" + filter_name + ".exr"
-		if not save_as_exr(image_data, width, height, exr_path):
-			log_message("    Error: Failed to save EXR file for filter " + filter_name)
-			continue
-		
-		# Create resource
+		# Create resource with raw image data
 		var resource = DirectImageResource.new()
 		resource.object_id = object_id
 		resource.filter_name = filter_name
-		resource.texture_path = exr_path
+		resource.image_data = image_data
 		resource.width = width
 		resource.height = height
 		resource.header_info = header
@@ -345,12 +335,10 @@ func preprocess_direct_images(object_id: String, fits_path: String, output_dir: 
 				is_segmap = true
 			
 			if is_segmap:
-				var segmap_data = fits_reader.get_image_data(hdu_index + 1)
-				if segmap_data.size() > 0:
-					var segmap_path = output_dir + object_id + "_segmap_" + filter_name + ".exr"
-					if save_as_exr(segmap_data, width, height, segmap_path):
-						resource.segmap_path = segmap_path
-						log_message("    Saved segmentation map for " + filter_name)
+				var segmap_data_array = fits_reader.get_image_data(hdu_index + 1)
+				if segmap_data_array.size() > 0:
+					resource.segmap_data = segmap_data_array
+					log_message("    Saved segmentation map data for " + filter_name)
 		
 		# Save resource
 		var resource_path = output_dir + object_id + "_direct_" + filter_name + ".tres"
@@ -437,40 +425,7 @@ func preprocess_redshift(object_id: String, fits_path: String, output_dir: Strin
 	log_message("    Saved redshift data with best z = " + str(best_redshift))
 	return resource_path
 
-## Save image data as an EXR file
-##
-## @param data The image data as a PackedFloat32Array
-## @param width The width of the image
-## @param height The height of the image
-## @param path The path to save the EXR file to
-## @return True if the file was saved successfully, false otherwise
-func save_as_exr(data: PackedFloat32Array, width: int, height: int, path: String) -> bool:
-	if data.size() == 0 or width <= 0 or height <= 0:
-		log_message("    Error: Invalid data or dimensions for EXR file")
-		return false
-	
-	var img = Image.create(width, height, false, Image.FORMAT_RF)
-	
-	for y in range(height):
-		for x in range(width):
-			var idx = y * width + x
-			if idx < data.size():
-				img.set_pixel(x, y, Color(data[idx], 0, 0, 0))
-	
-	# Ensure the directory exists
-	var dir_path = path.get_base_dir()
-	if not DirAccess.dir_exists_absolute(dir_path):
-		var dir_result = DirAccess.make_dir_recursive_absolute(dir_path)
-		if dir_result != OK:
-			log_message("    Error creating directory for EXR file: " + str(dir_result))
-			return false
-	
-	var save_result = img.save_exr(path)
-	if save_result != OK:
-		log_message("    Error saving EXR file: " + str(save_result))
-		return false
-	
-	return true
+# This function has been removed as we now store raw data directly in resources
 
 ## Extract observation date from FITS headers
 ##

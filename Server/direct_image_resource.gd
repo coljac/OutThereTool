@@ -12,11 +12,11 @@ extends Resource
 ## The filter name (e.g., F115W, F150W, F200W)
 @export var filter_name: String
 
-## Path to the EXR file containing the direct image
-@export var texture_path: String
+## Raw image data as a PackedFloat32Array
+@export var image_data: PackedFloat32Array
 
-## Path to the EXR file containing the segmentation map (if applicable)
-@export var segmap_path: String
+## Raw segmentation map data as a PackedFloat32Array (if applicable)
+@export var segmap_data: PackedFloat32Array
 
 ## Image dimensions
 @export var width: int

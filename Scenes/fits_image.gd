@@ -20,7 +20,7 @@ var fits: FITSReader
 var region_manager: RegionManager
 var width: int = 0
 var height: int = 0
-var hdu: int = 1
+@export var hdu: int = 1
 
 # Variables for shader control
 var is_dragging: bool = false
@@ -166,16 +166,20 @@ func _load_fits(fits: FITSReader = null) -> void:
 	if fits_path or fits:
 		if not fits:
 			fits = FITSReader.new()
-		
+
 		if fits.load_fits(str(fits_path)): # .substr(6, -1)): # TODO res://
 			#print("FITS file loaded")
 			var header = fits.get_header_info(hdu)
 			#print("Header info: ", header)
 			#var data = fits.get_image_data()
 			#print("Got image data of size: ", data.size())
-
-			width = int(header['NAXIS1'])
-			height = int(header['NAXIS2'])
+			if "NAXIS1" in header:
+				width = int(header['NAXIS1'])
+				height = int(header['NAXIS2'])
+			else:
+				print("No NAXIS in header")
+				print(hdu)
+				return
 			white_level = get_percentile(fits.get_image_data_normalized(hdu), 95.5)
 			#print(log(fits.get_image_data(hdu)[0])/log(10))
 

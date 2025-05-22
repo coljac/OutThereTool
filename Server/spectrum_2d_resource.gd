@@ -12,8 +12,8 @@ extends Resource
 ## The filter name (e.g., F115W, F150W, F200W)
 @export var filter_name: String
 
-## Path to the EXR file containing the 2D spectrum image
-@export var texture_path: String
+## Raw image data as a PackedFloat32Array
+@export var image_data: PackedFloat32Array
 
 ## Wavelength scaling information for aligning the spectrum
 @export var scaling: Dictionary = {"left": 0.0, "right": 0.0}
