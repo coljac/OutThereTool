@@ -23,6 +23,7 @@ Helpers="*res://Scripts/helpers.gd"
 FitsHelper="*res://Scripts/fitshelper.gd"
 ThemeManager="*res://theme/ThemeManager.gd"
 DataManager="*res://Scripts/data_manager.gd"
+GlobalResourceCache="*res://Scripts/GlobalResourceCache.gd"
 
 [display]
 

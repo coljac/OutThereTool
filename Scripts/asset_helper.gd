@@ -4,74 +4,122 @@ class_name AssetHelper
 var c_log10 = log(10)
 
 var manifest: Resource
+var loader: CachedResourceLoader
+var current_object_id: String
 
-func set_object(objid) -> bool:
-	manifest = load("./processed/" + objid + "_manifest.tres")
-	if manifest:
-		print("2D spectra by filter: ", manifest['spectrum_2d_paths'])
-		print("2D spectra by PA: ", manifest['spectrum_2d_paths_by_pa'])
-		return true
+# Signals
+signal object_loaded(success: bool)
+signal resource_ready(resource_name: String)
+
+func _ready():
+	loader = GlobalResourceCache.get_loader()
+	loader.resource_loaded.connect(_on_resource_loaded)
+	loader.resource_failed.connect(_on_resource_failed)
+
+func set_object(objid: String) -> void:
+	current_object_id = objid
+	manifest = null
+	
+	# Load manifest first
+	var manifest_id = objid + "_manifest.tres"
+	loader.load_resource(manifest_id)
+
+func _on_resource_loaded(resource_id: String, resource: Resource) -> void:
+	if resource_id.ends_with("_manifest.tres") and resource_id.begins_with(current_object_id):
+		manifest = resource
+		print("Manifest loaded for: ", current_object_id)
+		# if manifest:
+			# print("2D spectra by filter: ", manifest.get('spectrum_2d_paths', {}))
+			# print("2D spectra by PA: ", manifest.get('spectrum_2d_paths_by_pa', {}))
+		object_loaded.emit(manifest != null)
 	else:
-		return false
+		# Other resource loaded, emit signal
+		resource_ready.emit(resource_id)
+
+func _on_resource_failed(resource_id: String, error: String) -> void:
+	print("Failed to load resource: ", resource_id, " Error: ", error)
+	if resource_id.ends_with("_manifest.tres") and resource_id.begins_with(current_object_id):
+		object_loaded.emit(false)
 
 func get_pz() -> Resource:
-	if manifest:
-		var pz = load(manifest.redshift_path)
-		return pz
+	if manifest and "redshift_path" in manifest:
+		# Check if already cached
+		var resource_id = _extract_resource_id(manifest.redshift_path)
+		if loader.memory_cache.has(resource_id):
+			return loader.memory_cache[resource_id]
+		# Otherwise load it (will be async)
+		loader.load_resource(resource_id)
 	return null
 
+func _extract_resource_id(path: String) -> String:
+	# Convert local path to resource ID
+	# e.g., "./processed/uma-03_16420_pz.tres" -> "uma-03_16420_pz.tres"
+	var parts = path.split("/")
+	return parts[-1]
 
-func get_1d_spectrum(microns: bool = false) -> Dictionary: # Array[Vector2]:
-	if not manifest:
+
+func get_1d_spectrum(microns: bool = false) -> Dictionary:
+	if not manifest or not "spectrum_1d_paths" in manifest:
 		return {}
 	
 	var oneds = manifest.spectrum_1d_paths
 	var res = {}
 	for filt in oneds:
-		var spec = load(oneds[filt]) as Spectrum1DResource
-		if not spec:
-			continue
-		var waves = spec.wavelengths
-		var fluxes = spec.fluxes
-		var errors = spec.errors
-		var bestfit = spec.bestfit
-		
-		var max = Array(fluxes).max()
-		# if microns:
-			# waves = Array(waves).map(func d(x): return x / 10000)
-			# waves = PackedFloat32Array(waves)
-
-		res[filt] = {
-			"fluxes": zip_p32([waves, fluxes]),
-			"err": errors,
-			"bestfit": zip_p32([waves, spec.bestfit]),
-			"cont": zip_p32([waves, spec.continuum]),
-			"contam": zip_p32([waves, spec.contam]),
-			"flat": spec.flat,
-			"max": max
-		}
+		var resource_id = _extract_resource_id(oneds[filt])
+		if loader.memory_cache.has(resource_id):
+			var spec = loader.memory_cache[resource_id] as Spectrum1DResource
+			if not spec:
+				continue
+			var waves = spec.wavelengths
+			var fluxes = spec.fluxes
+			var errors = spec.errors
+			var bestfit = spec.bestfit
+			
+			var max = Array(fluxes).max()
+			
+			res[filt] = {
+				"fluxes": zip_p32([waves, fluxes]),
+				"err": errors,
+				"bestfit": zip_p32([waves, spec.bestfit]),
+				"cont": zip_p32([waves, spec.continuum]),
+				"contam": zip_p32([waves, spec.contam]),
+				"flat": spec.flat,
+				"max": max
+			}
+		else:
+			# Load resource asynchronously
+			loader.load_resource(resource_id)
 	
 	return res
 
 func get_directs() -> Dictionary:
-	if not manifest:
+	if not manifest or not "direct_image_paths" in manifest:
 		return {}
 	var res = {}
 	for filt in manifest.direct_image_paths:
-		var direct = load(manifest.direct_image_paths[filt])
-		res[filt] = direct
+		var resource_id = _extract_resource_id(manifest.direct_image_paths[filt])
+		if loader.memory_cache.has(resource_id):
+			res[filt] = loader.memory_cache[resource_id]
+		else:
+			# Load resource asynchronously
+			loader.load_resource(resource_id)
 	return res
 
 
 func get_2d_spectra() -> Dictionary:
-	if not manifest:
+	if not manifest or not "spectrum_2d_paths_by_pa" in manifest:
 		return {}
 	var res = {}
 	for pa in manifest.spectrum_2d_paths_by_pa:
 		if pa not in res:
 			res[pa] = {}
 		for filt in manifest.spectrum_2d_paths_by_pa[pa]:
-			res[pa][filt] = load(manifest.spectrum_2d_paths_by_pa[pa][filt])
+			var resource_id = _extract_resource_id(manifest.spectrum_2d_paths_by_pa[pa][filt])
+			if loader.memory_cache.has(resource_id):
+				res[pa][filt] = loader.memory_cache[resource_id]
+			else:
+				# Load resource asynchronously
+				loader.load_resource(resource_id)
 	return res
 
 
@@ -90,11 +138,54 @@ func get_2d_spectra_by_pa(pa: String) -> Dictionary:
 	
 	return manifest.spectrum_2d_paths_by_pa[pa]
 
+# Preload resources for the next object (background loading)
+func preload_next_object(next_object_id: String) -> void:
+	if next_object_id == "" or next_object_id == current_object_id:
+		return
+	
+	print("Preloading resources for next object: ", next_object_id)
+	
+	# Preload manifest first
+	var manifest_id = next_object_id + "_manifest.tres"
+	loader.preload_resource(manifest_id)
+	
+	# Note: We can't preload other resources without knowing the manifest content
+	# This would need to be done after the manifest is loaded
+
 func get_available_position_angles() -> Array:
 	if not manifest or not "spectrum_2d_paths_by_pa" in manifest:
 		return []
 	
 	return manifest.spectrum_2d_paths_by_pa.keys()
+
+# Load all resources for current object
+func load_all_resources() -> void:
+	if not manifest:
+		return
+	
+	# Load redshift data
+	if "redshift_path" in manifest:
+		var resource_id = _extract_resource_id(manifest.redshift_path)
+		loader.load_resource(resource_id)
+	
+	# Load 1D spectra
+	if "spectrum_1d_paths" in manifest:
+		for filt in manifest.spectrum_1d_paths:
+			var resource_id = _extract_resource_id(manifest.spectrum_1d_paths[filt])
+			loader.load_resource(resource_id)
+	
+	# Load direct images
+	if "direct_image_paths" in manifest:
+		for filt in manifest.direct_image_paths:
+			var resource_id = _extract_resource_id(manifest.direct_image_paths[filt])
+			loader.load_resource(resource_id)
+	
+	# Load 2D spectra
+	if "spectrum_2d_paths_by_pa" in manifest:
+		for pa in manifest.spectrum_2d_paths_by_pa:
+			for filt in manifest.spectrum_2d_paths_by_pa[pa]:
+				var resource_id = _extract_resource_id(manifest.spectrum_2d_paths_by_pa[pa][filt])
+				loader.load_resource(resource_id)
 
 func zip_p32(inputs: Array[PackedFloat32Array]) -> Array[Vector2]:
 	var output = [] as Array[Vector2]

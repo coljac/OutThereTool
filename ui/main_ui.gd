@@ -139,6 +139,9 @@ func _goto_object(step: int = 1) -> void:
 	gal_display.set_object_id(objects[obj_index]['id'])
 	%ObjectViewing.set_galaxy_details(objects[obj_index])
 	gal_display.name = objects[obj_index]['id']
+	
+	# Preload next object in background
+	_preload_next_object()
 
 	# newbox.path = objects[obj_index][0]
 	# newbox.object_id = objects[obj_index][1]
@@ -251,6 +254,21 @@ func _on_apply_filters_button_pressed():
 	print("Applying filters - Redshift range: ", min_z, "to", max_z, " with filters: ", filters, " field: ", current_field)
 	_set_objects(DataManager.get_gals(min_z, max_z, filters, current_field))
 
+
+func _preload_next_object() -> void:
+	# Determine the next object to preload
+	var next_index = obj_index + 1
+	if next_index >= objects.size():
+		next_index = 0
+	
+	if next_index < objects.size():
+		var next_object_id = objects[next_index]['id']
+		print("Preloading next object: ", next_object_id)
+		
+		# Get the galaxy display to access its asset helper
+		var gal_display = %SimpleTab.get_tab_control(0)
+		if gal_display and gal_display.has_method("preload_next_object"):
+			gal_display.preload_next_object(next_object_id)
 
 func _on_objects_list_item_selected(index: int) -> void:
 	if index == 0:

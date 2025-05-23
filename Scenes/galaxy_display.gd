@@ -113,12 +113,6 @@ func set_redshift(z: float) -> void:
 	#load_object()
 	
 func load_object() -> void:
-	asset_helper = AssetHelper.new()
-	if not asset_helper.set_object(object_id):
-		print("Can't load " + object_id)
-		return
-
-	redshift_label.text = "" # TODO figure this out, why it duplicates after a new object
 	if _is_loading or not is_inside_tree():
 		return
 	if object_id == "":
@@ -126,18 +120,77 @@ func load_object() -> void:
 		
 	_is_loading = true
 	print("Loading object: ", object_id)
-		
+	
+	# Create new asset helper
+	asset_helper = AssetHelper.new()
+	add_child(asset_helper)
+	
+	# Connect to asset helper signals
+	asset_helper.object_loaded.connect(_on_object_loaded)
+	asset_helper.resource_ready.connect(_on_resource_ready)
+	
+	# Start loading the object
+	asset_helper.set_object(object_id)
+
+func _on_object_loaded(success: bool) -> void:
+	if not success:
+		print("Can't load " + object_id)
+		_is_loading = false
+		return
+	
+	# Manifest is loaded, start loading all resources
+	asset_helper.load_all_resources()
+	
+	# Initial UI setup
+	get_node("VBoxContainer/MarginContainer/Label").text = object_id
+	redshift_label.text = ""
+	
 	# Clear any existing data
 	if pofz:
 		pofz.clear_series()
 	if spec_1d:
 		spec_1d.clear_series()
-		
-	get_node("VBoxContainer/MarginContainer/Label").text = object_id
+	
+	# Try to load resources that might already be cached
+	_try_load_cached_resources()
+
+func _on_resource_ready(resource_name: String) -> void:
+	# A resource has been loaded, try to update the display
+	print("Resource ready: ", resource_name)
+	_try_load_cached_resources()
+
+func _try_load_cached_resources() -> void:
+	if not asset_helper or not asset_helper.manifest:
+		return
+	
+	# Try to load redshift data
 	var pz = asset_helper.get_pz()
-	# var pz = FitsHelper.get_pz(path + object_id + ".full.fits")
-	var logp = pz.log_pdf # Array(pz.pdf).map(func(i): log(i)/asset_helper.c_log10)
-	# var logp = Array(pz[1]).map(func(i): return FitsHelper.log10(i))
+	if pz:
+		_load_redshift_data(pz)
+	
+	# Try to load 1D spectrum
+	var oned_spec = asset_helper.get_1d_spectrum(true)
+	if oned_spec.size() > 0:
+		_load_1d_spectrum(oned_spec)
+	
+	# Try to load 2D spectra
+	var data2d = asset_helper.get_2d_spectra()
+	if data2d.size() > 0:
+		_load_2d_spectra(data2d)
+	
+	# Try to load direct images
+	var directs = asset_helper.get_directs()
+	if directs.size() > 0:
+		_load_direct_images(directs)
+	
+	# Check if loading is complete
+	_check_loading_complete()
+
+func _load_redshift_data(pz: Resource) -> void:
+	if not pz or not ("log_pdf" in pz and "z_grid" in pz):
+		return
+	
+	var logp = pz.log_pdf
 	var peaks = asset_helper.peak_finding(logp, 50)
 	
 	# REDSHIFT
@@ -155,64 +208,40 @@ func load_object() -> void:
 	pofz.add_series(
 		z_maxes, Color(1.0, 0.0, 0.0), 0.0, true, 7.0
 	)
-	
-	# SPEC 1D
-	var oned_spec = asset_helper.get_1d_spectrum(true)
-	# FitsHelper.get_1d_spectrum(path + object_id + ".1D.fits", true)
+
+func _load_1d_spectrum(oned_spec: Dictionary) -> void:
 	var xx = 0.2
-	var max = 0.0
+	var max_flux = 0.0
 	for f in oned_spec:
-		# f = f['data']
-		# print(f, " <<")
-		#func add_series(points: Array, color: Color = Color(0, 0, 1), line_width: float = 2.0,
-				#drawevent_points: bool = false, point_size: float = 4.0,
-				#x_errors: Array = [], y_errors: Array = [],
-				#error_color: Color = Color.TRANSPARENT, error_line_width: float = 1.0,
-				#error_cap_size: float = 5.0, draw_as_steps: bool = false) -> int:
-		spec_1d.add_series(oned_spec[f]['fluxes'], Color(0.4 + xx, xx, 0.8), 2.0, false, 3.0, [], oned_spec[f]['err'], Color(1.0, 0.0, 0.0), 1.0, 5.0, true)
-		spec_1d.add_series(oned_spec[f]['bestfit'], Color(0.0, 1.0, 0.0, 0.5), 2.0, false, 3.0, [])
-		xx += 0.2
-		max = max(oned_spec[f]['max'], max)
-	%Spec1d.set_limits(%Spec1d.x_min, %Spec1d.x_max, %Spec1d.y_min, max, true)
+		var data = oned_spec[f]
+		if "max" in data:
+			max_flux = max(max_flux, data["max"])
 		
-	# Spec2D
-	var data2d = asset_helper.get_2d_spectra()
-	# FitsHelper.get_2d_spectrum(path + object_id + ".stack.fits")
+		spec_1d.add_series(data["fluxes"], Color(0.4 + xx, xx, 0.8), 2.0, false, 3.0, [], data.get("err", []), Color(1.0, 0.0, 0.0), 1.0, 5.0, true)
+		spec_1d.add_series(data["bestfit"], Color(0.0, 1.0, 0.0, 0.5), 2.0, false, 3.0, [])
+		xx += 0.2
 	
-	# First, hide all existing spectrum displays
+	if max_flux > 0:
+		%Spec1d.set_limits(%Spec1d.x_min, %Spec1d.x_max, %Spec1d.y_min, max_flux, true)
+
+func _load_2d_spectra(data2d: Dictionary) -> void:
+	# Clear existing spectra
 	var aligned = %Spec2Ds1
 	for child in aligned.get_children():
 		child.queue_free()
-		# if child is OTImage:
-			# child.visible = false
 	
 	# Clear existing rows in the aligned displayer
 	aligned.rows.clear()
 	aligned.row_heights.clear()
 	
-	# Now add all spectra from different position angles to the single AlignedDisplayer
-	# The AlignedDisplayer will organize them into rows
+	# Add all spectra from different position angles
 	var pa_index = 0
 	for pa in data2d.keys():
 		for f in ['F115W', 'F150W', 'F200W']:
 			if f not in data2d[pa]:
 				continue
-				
-			# Try to find an existing node for this filter
-			var spec_display: OTImage = null
-			var node_name = "Spec2D_" + f + "_PA" + str(pa_index)
 			
-			# Check if the node already exists
-			spec_display = otimg.instantiate()
-			# if aligned.has_node(node_name):
-				# spec_display = aligned.get_node(node_name)
-			# else:
-				# var existing_image = aligned.get_node("Spec2D_" + f)
-				# if existing_image:
-					# spec_display = existing_image.duplicate() as OTImage
-					# spec_display.name = node_name
-					# aligned.add_child(spec_display)
-			
+			var spec_display: OTImage = otimg.instantiate()
 			if spec_display:
 				spec_display.color_map = OTImage.ColorMap.JET
 				spec_display.is_2d_spectrum = true
@@ -223,39 +252,45 @@ func load_object() -> void:
 				%Spec2Ds1.add_spectrum(spec_display, pa_index)
 
 		pa_index += 1
-
-		
-	# Directs
-	var x = asset_helper.get_directs()
-		# FitsHelper.get_directs(path + object_id + ".beams.fits")
-	for filt in x:
-		var nd = get_node("VBoxContainer/MarginContainer3/Imaging/IC" + filt + "/Direct" + filt) as OTImage
-		nd.res = x[filt]
-		nd._load_object()
-		nd._set_scale_pc(99.5)
-		nd.visible = true
-		nd.set_label(filt)
-		if filt == "F200W":
-			nd = %SegMap
-			nd.res = x[filt]
-			nd.segmap = true
-			nd.visible = true
-			nd._load_object()
-			nd.set_label("SegMap")
-				
-				
+	
 	# Position all textures after adding all spectra
 	%Spec2Ds1.position_textures()
-		#$VBoxContainer/MarginContainer4/Spec2Ds._on_plot_display_x_limits_changed(spec_1d.x_min, spec_1d.x_max)
-		# spec_1d.emit_signal("x_limits_changed", spec_1d.x_min, spec_1d.x_max)
-		
-		# Reset the loading flag
-	_is_loading = false
-	set_redshift(redshift)
-	call_deferred("oned_zoomed")
-		# print("Finished loading object: ", object_id)
-		# asset_helper.set_object(object_id)
 
+func _load_direct_images(directs: Dictionary) -> void:
+	for filt in directs:
+		var direct = directs[filt]
+		if direct:
+			var node_name = "VBoxContainer/MarginContainer3/Imaging/IC%s/Direct%s" % [filt, filt]
+			var direct_node = get_node_or_null(node_name) as OTImage
+			if direct_node:
+				direct_node.res = direct
+				direct_node._load_object()
+				direct_node._set_scale_pc(99.5)
+				direct_node.visible = true
+				direct_node.set_label(filt)
+				if filt == "F200W":
+					var segmap_node = %SegMap
+					segmap_node.res = direct
+					segmap_node.segmap = true
+					segmap_node.visible = true
+					segmap_node._load_object()
+					segmap_node.set_label("SegMap")
+
+func _check_loading_complete() -> void:
+	# Check if we have loaded the basic required resources
+	var pz = asset_helper.get_pz()
+	var oned_spec = asset_helper.get_1d_spectrum(true)
+	
+	if pz and oned_spec.size() > 0:
+		print("Basic loading complete for: ", object_id)
+		_is_loading = false
+		set_redshift(redshift)
+		call_deferred("oned_zoomed")
+
+func preload_next_object(next_object_id: String) -> void:
+	# Preload resources for the next object in background
+	if asset_helper:
+		asset_helper.preload_next_object(next_object_id)
 
 # func _unhandled_input(event: InputEvent) -> void:
 # 	if Input.is_action_just_pressed("flag_bad"):
