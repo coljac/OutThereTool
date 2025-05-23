@@ -107,18 +107,36 @@ func preprocess_object(object_id: String, input_dir: String, output_dir: String)
 		"output_directory": output_dir
 	}
 	
-	# Save manifest
-	var manifest_path = output_dir + object_id + "_manifest.tres"
-	var save_result = ResourceSaver.save(manifest, manifest_path)
+	# Create a bundled resource containing all data
+	var bundle = ObjectBundle.new()
+	bundle.manifest = manifest
+	bundle.resources = {}
+	
+	# Load all individual resources into the bundle
+	_bundle_all_resources(bundle, manifest, output_dir)
+	
+	# Save as single .res file
+	var bundle_path = output_dir + object_id + "_bundle.res"
+	var save_result = ResourceSaver.save(bundle, bundle_path)
+	if save_result != OK:
+		log_message("Error saving bundle: " + str(save_result))
+		return ""
+	
+	# Also save manifest separately for compatibility
+	var manifest_path = output_dir + object_id + "_manifest.res"
+	save_result = ResourceSaver.save(manifest, manifest_path)
 	if save_result != OK:
 		log_message("Error saving manifest: " + str(save_result))
 		return ""
 	
+	# Clean up individual resource files
+	_cleanup_individual_files(manifest, output_dir)
+	
 	# Write metadata to the metadata file
 	write_object_metadata(manifest)
 	
-	log_message("Finished processing object: " + object_id)
-	return manifest_path
+	log_message("Finished processing object: " + object_id + " (bundled)")
+	return bundle_path
 
 ## Process 1D spectra from a FITS file
 ##
@@ -175,7 +193,7 @@ func preprocess_1d_spectra(object_id: String, fits_path: String, output_dir: Str
 		}
 		
 		# Save resource
-		var resource_path = output_dir + object_id + "_1d_" + filter_name + ".tres"
+		var resource_path = output_dir + object_id + "_1d_" + filter_name + ".res"
 		var save_result = ResourceSaver.save(resource, resource_path)
 		if save_result != OK:
 			log_message("    Error saving 1D spectrum resource: " + str(save_result))
@@ -266,7 +284,7 @@ func preprocess_2d_spectra(object_id: String, fits_path: String, output_dir: Str
 			}
 			
 			# Save resource with PA in the filename
-			var resource_path = output_dir + object_id + "_2d_PA" + pa + "_" + filter_name + ".tres"
+			var resource_path = output_dir + object_id + "_2d_PA" + pa + "_" + filter_name + ".res"
 			var save_result = ResourceSaver.save(resource, resource_path)
 			if save_result != OK:
 				log_message("    Error saving 2D spectrum resource: " + str(save_result))
@@ -360,7 +378,7 @@ func preprocess_direct_images(object_id: String, fits_path: String, output_dir: 
 					log_message("    Saved segmentation map data for " + filter_name)
 		
 		# Save resource
-		var resource_path = output_dir + object_id + "_direct_" + filter_name + ".tres"
+		var resource_path = output_dir + object_id + "_direct_" + filter_name + ".res"
 		var save_result = ResourceSaver.save(resource, resource_path)
 		if save_result != OK:
 			log_message("    Error saving direct image resource: " + str(save_result))
@@ -435,7 +453,7 @@ func preprocess_redshift(object_id: String, fits_path: String, output_dir: Strin
 	}
 	
 	# Save resource
-	var resource_path = output_dir + object_id + "_redshift.tres"
+	var resource_path = output_dir + object_id + "_redshift.res"
 	var save_result = ResourceSaver.save(resource, resource_path)
 	if save_result != OK:
 		log_message("    Error saving redshift resource: " + str(save_result))
@@ -662,3 +680,70 @@ func process_directory(input_dir: String, output_dir: String, pattern: String = 
 	
 	# Close log and metadata files
 	close_files()
+
+# Bundle all individual resources into a single bundle
+func _bundle_all_resources(bundle: ObjectBundle, manifest: ObjectManifest, output_dir: String) -> void:
+	log_message("  Bundling all resources...")
+	
+	# Bundle redshift data
+	if "redshift_path" in manifest and manifest.redshift_path != "":
+		var resource = load(manifest.redshift_path)
+		if resource:
+			bundle.resources["redshift"] = resource
+			log_message("    Bundled redshift data")
+	
+	# Bundle 1D spectra
+	if "spectrum_1d_paths" in manifest:
+		for filter_name in manifest.spectrum_1d_paths:
+			var resource = load(manifest.spectrum_1d_paths[filter_name])
+			if resource:
+				bundle.resources["1d_" + filter_name] = resource
+				log_message("    Bundled 1D spectrum: " + filter_name)
+	
+	# Bundle direct images
+	if "direct_image_paths" in manifest:
+		for filter_name in manifest.direct_image_paths:
+			var resource = load(manifest.direct_image_paths[filter_name])
+			if resource:
+				bundle.resources["direct_" + filter_name] = resource
+				log_message("    Bundled direct image: " + filter_name)
+	
+	# Bundle 2D spectra
+	if "spectrum_2d_paths_by_pa" in manifest:
+		for pa in manifest.spectrum_2d_paths_by_pa:
+			for filter_name in manifest.spectrum_2d_paths_by_pa[pa]:
+				var resource = load(manifest.spectrum_2d_paths_by_pa[pa][filter_name])
+				if resource:
+					bundle.resources["2d_PA" + pa + "_" + filter_name] = resource
+					log_message("    Bundled 2D spectrum: PA" + pa + "_" + filter_name)
+
+# Clean up individual resource files after bundling
+func _cleanup_individual_files(manifest: ObjectManifest, output_dir: String) -> void:
+	log_message("  Cleaning up individual files...")
+	
+	# Clean up redshift file
+	if "redshift_path" in manifest and manifest.redshift_path != "":
+		if FileAccess.file_exists(manifest.redshift_path):
+			DirAccess.remove_absolute(manifest.redshift_path)
+	
+	# Clean up 1D spectra files
+	if "spectrum_1d_paths" in manifest:
+		for filter_name in manifest.spectrum_1d_paths:
+			var path = manifest.spectrum_1d_paths[filter_name]
+			if FileAccess.file_exists(path):
+				DirAccess.remove_absolute(path)
+	
+	# Clean up direct image files
+	if "direct_image_paths" in manifest:
+		for filter_name in manifest.direct_image_paths:
+			var path = manifest.direct_image_paths[filter_name]
+			if FileAccess.file_exists(path):
+				DirAccess.remove_absolute(path)
+	
+	# Clean up 2D spectra files
+	if "spectrum_2d_paths_by_pa" in manifest:
+		for pa in manifest.spectrum_2d_paths_by_pa:
+			for filter_name in manifest.spectrum_2d_paths_by_pa[pa]:
+				var path = manifest.spectrum_2d_paths_by_pa[pa][filter_name]
+				if FileAccess.file_exists(path):
+					DirAccess.remove_absolute(path)

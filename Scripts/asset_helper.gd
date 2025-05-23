@@ -22,16 +22,36 @@ func set_object(objid: String) -> void:
 	manifest = null
 	is_loading_resources = false  # Reset loading state for new object
 	
-	# Load manifest first
-	var manifest_id = objid + "_manifest.tres"
-	loader.load_resource(manifest_id)
+	# Try to load bundled resource first, fall back to manifest
+	var bundle_id = objid + "_bundle.res"
+	var manifest_id = objid + "_manifest.res"
+	
+	# Check if bundle exists in cache
+	if loader.is_cached(bundle_id):
+		print("Loading bundled resource for: ", objid)
+		loader.load_resource(bundle_id)
+	else:
+		print("Loading manifest for: ", objid)
+		loader.load_resource(manifest_id)
 
 func _on_resource_loaded(resource_id: String, resource: Resource) -> void:
 	# Only handle resources for the current object
 	if not resource_id.begins_with(current_object_id):
 		return
 		
-	if resource_id.ends_with("_manifest.tres"):
+	if resource_id.ends_with("_bundle.res"):
+		# Handle bundled resource
+		var bundle = resource as ObjectBundle
+		if bundle:
+			manifest = bundle.manifest
+			# Cache all bundled resources in memory
+			for resource_key in bundle.resources:
+				var bundled_resource = bundle.resources[resource_key]
+				var cache_key = current_object_id + "_" + resource_key + ".res"
+				loader.memory_cache[cache_key] = bundled_resource
+			print("Bundle loaded for: ", current_object_id, " with ", bundle.resources.size(), " resources")
+			object_loaded.emit(true)
+	elif resource_id.ends_with("_manifest.res"):
 		manifest = resource
 		print("Manifest loaded for: ", current_object_id)
 		object_loaded.emit(manifest != null)
@@ -46,7 +66,13 @@ func _on_resource_failed(resource_id: String, error: String) -> void:
 		return
 		
 	print("Failed to load resource: ", resource_id, " Error: ", error)
-	if resource_id.ends_with("_manifest.tres"):
+	
+	if resource_id.ends_with("_bundle.res"):
+		# Bundle failed, try manifest instead
+		print("Bundle failed, trying manifest for: ", current_object_id)
+		var manifest_id = current_object_id + "_manifest.res"
+		loader.load_resource(manifest_id)
+	elif resource_id.ends_with("_manifest.res"):
 		object_loaded.emit(false)
 
 func get_pz() -> Resource:
@@ -61,9 +87,13 @@ func get_pz() -> Resource:
 
 func _extract_resource_id(path: String) -> String:
 	# Convert local path to resource ID
-	# e.g., "./processed/uma-03_16420_pz.tres" -> "uma-03_16420_pz.tres"
+	# e.g., "./processed/uma-03_16420_pz.tres" -> "uma-03_16420_pz.res"
 	var parts = path.split("/")
-	return parts[-1]
+	var filename = parts[-1]
+	# Replace .tres with .res for new format
+	if filename.ends_with(".tres"):
+		filename = filename.replace(".tres", ".res")
+	return filename
 
 # Public method to extract resource ID (for external use)
 func extract_resource_id(path: String) -> String:
@@ -157,12 +187,12 @@ func preload_next_object(next_object_id: String) -> void:
 	
 	print("Preloading resources for next object: ", next_object_id)
 	
-	# Preload manifest first
-	var manifest_id = next_object_id + "_manifest.tres"
-	loader.preload_resource(manifest_id)
+	# Try to preload bundle first, fall back to manifest
+	var bundle_id = next_object_id + "_bundle.res"
+	var manifest_id = next_object_id + "_manifest.res"
 	
-	# Note: We can't preload other resources without knowing the manifest content
-	# This would need to be done after the manifest is loaded
+	loader.preload_resource(bundle_id)
+	loader.preload_resource(manifest_id)
 
 # Cleanup connections when destroying this instance
 func cleanup_connections() -> void:
