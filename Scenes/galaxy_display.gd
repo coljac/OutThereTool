@@ -119,11 +119,12 @@ func set_redshift(z: float) -> void:
 	#load_object()
 	
 func load_object() -> void:
-	if _is_loading or not is_inside_tree():
+	if not is_inside_tree():
 		return
 	if object_id == "":
 		return
 		
+	# Reset loading state for new object (don't check _is_loading to prevent stuckness)
 	_is_loading = true
 	print("Loading object: ", object_id)
 	

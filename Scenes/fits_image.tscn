@@ -10,7 +10,8 @@ shader_parameter/z_max = 1.0
 
 [node name="FitsImage" type="MarginContainer"]
 custom_minimum_size = Vector2(100, 100)
-offset_right = 141.0
+offset_left = 8.0
+offset_right = 149.0
 offset_bottom = 110.0
 size_flags_horizontal = 3
 size_flags_vertical = 3

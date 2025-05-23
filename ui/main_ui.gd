@@ -137,9 +137,12 @@ func _goto_object(step: int = 1) -> void:
 		obj_index = 0
 	if obj_index < 0:
 		obj_index = objects.size() - 1
+	print("DEBUG: About to set object ID to: ", objects[obj_index]['id'])
 	gal_display.set_object_id(objects[obj_index]['id'])
+	print("DEBUG: Called set_object_id, updating details...")
 	%ObjectViewing.set_galaxy_details(objects[obj_index])
 	gal_display.name = objects[obj_index]['id']
+	print("DEBUG: Object switch completed")
 	
 	# Preload next object in background
 	_preload_next_object()
