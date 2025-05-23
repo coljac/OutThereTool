@@ -6,6 +6,7 @@ var c_log10 = log(10)
 var manifest: Resource
 var loader: ThreadedCachedResourceLoader
 var current_object_id: String
+var is_loading_resources: bool = false
 
 # Signals
 signal object_loaded(success: bool)
@@ -19,26 +20,33 @@ func _ready():
 func set_object(objid: String) -> void:
 	current_object_id = objid
 	manifest = null
+	is_loading_resources = false  # Reset loading state for new object
 	
 	# Load manifest first
 	var manifest_id = objid + "_manifest.tres"
 	loader.load_resource(manifest_id)
 
 func _on_resource_loaded(resource_id: String, resource: Resource) -> void:
-	if resource_id.ends_with("_manifest.tres") and resource_id.begins_with(current_object_id):
+	# Only handle resources for the current object
+	if not resource_id.begins_with(current_object_id):
+		return
+		
+	if resource_id.ends_with("_manifest.tres"):
 		manifest = resource
 		print("Manifest loaded for: ", current_object_id)
-		# if manifest:
-			# print("2D spectra by filter: ", manifest.get('spectrum_2d_paths', {}))
-			# print("2D spectra by PA: ", manifest.get('spectrum_2d_paths_by_pa', {}))
 		object_loaded.emit(manifest != null)
 	else:
-		# Other resource loaded, emit signal
-		resource_ready.emit(resource_id)
+		# Other resource loaded, emit signal only if we're still loading this object
+		if current_object_id != "" and resource_id.begins_with(current_object_id):
+			resource_ready.emit(resource_id)
 
 func _on_resource_failed(resource_id: String, error: String) -> void:
+	# Only handle failures for the current object
+	if not resource_id.begins_with(current_object_id):
+		return
+		
 	print("Failed to load resource: ", resource_id, " Error: ", error)
-	if resource_id.ends_with("_manifest.tres") and resource_id.begins_with(current_object_id):
+	if resource_id.ends_with("_manifest.tres"):
 		object_loaded.emit(false)
 
 func get_pz() -> Resource:
@@ -152,6 +160,14 @@ func preload_next_object(next_object_id: String) -> void:
 	# Note: We can't preload other resources without knowing the manifest content
 	# This would need to be done after the manifest is loaded
 
+# Cleanup connections when destroying this instance
+func cleanup_connections() -> void:
+	if loader:
+		if loader.resource_loaded.is_connected(_on_resource_loaded):
+			loader.resource_loaded.disconnect(_on_resource_loaded)
+		if loader.resource_failed.is_connected(_on_resource_failed):
+			loader.resource_failed.disconnect(_on_resource_failed)
+
 # Debug function to check loader performance
 func get_performance_stats() -> Dictionary:
 	if loader and loader.has_method("get_stats"):
@@ -166,8 +182,11 @@ func get_available_position_angles() -> Array:
 
 # Load all resources for current object
 func load_all_resources() -> void:
-	if not manifest:
+	if not manifest or is_loading_resources:
 		return
+	
+	is_loading_resources = true
+	print("Starting to load all resources for: ", current_object_id)
 	
 	# Load redshift data
 	if "redshift_path" in manifest:

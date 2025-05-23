@@ -79,6 +79,12 @@ func _ready():
 func _exit_tree() -> void:
 	print_debug("Exiting tree")
 	$CanvasLayer/RedshiftLabel.text = ""
+	
+	# Clean up asset helper
+	if asset_helper:
+		asset_helper.cleanup_connections()
+		asset_helper.queue_free()
+		asset_helper = null
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -121,6 +127,12 @@ func load_object() -> void:
 	_is_loading = true
 	print("Loading object: ", object_id)
 	
+	# Clean up existing asset helper
+	if asset_helper:
+		asset_helper.cleanup_connections()
+		asset_helper.queue_free()
+		asset_helper = null
+	
 	# Create new asset helper
 	asset_helper = AssetHelper.new()
 	add_child(asset_helper)
@@ -157,7 +169,9 @@ func _on_object_loaded(success: bool) -> void:
 func _on_resource_ready(resource_name: String) -> void:
 	# A resource has been loaded, try to update the display
 	print("Resource ready: ", resource_name)
-	_try_load_cached_resources()
+	# Only update if this resource belongs to current object
+	if resource_name.begins_with(object_id):
+		_try_load_cached_resources()
 
 func _try_load_cached_resources() -> void:
 	if not asset_helper or not asset_helper.manifest:
@@ -281,7 +295,8 @@ func _check_loading_complete() -> void:
 	var pz = asset_helper.get_pz()
 	var oned_spec = asset_helper.get_1d_spectrum(true)
 	
-	if pz and oned_spec.size() > 0:
+	# Only complete if we actually have the required resources AND we're still loading the right object
+	if pz and oned_spec.size() > 0 and _is_loading and asset_helper.current_object_id == object_id:
 		print("Basic loading complete for: ", object_id)
 		_is_loading = false
 		set_redshift(redshift)
