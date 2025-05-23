@@ -61,6 +61,18 @@ horizontal_alignment = 1
 [node name="HSeparator" type="HSeparator" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
 
+[node name="FieldLabel" type="Label" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Field:"
+
+[node name="FieldList" type="OptionButton" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+selected = 0
+item_count = 1
+popup/item_0/text = "0 objects"
+popup/item_0/id = 0
+
 [node name="ObjectsList" type="OptionButton" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -174,6 +186,7 @@ size_flags_vertical = 3
 visible = false
 layout_mode = 1
 
+[connection signal="item_selected" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/FieldList" to="." method="_on_field_selected"]
 [connection signal="item_selected" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/ObjectsList" to="." method="_on_objects_list_item_selected"]
 [connection signal="pressed" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/SearchButton" to="." method="_on_search_button_pressed"]
 [connection signal="pressed" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/ApplyFiltersButton" to="." method="_on_apply_filters_button_pressed"]

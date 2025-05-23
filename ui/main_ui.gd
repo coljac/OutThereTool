@@ -9,6 +9,7 @@ extends Control
 @onready var apply_filters_button = $VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/ApplyFiltersButton
 @onready var min_redshift = $VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/RedshiftRangeContainer/MinRedshift
 @onready var max_redshift = $VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/RedshiftRangeContainer/MaxRedshift
+@onready var field_list = $VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/FieldList
 
 # Path to the GalaxyDisplay scene
 const GALAXY_DISPLAY_SCENE = "res://Scenes/galaxy_display.tscn"
@@ -25,7 +26,9 @@ func _ready():
 	top_bar.more_options_pressed.connect(_on_more_options_pressed)
 	top_bar.settings_pressed.connect(_on_settings_pressed)
 	
-	_set_objects(DataManager.get_gals())
+	# Initialize field selection
+	_populate_field_list()
+	_set_objects(DataManager.get_gals(0.0, 10.0, 0, DataManager.get_current_field()))
 
 	# Connect signals from the tab container
 	tab_container.tab_added.connect(_on_tab_added)
@@ -34,6 +37,7 @@ func _ready():
 	# Connect signals from the left panel
 	search_button.pressed.connect(_on_search_button_pressed)
 	apply_filters_button.pressed.connect(_on_apply_filters_button_pressed)
+	field_list.item_selected.connect(_on_field_selected)
 	
 	# Set the tab scene for the tab container
 	tab_container.set_tab_scene(GALAXY_DISPLAY_SCENE)
@@ -49,7 +53,7 @@ func _ready():
 
 func update_cache(success: bool):
 	if success:
-		_set_objects(DataManager.get_gals())
+		_set_objects(DataManager.get_gals(0.0, 10.0, 0, DataManager.get_current_field()))
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_released("next"):
@@ -210,19 +214,42 @@ func _set_objects(new_objects: Array) -> void:
 		galaxy_display.set_galaxy_details(objects[obj_index])
 
 
+func _populate_field_list():
+	var fields = DataManager.get_unique_fields()
+	field_list.clear()
+	
+	if fields.size() > 0:
+		# Set the first field as current and populate the dropdown
+		for field in fields:
+			field_list.add_item(field)
+		DataManager.set_current_field(fields[0])
+		field_list.selected = 0
+	else:
+		# No fields available
+		field_list.add_item("No fields")
+		DataManager.set_current_field("")
+
+func _on_field_selected(index: int):
+	var selected_field = field_list.get_item_text(index)
+	DataManager.set_current_field(selected_field)
+	# Refresh the objects list with the new field filter
+	var min_z = min_redshift.value
+	var max_z = max_redshift.value
+	var filters = %FiltersSelect.selected + 1
+	_set_objects(DataManager.get_gals(min_z, max_z, filters, selected_field))
+	# Reset to first object when changing fields
+	obj_index = 0
+	if objects.size() > 0:
+		_goto_object(0)
+
 func _on_apply_filters_button_pressed():
 	# Get the redshift range
 	var min_z = min_redshift.value
 	var max_z = max_redshift.value
 	var filters = %FiltersSelect.selected + 1
-	print("Applying filters - Redshift range: ", min_z, "to", max_z, " with filters: ", filters)
-	_set_objects(DataManager.get_gals(min_z, max_z, filters))
-	# refresh_objects()
-	# print("Applying filters - Redshiftrange: ", min_z, "to", max_z)
-	# print("Applying filters - num filters: ", %FiltersSelect.selected)
-	
-	# Here you would apply the filters to the GalaxyDisplay
-	# This is a placeholder for future implementation
+	var current_field = DataManager.get_current_field()
+	print("Applying filters - Redshift range: ", min_z, "to", max_z, " with filters: ", filters, " field: ", current_field)
+	_set_objects(DataManager.get_gals(min_z, max_z, filters, current_field))
 
 
 func _on_objects_list_item_selected(index: int) -> void:
