@@ -168,7 +168,8 @@ func _on_tab_added(tab_index):
 		# Configure the GalaxyDisplay
 		# Set the object_id for this tab
 		if galaxy_display.has_method("set_object_id"):
-			galaxy_display.set_object_id("outthere-hudfn_04375")
+			pass
+			# galaxy_display.set_object_id("outthere-hudfn_04375")
 
 func _on_tab_closed(tab_index):
 	# Handle a tab being closed

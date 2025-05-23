@@ -1,11 +1,8 @@
-[gd_scene load_steps=5 format=3 uid="uid://clkrnght0y4vc"]
+[gd_scene load_steps=4 format=3 uid="uid://clkrnght0y4vc"]
 
 [ext_resource type="Script" uid="uid://bt80rk5e6hint" path="res://temporar.gd" id="1_qbccq"]
 [ext_resource type="PackedScene" uid="uid://cr74tp6o0s73g" path="res://Scenes/ot_image.tscn" id="2_wbr6t"]
-[ext_resource type="PackedScene" uid="uid://biwtif1e8fvo2" path="res://Scenes/fits_image.tscn" id="4_03e4w"]
-
-[sub_resource type="Resource" id="Resource_wbr6t"]
-metadata/__load_path__ = "res://processed/uma-03_09452_2d_F150W.tres"
+[ext_resource type="Resource" path="res://processed/uma-03_13797_2d_PA_F150W.tres" id="3_wbr6t"]
 
 [node name="Temporar" type="Control"]
 layout_mode = 3
@@ -28,20 +25,9 @@ color = Color(1, 0.219608, 1, 1)
 
 [node name="OTImage" parent="." instance=ExtResource("2_wbr6t")]
 layout_mode = 0
-offset_left = 61.0
-offset_top = 43.0
-offset_right = 576.0
-offset_bottom = 318.0
+offset_left = 236.0
+offset_top = 196.0
+offset_right = 1861.0
+offset_bottom = 479.0
 is_2d_spectrum = true
-res = SubResource("Resource_wbr6t")
-
-[node name="FitsImage" parent="." instance=ExtResource("4_03e4w")]
-visible = false
-layout_mode = 0
-offset_left = 987.0
-offset_top = 269.0
-offset_right = 1390.0
-offset_bottom = 600.0
-fits_path = "./data/uma-03_03269.stack.fits"
-is_2d_spectrum = true
-hdu = 2
+res = ExtResource("3_wbr6t")

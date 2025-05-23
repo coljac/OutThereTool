@@ -19,7 +19,6 @@ var obj_index = 0
 
 var object_id: String = "./data/Good_example/uma-03_02122"
 var object_id2: String = "./data/Good_example/uma-03_02122"
-#var object_id2: String = "./data/outthere-hudfn_04375"
 
 func _ready() -> void:
 	print("I LIVEEEEEEEEEEEEE")

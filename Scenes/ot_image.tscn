@@ -1,8 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://cr74tp6o0s73g"]
+[gd_scene load_steps=4 format=3 uid="uid://cr74tp6o0s73g"]
 
 [ext_resource type="Script" uid="uid://cum6stlm5hxx4" path="res://Scenes/ot_image.gd" id="1_7k6u2"]
 [ext_resource type="Shader" uid="uid://beafejh066cfs" path="res://Resources/zscale.gdshader" id="2_48rgr"]
-[ext_resource type="Texture2D" uid="uid://crwoanyicpcxd" path="res://icon.png" id="3_40dlk"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_lvlw1"]
 shader = ExtResource("2_48rgr")
@@ -16,12 +15,14 @@ offset_bottom = 110.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("1_7k6u2")
+color_map = 5
 
 [node name="FitsImageShow" type="TextureRect" parent="."]
 material = SubResource("ShaderMaterial_lvlw1")
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
-texture = ExtResource("3_40dlk")
+size_flags_horizontal = 0
+size_flags_vertical = 0
 stretch_mode = 5
 
 [node name="Label" type="Label" parent="."]

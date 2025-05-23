@@ -14,7 +14,7 @@ enum ColorMap {GRAYSCALE, VIRIDIS, PLASMA, INFERNO, MAGMA, JET, HOT, COOL, RAINB
 
 @onready var fits_img: TextureRect = $FitsImageShow
 
-var fits: Texture2D
+# var fits: Texture2D
 @export var res: Resource
 var show_scales = [90.0, 92.0, 93.0, 94.0, 95.0, 96.0, 97.0, 98.0, 99.0, 99.5]
 var width: int = 0
@@ -186,16 +186,18 @@ func _load_object() -> void:
 			else:
 				wcs = res['header_info']
 			# var wcs = res['wcs_info']
-			var crpix = float(wcs['CRPIX1'])
-			var crval = float(wcs['CRVAL1'])
-			var cdelt = float(wcs['CD1_1'])
-			scaling = {"left": - crpix * cdelt + crval, "right": (width - crpix) * cdelt + crval}
+			# var crpix = float(wcs['CRPIX1'])
+			# var crval = float(wcs['CRVAL1'])
+			# var cdelt = float(wcs['CD1_1'])
+			scaling = res['scaling']
+			# print(scaling)
+			# scaling = {"left": - crpix * cdelt + crval, "right": (width - crpix) * cdelt + crval}
 	_make_texture()
 	if "position_angle" in res:
 		set_label(res.position_angle)
 
 func _make_texture():
-	if image_data:
+	if image_data and fits_img:
 		fits_img.texture = display_fits_image(width, height, black_level, white_level)
 		# Re-apply shader after texture update
 		_init_shader()

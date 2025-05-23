@@ -25,6 +25,7 @@ var path = "./data/"
 @onready var spec2d: VBoxContainer = %Spec2DContainer
 @onready var slider = $VBoxContainer/MarginContainer6/VBoxContainer/MarginContainer/HSlider
 var redshift = 1.0
+@onready var otimg = preload("res://Scenes/ot_image.tscn")
 
 var asset_helper: AssetHelper
 # = AssetHelper.new()
@@ -177,48 +178,81 @@ func load_object() -> void:
 	# Spec2D
 	var data2d = asset_helper.get_2d_spectra()
 	# FitsHelper.get_2d_spectrum(path + object_id + ".stack.fits")
-	var row: int = 1
+	
+	# First, hide all existing spectrum displays
+	var aligned = %Spec2Ds1
+	for child in aligned.get_children():
+		child.queue_free()
+		# if child is OTImage:
+			# child.visible = false
+	
+	# Clear existing rows in the aligned displayer
+	aligned.rows.clear()
+	aligned.row_heights.clear()
+	
+	# Now add all spectra from different position angles to the single AlignedDisplayer
+	# The AlignedDisplayer will organize them into rows
+	var pa_index = 0
 	for pa in data2d.keys():
-		var aligned = spec2d.get_node("Spec2Ds%d"%row)
-		row += 1
 		for f in ['F115W', 'F150W', 'F200W']:
-			var spec_display = aligned.get_node("Spec2D_" + f) as OTImage
-			spec_display.visible = false
 			if f not in data2d[pa]:
 				continue
-			spec_display.res = data2d[pa][f]
-			spec_display._load_object()
-			spec_display.visible = true
-		
-		# Directs
-		var x = asset_helper.get_directs()
-			# FitsHelper.get_directs(path + object_id + ".beams.fits")
-		for filt in x:
-			var nd = get_node("VBoxContainer/MarginContainer3/Imaging/IC" + filt + "/Direct" + filt) as OTImage
-			nd.res = x[filt]
-			nd._load_object()
-			nd._set_scale_pc(99.5)
-			nd.visible = true
-			nd.set_label(filt)
-			if filt == "F200W":
-				nd = %SegMap
-				nd.res = x[filt]
-				nd.segmap = true
-				nd.visible = true
-				nd._load_object()
-				nd.set_label("SegMap")
-					
 				
-		%Spec2Ds1.position_textures()
-		%Spec2Ds2.position_textures()
-		%Spec2Ds3.position_textures()
+			# Try to find an existing node for this filter
+			var spec_display: OTImage = null
+			var node_name = "Spec2D_" + f + "_PA" + str(pa_index)
+			
+			# Check if the node already exists
+			spec_display = otimg.instantiate()
+			# if aligned.has_node(node_name):
+				# spec_display = aligned.get_node(node_name)
+			# else:
+				# var existing_image = aligned.get_node("Spec2D_" + f)
+				# if existing_image:
+					# spec_display = existing_image.duplicate() as OTImage
+					# spec_display.name = node_name
+					# aligned.add_child(spec_display)
+			
+			if spec_display:
+				spec_display.color_map = OTImage.ColorMap.JET
+				spec_display.is_2d_spectrum = true
+				spec_display.res = data2d[pa][f]
+				spec_display._load_object()
+				spec_display.visible = true
+				# Add the spectrum to the row corresponding to its position angle
+				%Spec2Ds1.add_spectrum(spec_display, pa_index)
+
+		pa_index += 1
+
+		
+	# Directs
+	var x = asset_helper.get_directs()
+		# FitsHelper.get_directs(path + object_id + ".beams.fits")
+	for filt in x:
+		var nd = get_node("VBoxContainer/MarginContainer3/Imaging/IC" + filt + "/Direct" + filt) as OTImage
+		nd.res = x[filt]
+		nd._load_object()
+		nd._set_scale_pc(99.5)
+		nd.visible = true
+		nd.set_label(filt)
+		if filt == "F200W":
+			nd = %SegMap
+			nd.res = x[filt]
+			nd.segmap = true
+			nd.visible = true
+			nd._load_object()
+			nd.set_label("SegMap")
+				
+				
+	# Position all textures after adding all spectra
+	%Spec2Ds1.position_textures()
 		#$VBoxContainer/MarginContainer4/Spec2Ds._on_plot_display_x_limits_changed(spec_1d.x_min, spec_1d.x_max)
 		# spec_1d.emit_signal("x_limits_changed", spec_1d.x_min, spec_1d.x_max)
 		
 		# Reset the loading flag
-		_is_loading = false
-		set_redshift(redshift)
-		call_deferred("oned_zoomed")
+	_is_loading = false
+	set_redshift(redshift)
+	call_deferred("oned_zoomed")
 		# print("Finished loading object: ", object_id)
 		# asset_helper.set_object(object_id)
 
