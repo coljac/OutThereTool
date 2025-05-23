@@ -150,9 +150,6 @@ func _on_object_loaded(success: bool) -> void:
 		_is_loading = false
 		return
 	
-	# Manifest is loaded, start loading all resources
-	asset_helper.load_all_resources()
-	
 	# Initial UI setup
 	get_node("VBoxContainer/MarginContainer/Label").text = object_id
 	redshift_label.text = ""
@@ -163,8 +160,16 @@ func _on_object_loaded(success: bool) -> void:
 	if spec_1d:
 		spec_1d.clear_series()
 	
-	# Try to load resources that might already be cached
-	_try_load_cached_resources()
+	# Check if all resources are already cached - if so, load synchronously
+	if _all_resources_cached():
+		print("All resources cached, loading synchronously for: ", object_id)
+		_load_all_cached_resources_sync()
+		_finalize_loading()
+	else:
+		print("Some resources not cached, loading asynchronously for: ", object_id)
+		# Fall back to async loading
+		asset_helper.load_all_resources()
+		_try_load_cached_resources()
 
 func _on_resource_ready(resource_name: String) -> void:
 	# A resource has been loaded, try to update the display
@@ -297,10 +302,8 @@ func _check_loading_complete() -> void:
 	
 	# Only complete if we actually have the required resources AND we're still loading the right object
 	if pz and oned_spec.size() > 0 and _is_loading and asset_helper.current_object_id == object_id:
-		print("Basic loading complete for: ", object_id)
-		_is_loading = false
-		set_redshift(redshift)
-		call_deferred("oned_zoomed")
+		print("Async loading complete for: ", object_id)
+		_finalize_loading()
 
 func preload_next_object(next_object_id: String) -> void:
 	# Preload resources for the next object in background
@@ -311,6 +314,78 @@ func get_performance_stats() -> Dictionary:
 	if asset_helper:
 		return asset_helper.get_performance_stats()
 	return {}
+
+# Check if all required resources are already in memory cache
+func _all_resources_cached() -> bool:
+	if not asset_helper or not asset_helper.manifest:
+		return false
+	
+	var loader = asset_helper.loader
+	var manifest = asset_helper.manifest
+	
+	# Check redshift
+	if "redshift_path" in manifest:
+		var resource_id = asset_helper.extract_resource_id(manifest.redshift_path)
+		if not loader.memory_cache.has(resource_id):
+			return false
+	
+	# Check 1D spectra
+	if "spectrum_1d_paths" in manifest:
+		for filt in manifest.spectrum_1d_paths:
+			var resource_id = asset_helper.extract_resource_id(manifest.spectrum_1d_paths[filt])
+			if not loader.memory_cache.has(resource_id):
+				return false
+	
+	# Check direct images
+	if "direct_image_paths" in manifest:
+		for filt in manifest.direct_image_paths:
+			var resource_id = asset_helper.extract_resource_id(manifest.direct_image_paths[filt])
+			if not loader.memory_cache.has(resource_id):
+				return false
+	
+	# Check 2D spectra
+	if "spectrum_2d_paths_by_pa" in manifest:
+		for pa in manifest.spectrum_2d_paths_by_pa:
+			for filt in manifest.spectrum_2d_paths_by_pa[pa]:
+				var resource_id = asset_helper.extract_resource_id(manifest.spectrum_2d_paths_by_pa[pa][filt])
+				if not loader.memory_cache.has(resource_id):
+					return false
+	
+	return true
+
+# Load all cached resources synchronously (no async calls)
+func _load_all_cached_resources_sync() -> void:
+	var start_time = Time.get_ticks_msec()
+	
+	# Load redshift data
+	var pz = asset_helper.get_pz()
+	if pz:
+		_load_redshift_data(pz)
+	
+	# Load 1D spectrum
+	var oned_spec = asset_helper.get_1d_spectrum(true)
+	if oned_spec.size() > 0:
+		_load_1d_spectrum(oned_spec)
+	
+	# Load 2D spectra
+	var data2d = asset_helper.get_2d_spectra()
+	if data2d.size() > 0:
+		_load_2d_spectra(data2d)
+	
+	# Load direct images
+	var directs = asset_helper.get_directs()
+	if directs.size() > 0:
+		_load_direct_images(directs)
+	
+	var load_time = Time.get_ticks_msec() - start_time
+	print("Synchronous loading completed in ", load_time, "ms for: ", object_id)
+
+# Finalize loading (called after sync or async loading is complete)
+func _finalize_loading() -> void:
+	print("Finalizing loading for: ", object_id)
+	_is_loading = false
+	set_redshift(redshift)
+	call_deferred("oned_zoomed")
 
 # func _unhandled_input(event: InputEvent) -> void:
 # 	if Input.is_action_just_pressed("flag_bad"):

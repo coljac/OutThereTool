@@ -65,6 +65,10 @@ func _extract_resource_id(path: String) -> String:
 	var parts = path.split("/")
 	return parts[-1]
 
+# Public method to extract resource ID (for external use)
+func extract_resource_id(path: String) -> String:
+	return _extract_resource_id(path)
+
 
 func get_1d_spectrum(microns: bool = false) -> Dictionary:
 	if not manifest or not "spectrum_1d_paths" in manifest:
