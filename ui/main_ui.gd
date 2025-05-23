@@ -57,6 +57,7 @@ func update_cache(success: bool):
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_released("next"):
+		print("NEXT")
 		next_object()
 		get_viewport().set_input_as_handled()
 	if event.is_action_pressed("prev"):
@@ -225,7 +226,7 @@ func _populate_field_list():
 		# Set the first field as current and populate the dropdown
 		for field in fields:
 			field_list.add_item(field)
-		DataManager.set_current_field(fields[0])
+		DataManager.set_current_field("uma-03") # fields[0])
 		field_list.selected = 0
 	else:
 		# No fields available
@@ -256,32 +257,25 @@ func _on_apply_filters_button_pressed():
 
 
 func _preload_next_object() -> void:
-	# Preload the next 10 objects for better performance
+	# Preload just the next object to avoid overwhelming HTTP pool
 	print("Starting background preload from index: ", obj_index)
 	
-	for i in range(1, 11):  # Preload objects X+1 to X+10
-		var next_index = obj_index + i
-		if next_index >= objects.size():
-			next_index = next_index - objects.size()  # Wrap around
+	var next_index = obj_index + 1
+	if next_index >= objects.size():
+		next_index = 0 # Wrap around
+	
+	if next_index < objects.size():
+		var next_object_id = objects[next_index]['id']
 		
-		if next_index < objects.size():
-			var next_object_id = objects[next_index]['id']
-			
-			# Use the global cache loader directly for background preloading
-			var loader = GlobalResourceCache.get_loader()
-			
-			# Try to preload bundle first
-			var bundle_id = next_object_id + "_bundle.res"
-			var manifest_id = next_object_id + "_manifest.res"
-			
-			if not loader.is_cached(bundle_id) and not loader.is_cached(manifest_id):
-				print("Background preloading: ", next_object_id)
-				loader.preload_resource(bundle_id)
-				loader.preload_resource(manifest_id)
-			
-			# Small delay between preloads to avoid overwhelming the network
-			if i % 3 == 0:
-				await get_tree().create_timer(0.1).timeout
+		# Use the global cache loader directly for background preloading
+		var loader = GlobalResourceCache.get_loader()
+		
+		# Only preload bundle (not individual resources)
+		var bundle_id = next_object_id + "_bundle.tres"
+		
+		if not loader.is_cached(bundle_id):
+			print("Background preloading bundle: ", next_object_id)
+			loader.preload_resource(bundle_id)
 
 func _on_objects_list_item_selected(index: int) -> void:
 	if index == 0:

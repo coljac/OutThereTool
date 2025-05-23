@@ -176,7 +176,23 @@ func _on_resource_ready(resource_name: String) -> void:
 	print("Resource ready: ", resource_name)
 	# Only update if this resource belongs to current object
 	if resource_name.begins_with(object_id):
-		_try_load_cached_resources()
+		_update_single_resource(resource_name)
+
+func _update_single_resource(resource_name: String) -> void:
+	if not asset_helper or not asset_helper.manifest:
+		return
+	
+	# Update only the specific resource that was loaded
+	if resource_name.find("redshift") != -1:
+		var pz = asset_helper.get_pz()
+		if pz:
+			_load_redshift_data(pz)
+	elif resource_name.find("1d_") != -1:
+		_try_update_1d_spectra()
+	elif resource_name.find("direct_") != -1:
+		_try_update_direct_images()
+	elif resource_name.find("2d_") != -1:
+		_try_update_2d_spectra()
 
 func _try_load_cached_resources() -> void:
 	if not asset_helper or not asset_helper.manifest:
@@ -187,23 +203,27 @@ func _try_load_cached_resources() -> void:
 	if pz:
 		_load_redshift_data(pz)
 	
+	_try_update_1d_spectra()
+	_try_update_direct_images()
+	_try_update_2d_spectra()
+
+func _try_update_1d_spectra() -> void:
 	# Try to load 1D spectrum
 	var oned_spec = asset_helper.get_1d_spectrum(true)
 	if oned_spec.size() > 0:
 		_load_1d_spectrum(oned_spec)
-	
+
+func _try_update_2d_spectra() -> void:
 	# Try to load 2D spectra
 	var data2d = asset_helper.get_2d_spectra()
 	if data2d.size() > 0:
 		_load_2d_spectra(data2d)
-	
+
+func _try_update_direct_images() -> void:
 	# Try to load direct images
 	var directs = asset_helper.get_directs()
 	if directs.size() > 0:
 		_load_direct_images(directs)
-	
-	# Check if loading is complete
-	_check_loading_complete()
 
 func _load_redshift_data(pz: Resource) -> void:
 	if not pz or not ("log_pdf" in pz and "z_grid" in pz):

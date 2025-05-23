@@ -2,7 +2,7 @@ extends Node
 var database: SQLite
 signal updated_data(success: bool)
 
-var current_field: String = ""
+var current_field: String = "uma-03"
 
 
 func _ready() -> void:

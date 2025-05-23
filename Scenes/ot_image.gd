@@ -192,9 +192,9 @@ func _load_object() -> void:
 			scaling = res['scaling']
 			# print(scaling)
 			# scaling = {"left": - crpix * cdelt + crval, "right": (width - crpix) * cdelt + crval}
+		if res and "position_angle" in res:
+			set_label(res.position_angle)
 	_make_texture()
-	if "position_angle" in res:
-		set_label(res.position_angle)
 
 func _make_texture():
 	if image_data and fits_img:

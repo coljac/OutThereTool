@@ -1,6 +1,9 @@
 extends Node
 class_name AssetHelper
 
+# Preload the ObjectBundle class to ensure it's available for casting
+const ObjectBundle = preload("res://Server/object_bundle.gd")
+
 var c_log10 = log(10)
 
 var manifest: Resource
@@ -22,36 +25,57 @@ func set_object(objid: String) -> void:
 	manifest = null
 	is_loading_resources = false  # Reset loading state for new object
 	
-	# Try to load bundled resource first, fall back to manifest
-	var bundle_id = objid + "_bundle.res"
-	var manifest_id = objid + "_manifest.res"
+	# Try to load bundled resource first (from cache OR network), fall back to manifest
+	var bundle_id = objid + "_bundle.tres"
+	var manifest_id = objid + "_manifest.tres"
 	
-	# Check if bundle exists in cache
-	if loader.is_cached(bundle_id):
-		print("Loading bundled resource for: ", objid)
-		loader.load_resource(bundle_id)
-	else:
-		print("Loading manifest for: ", objid)
-		loader.load_resource(manifest_id)
+	# Always try bundle first - either from cache or network
+	print("Attempting to load bundle for: ", objid)
+	loader.load_resource(bundle_id)
 
 func _on_resource_loaded(resource_id: String, resource: Resource) -> void:
 	# Only handle resources for the current object
 	if not resource_id.begins_with(current_object_id):
 		return
 		
-	if resource_id.ends_with("_bundle.res"):
+	if resource_id.ends_with("_bundle.tres"):
 		# Handle bundled resource
+		print("Bundle resource received, type: ", resource.get_class() if resource else "null")
+		
+		# Try multiple approaches to handle the bundle
 		var bundle = resource as ObjectBundle
-		if bundle:
+		if not bundle:
+			# Maybe it's a generic Resource, try to access properties directly
+			if resource and resource.has_method("get"):
+				print("Trying to access bundle as generic resource...")
+				if "manifest" in resource and "resources" in resource:
+					print("Found manifest and resources properties")
+					manifest = resource.manifest
+					# Cache all bundled resources in memory
+					for resource_key in resource.resources:
+						var bundled_resource = resource.resources[resource_key]
+						var cache_key = current_object_id + "_" + resource_key + ".tres"
+						loader.memory_cache[cache_key] = bundled_resource
+					print("Bundle loaded for: ", current_object_id, " with ", resource.resources.size(), " resources")
+					object_loaded.emit(true)
+					return
+		
+		if bundle and bundle.manifest:
 			manifest = bundle.manifest
 			# Cache all bundled resources in memory
 			for resource_key in bundle.resources:
 				var bundled_resource = bundle.resources[resource_key]
-				var cache_key = current_object_id + "_" + resource_key + ".res"
+				var cache_key = current_object_id + "_" + resource_key + ".tres"
 				loader.memory_cache[cache_key] = bundled_resource
 			print("Bundle loaded for: ", current_object_id, " with ", bundle.resources.size(), " resources")
 			object_loaded.emit(true)
-	elif resource_id.ends_with("_manifest.res"):
+		else:
+			print("Bundle resource failed to cast to ObjectBundle or has no manifest")
+			# Fall back to manifest loading
+			print("Bundle failed, falling back to manifest for: ", current_object_id)
+			var manifest_id = current_object_id + "_manifest.tres"
+			loader.load_resource(manifest_id)
+	elif resource_id.ends_with("_manifest.tres"):
 		manifest = resource
 		print("Manifest loaded for: ", current_object_id)
 		object_loaded.emit(manifest != null)
@@ -67,13 +91,17 @@ func _on_resource_failed(resource_id: String, error: String) -> void:
 		
 	print("Failed to load resource: ", resource_id, " Error: ", error)
 	
-	if resource_id.ends_with("_bundle.res"):
+	if resource_id.ends_with("_bundle.tres"):
 		# Bundle failed, try manifest instead
-		print("Bundle failed, trying manifest for: ", current_object_id)
-		var manifest_id = current_object_id + "_manifest.res"
+		print("Bundle failed, falling back to manifest for: ", current_object_id)
+		var manifest_id = current_object_id + "_manifest.tres"
 		loader.load_resource(manifest_id)
-	elif resource_id.ends_with("_manifest.res"):
+	elif resource_id.ends_with("_manifest.tres"):
+		print("Both bundle and manifest failed for: ", current_object_id)
 		object_loaded.emit(false)
+	else:
+		# Individual resource failed - this is normal for async loading
+		print("Individual resource failed (expected): ", resource_id)
 
 func get_pz() -> Resource:
 	if manifest and "redshift_path" in manifest:
@@ -87,12 +115,12 @@ func get_pz() -> Resource:
 
 func _extract_resource_id(path: String) -> String:
 	# Convert local path to resource ID
-	# e.g., "./processed/uma-03_16420_pz.tres" -> "uma-03_16420_pz.res"
+	# e.g., "./processed/uma-03_16420_pz.tres" -> "uma-03_16420_pz.tres"
 	var parts = path.split("/")
 	var filename = parts[-1]
 	# Replace .tres with .res for new format
 	if filename.ends_with(".tres"):
-		filename = filename.replace(".tres", ".res")
+		filename = filename.replace(".tres", ".tres")
 	return filename
 
 # Public method to extract resource ID (for external use)
@@ -188,8 +216,8 @@ func preload_next_object(next_object_id: String) -> void:
 	print("Preloading resources for next object: ", next_object_id)
 	
 	# Try to preload bundle first, fall back to manifest
-	var bundle_id = next_object_id + "_bundle.res"
-	var manifest_id = next_object_id + "_manifest.res"
+	var bundle_id = next_object_id + "_bundle.tres"
+	var manifest_id = next_object_id + "_manifest.tres"
 	
 	loader.preload_resource(bundle_id)
 	loader.preload_resource(manifest_id)

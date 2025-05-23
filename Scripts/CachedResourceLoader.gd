@@ -1,8 +1,8 @@
 extends Node
 class_name CachedResourceLoader
 
-# Base URL for resources
-const BASE_URL = "https://outthere.s3.us-east-1.amazonaws.com/processed/"
+# Base URL for resources (from centralized config)
+var BASE_URL: String = NetworkConfig.get_base_url()
 
 # Cache directory in user space
 var cache_dir: String = "user://cache/"
@@ -38,7 +38,7 @@ func load_resource(resource_id: String) -> void:
 	# Check file cache
 	var cache_path = cache_dir + resource_id
 	if FileAccess.file_exists(cache_path):
-		print("Loading from file cache: ", resource_id)
+		print_debug("Loading from file cache: ", resource_id)
 		_load_from_cache(resource_id, cache_path)
 		return
 	

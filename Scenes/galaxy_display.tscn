@@ -116,6 +116,7 @@ cursor_line_width = 4.01
 [node name="Spec2D_F115W" parent="VBoxContainer/MarginContainer4/Spec2DContainer/Spec2Ds1" instance=ExtResource("5_1oh7d")]
 custom_minimum_size = Vector2(100, 32.27)
 layout_mode = 0
+offset_left = 0.0
 offset_right = 256.0
 offset_bottom = 256.0
 is_2d_spectrum = true

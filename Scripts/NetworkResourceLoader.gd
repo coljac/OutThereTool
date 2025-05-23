@@ -1,8 +1,8 @@
 extends Node
 class_name NetworkResourceLoader
 
-# Base URL for your resource server
-const BASE_URL = "https://outthere.s3.us-east-1.amazonaws.com/processed/"
+# Base URL for your resource server (from centralized config)
+var BASE_URL: String = NetworkConfig.get_base_url()
 
 # Signal emitted when a resource is loaded
 signal resource_loaded(resource_id, resource)

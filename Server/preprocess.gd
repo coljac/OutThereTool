@@ -1,5 +1,8 @@
 extends Node
 
+# Import the ObjectBundle class
+const ObjectBundle = preload("res://Server/object_bundle.gd")
+
 ## Pre-processor for FITS data
 ##
 ## This script handles the extraction and conversion of FITS data into
@@ -112,25 +115,28 @@ func preprocess_object(object_id: String, input_dir: String, output_dir: String)
 	bundle.manifest = manifest
 	bundle.resources = {}
 	
-	# Load all individual resources into the bundle
+	# Ensure all individual resources are created before bundling
+	_ensure_resources_exist(manifest, object_id, input_dir, output_dir)
+	
+	# Bundle all individual resources 
 	_bundle_all_resources(bundle, manifest, output_dir)
 	
 	# Save as single .res file
-	var bundle_path = output_dir + object_id + "_bundle.res"
-	var save_result = ResourceSaver.save(bundle, bundle_path)
+	var bundle_path = output_dir + object_id + "_bundle.tres"
+	var save_result = ResourceSaver.save(bundle, bundle_path, ResourceSaver.FLAG_BUNDLE_RESOURCES)
 	if save_result != OK:
 		log_message("Error saving bundle: " + str(save_result))
 		return ""
 	
 	# Also save manifest separately for compatibility
-	var manifest_path = output_dir + object_id + "_manifest.res"
+	var manifest_path = output_dir + object_id + "_manifest.tres"
 	save_result = ResourceSaver.save(manifest, manifest_path)
 	if save_result != OK:
 		log_message("Error saving manifest: " + str(save_result))
 		return ""
 	
-	# Clean up individual resource files
-	_cleanup_individual_files(manifest, output_dir)
+	# Don't clean up individual resource files - bundle still references them
+	# _cleanup_individual_files(manifest, output_dir)
 	
 	# Write metadata to the metadata file
 	write_object_metadata(manifest)
@@ -193,7 +199,7 @@ func preprocess_1d_spectra(object_id: String, fits_path: String, output_dir: Str
 		}
 		
 		# Save resource
-		var resource_path = output_dir + object_id + "_1d_" + filter_name + ".res"
+		var resource_path = output_dir + object_id + "_1d_" + filter_name + ".tres"
 		var save_result = ResourceSaver.save(resource, resource_path)
 		if save_result != OK:
 			log_message("    Error saving 1D spectrum resource: " + str(save_result))
@@ -284,7 +290,7 @@ func preprocess_2d_spectra(object_id: String, fits_path: String, output_dir: Str
 			}
 			
 			# Save resource with PA in the filename
-			var resource_path = output_dir + object_id + "_2d_PA" + pa + "_" + filter_name + ".res"
+			var resource_path = output_dir + object_id + "_2d_PA" + pa + "_" + filter_name + ".tres"
 			var save_result = ResourceSaver.save(resource, resource_path)
 			if save_result != OK:
 				log_message("    Error saving 2D spectrum resource: " + str(save_result))
@@ -378,7 +384,7 @@ func preprocess_direct_images(object_id: String, fits_path: String, output_dir: 
 					log_message("    Saved segmentation map data for " + filter_name)
 		
 		# Save resource
-		var resource_path = output_dir + object_id + "_direct_" + filter_name + ".res"
+		var resource_path = output_dir + object_id + "_direct_" + filter_name + ".tres"
 		var save_result = ResourceSaver.save(resource, resource_path)
 		if save_result != OK:
 			log_message("    Error saving direct image resource: " + str(save_result))
@@ -453,7 +459,7 @@ func preprocess_redshift(object_id: String, fits_path: String, output_dir: Strin
 	}
 	
 	# Save resource
-	var resource_path = output_dir + object_id + "_redshift.res"
+	var resource_path = output_dir + object_id + "_redshift.tres"
 	var save_result = ResourceSaver.save(resource, resource_path)
 	if save_result != OK:
 		log_message("    Error saving redshift resource: " + str(save_result))
@@ -681,6 +687,69 @@ func process_directory(input_dir: String, output_dir: String, pattern: String = 
 	# Close log and metadata files
 	close_files()
 
+# Ensure all individual resource files exist before bundling
+func _ensure_resources_exist(manifest: ObjectManifest, object_id: String, input_dir: String, output_dir: String) -> void:
+	log_message("  Ensuring all resource files exist...")
+	
+	# Create redshift resource if needed
+	if "redshift_path" in manifest and manifest.redshift_path != "":
+		log_message("    Checking redshift: " + manifest.redshift_path)
+		if not FileAccess.file_exists(manifest.redshift_path):
+			log_message("    Redshift file missing, creating...")
+			var redshift_fits = input_dir + "/pz.fits"
+			if FileAccess.file_exists(redshift_fits):
+				var result = preprocess_redshift(object_id, redshift_fits, output_dir)
+				log_message("    Created redshift resource: " + result)
+			else:
+				log_message("    Warning: pz.fits not found in " + input_dir)
+		else:
+			log_message("    Redshift file exists")
+	
+	# Create 1D spectrum resources if needed
+	if "spectrum_1d_paths" in manifest:
+		for filter_name in manifest.spectrum_1d_paths:
+			var resource_path = manifest.spectrum_1d_paths[filter_name]
+			if not FileAccess.file_exists(resource_path):
+				# Find the source FITS file and process it
+				var fits_files = _find_fits_files(input_dir)
+				for fits_file in fits_files:
+					preprocess_1d_spectra(object_id, fits_file, output_dir)
+					break # Only need to process once
+	
+	# Create direct image resources if needed  
+	if "direct_image_paths" in manifest:
+		for filter_name in manifest.direct_image_paths:
+			var resource_path = manifest.direct_image_paths[filter_name]
+			if not FileAccess.file_exists(resource_path):
+				var fits_files = _find_fits_files(input_dir)
+				for fits_file in fits_files:
+					preprocess_direct_images(object_id, fits_file, output_dir)
+					break
+	
+	# Create 2D spectrum resources if needed
+	if "spectrum_2d_paths_by_pa" in manifest:
+		for pa in manifest.spectrum_2d_paths_by_pa:
+			for filter_name in manifest.spectrum_2d_paths_by_pa[pa]:
+				var resource_path = manifest.spectrum_2d_paths_by_pa[pa][filter_name]
+				if not FileAccess.file_exists(resource_path):
+					var fits_files = _find_fits_files(input_dir)
+					for fits_file in fits_files:
+						preprocess_2d_spectra(object_id, fits_file, output_dir)
+						break
+
+func _find_fits_files(input_dir: String) -> Array[String]:
+	var fits_files: Array[String] = []
+	var dir = DirAccess.open(input_dir)
+	if dir:
+		dir.list_dir_begin()
+		var file_name = dir.get_next()
+		while file_name != "":
+			if file_name.ends_with(".fits"):
+				fits_files.append(input_dir + "/" + file_name)
+			file_name = dir.get_next()
+		dir.list_dir_end()
+	return fits_files
+
 # Bundle all individual resources into a single bundle
 func _bundle_all_resources(bundle: ObjectBundle, manifest: ObjectManifest, output_dir: String) -> void:
 	log_message("  Bundling all resources...")
@@ -691,6 +760,8 @@ func _bundle_all_resources(bundle: ObjectBundle, manifest: ObjectManifest, outpu
 		if resource:
 			bundle.resources["redshift"] = resource
 			log_message("    Bundled redshift data")
+		else:
+			log_message("    Warning: Could not load redshift resource from " + manifest.redshift_path)
 	
 	# Bundle 1D spectra
 	if "spectrum_1d_paths" in manifest:
@@ -699,6 +770,8 @@ func _bundle_all_resources(bundle: ObjectBundle, manifest: ObjectManifest, outpu
 			if resource:
 				bundle.resources["1d_" + filter_name] = resource
 				log_message("    Bundled 1D spectrum: " + filter_name)
+			else:
+				log_message("    Warning: Could not load 1D spectrum resource: " + filter_name)
 	
 	# Bundle direct images
 	if "direct_image_paths" in manifest:
@@ -707,6 +780,8 @@ func _bundle_all_resources(bundle: ObjectBundle, manifest: ObjectManifest, outpu
 			if resource:
 				bundle.resources["direct_" + filter_name] = resource
 				log_message("    Bundled direct image: " + filter_name)
+			else:
+				log_message("    Warning: Could not load direct image resource: " + filter_name)
 	
 	# Bundle 2D spectra
 	if "spectrum_2d_paths_by_pa" in manifest:
@@ -716,6 +791,8 @@ func _bundle_all_resources(bundle: ObjectBundle, manifest: ObjectManifest, outpu
 				if resource:
 					bundle.resources["2d_PA" + pa + "_" + filter_name] = resource
 					log_message("    Bundled 2D spectrum: PA" + pa + "_" + filter_name)
+				else:
+					log_message("    Warning: Could not load 2D spectrum resource: PA" + pa + "_" + filter_name)
 
 # Clean up individual resource files after bundling
 func _cleanup_individual_files(manifest: ObjectManifest, output_dir: String) -> void:
