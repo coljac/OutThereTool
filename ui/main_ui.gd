@@ -269,6 +269,11 @@ func _preload_next_object() -> void:
 		var gal_display = %SimpleTab.get_tab_control(0)
 		if gal_display and gal_display.has_method("preload_next_object"):
 			gal_display.preload_next_object(next_object_id)
+			
+			# Print performance stats
+			if gal_display.has_method("get_performance_stats"):
+				var stats = gal_display.get_performance_stats()
+				print("Cache stats: ", stats)
 
 func _on_objects_list_item_selected(index: int) -> void:
 	if index == 0:

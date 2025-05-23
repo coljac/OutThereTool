@@ -4,7 +4,7 @@ class_name AssetHelper
 var c_log10 = log(10)
 
 var manifest: Resource
-var loader: CachedResourceLoader
+var loader: ThreadedCachedResourceLoader
 var current_object_id: String
 
 # Signals
@@ -151,6 +151,12 @@ func preload_next_object(next_object_id: String) -> void:
 	
 	# Note: We can't preload other resources without knowing the manifest content
 	# This would need to be done after the manifest is loaded
+
+# Debug function to check loader performance
+func get_performance_stats() -> Dictionary:
+	if loader and loader.has_method("get_stats"):
+		return loader.get_stats()
+	return {}
 
 func get_available_position_angles() -> Array:
 	if not manifest or not "spectrum_2d_paths_by_pa" in manifest:

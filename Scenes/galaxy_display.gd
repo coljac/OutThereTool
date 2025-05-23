@@ -292,6 +292,11 @@ func preload_next_object(next_object_id: String) -> void:
 	if asset_helper:
 		asset_helper.preload_next_object(next_object_id)
 
+func get_performance_stats() -> Dictionary:
+	if asset_helper:
+		return asset_helper.get_performance_stats()
+	return {}
+
 # func _unhandled_input(event: InputEvent) -> void:
 # 	if Input.is_action_just_pressed("flag_bad"):
 # 		print("Flag bad")

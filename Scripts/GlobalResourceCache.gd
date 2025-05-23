@@ -1,11 +1,11 @@
 extends Node
 
-var loader: CachedResourceLoader
+var loader: ThreadedCachedResourceLoader
 
 func _ready():
-	loader = CachedResourceLoader.new()
+	loader = ThreadedCachedResourceLoader.new()
 	add_child(loader)
-	print("Global resource cache initialized")
+	print("Global threaded resource cache initialized")
 
-func get_loader() -> CachedResourceLoader:
+func get_loader() -> ThreadedCachedResourceLoader:
 	return loader
