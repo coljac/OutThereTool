@@ -19,3 +19,5 @@ mono_crash.*.json
 .gitattributes
 data
 bin
+lib/
+processed/
