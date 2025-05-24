@@ -79,7 +79,7 @@ func organize_rows() -> void:
 	var visible_children = []
 	for child in get_children():
 		var img = child as OTImage
-		if img and img.visible and img.scaling and img.fits_img.texture:
+		if img and is_instance_valid(img) and img.visible and img.scaling and img.fits_img.texture:
 			visible_children.append(img)
 	
 	if visible_children.size() == 0:
@@ -97,6 +97,8 @@ func organize_rows() -> void:
 	# Try to keep children with similar wavelength ranges in the same row
 	var children_by_wavelength = visible_children.duplicate()
 	children_by_wavelength.sort_custom(func(a, b):
+		if not is_instance_valid(a) or not is_instance_valid(b) or not a.scaling or not b.scaling:
+			return false
 		return a.scaling['left'] < b.scaling['left']
 	)
 	
@@ -186,12 +188,14 @@ func position_textures():
 		
 		# Sort children by wavelength range for better organization
 		row_children.sort_custom(func(a, b):
+			if not is_instance_valid(a) or not is_instance_valid(b) or not a.scaling or not b.scaling:
+				return false
 			return a.scaling['left'] < b.scaling['left']
 		)
 		
 		for child in row_children:
 			var f = child as OTImage
-			if not f or not f.scaling or not f.scaling.has('left') or not f.scaling.has('right'):
+			if not f or not is_instance_valid(f) or not f.scaling or not f.scaling.has('left') or not f.scaling.has('right'):
 				continue
 			
 			# Calculate the pixel positions for the left and right boundaries of the image

@@ -160,6 +160,8 @@ func _on_object_loaded(success: bool) -> void:
 		pofz.clear_series()
 	if spec_1d:
 		spec_1d.clear_series()
+		# Reset zoom to default when loading new object
+		spec_1d.reset_zoom()
 	
 	# Check if all resources are already cached - if so, load synchronously
 	if _all_resources_cached():
@@ -234,7 +236,7 @@ func _load_redshift_data(pz: Resource) -> void:
 	var peaks = asset_helper.peak_finding(logp, 50)
 	
 	# REDSHIFT
-	var series = FitsHelper.zip_arr([Array(pz.z_grid), logp])
+	var series = asset_helper.zip_arr([Array(pz.z_grid), logp])
 	pofz.add_series(series, Color(0.2, 0.4, 0.8), 2.0, false, 3.0)
 	var z_maxes = [] as Array[Vector2]
 	var max_peak = -1.0
@@ -267,12 +269,13 @@ func _load_1d_spectrum(oned_spec: Dictionary) -> void:
 func _load_2d_spectra(data2d: Dictionary) -> void:
 	# Clear existing spectra
 	var aligned = %Spec2Ds1
-	for child in aligned.get_children():
-		child.queue_free()
 	
-	# Clear existing rows in the aligned displayer
+	# Clear existing rows in the aligned displayer BEFORE freeing children
 	aligned.rows.clear()
 	aligned.row_heights.clear()
+	
+	for child in aligned.get_children():
+		child.queue_free()
 	
 	# Add all spectra from different position angles
 	var pa_index = 0

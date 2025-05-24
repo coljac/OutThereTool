@@ -20,10 +20,16 @@ func _ready():
 	loader.resource_loaded.connect(_on_resource_loaded)
 	loader.resource_failed.connect(_on_resource_failed)
 
+func zip_arr(inputs: Array[Array]) -> Array[Vector2]:
+	var output = [] as Array[Vector2]
+	for i in range(inputs[0].size()):
+		output.append(Vector2(inputs[0][i], inputs[1][i]))
+	return output
+
 func set_object(objid: String) -> void:
 	current_object_id = objid
 	manifest = null
-	is_loading_resources = false  # Reset loading state for new object
+	is_loading_resources = false # Reset loading state for new object
 	
 	# Try to load bundled resource first (from cache OR network), fall back to manifest
 	var bundle_id = objid + "_bundle.tres"
@@ -281,11 +287,6 @@ func zip_p32(inputs: Array[PackedFloat32Array]) -> Array[Vector2]:
 	return output
 		
 
-func zip_arr(inputs: Array[Array]) -> Array[Vector2]:
-	var output = [] as Array[Vector2]
-	for i in range(inputs[0].size()):
-		output.append(Vector2(inputs[0][i], inputs[1][i]))
-	return output
 
 	
 func peak_finding(data, window_size):
