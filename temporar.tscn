@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://clkrnght0y4vc"]
 
 [ext_resource type="Script" uid="uid://bt80rk5e6hint" path="res://temporar.gd" id="1_qbccq"]
-[ext_resource type="Resource" uid="uid://cj3pqwme7fu0j" path="res://processed/outthere-hudfn_04375_manifest.tres" id="2_03e4w"]
+[ext_resource type="Resource" uid="uid://ba86huqs2b6fm" path="res://processed/uma-03_02122_bundle.res" id="2_03e4w"]
 [ext_resource type="PackedScene" uid="uid://cr74tp6o0s73g" path="res://Scenes/ot_image.tscn" id="2_wbr6t"]
 
 [sub_resource type="Resource" id="Resource_qbccq"]

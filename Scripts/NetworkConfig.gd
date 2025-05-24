@@ -20,10 +20,12 @@ enum AppEnvironemnt {
 }
 
 ## Change this to switch environments
-const CURRENT_ENVIRONMENT = AppEnvironemnt.TESTING
+const CURRENT_ENVIRONMENT = AppEnvironemnt.PRODUCTION
 
 ## Get the current base URL based on environment
 static func get_base_url() -> String:
+	if OS.get_environment("OUTTHERE_URL") != "":
+		return OS.get_environment("OUTTHERE_URL")
 	match CURRENT_ENVIRONMENT:
 		AppEnvironemnt.TESTING:
 			return TEST_URL
