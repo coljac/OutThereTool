@@ -254,17 +254,29 @@ func _load_redshift_data(pz: Resource) -> void:
 func _load_1d_spectrum(oned_spec: Dictionary) -> void:
 	var xx = 0.2
 	var max_flux = 0.0
+	var min_flux = 0.0
+	var first_data = true
+	
 	for f in oned_spec:
 		var data = oned_spec[f]
 		if "max" in data:
 			max_flux = max(max_flux, data["max"])
+		if "min" in data:
+			if first_data:
+				min_flux = data["min"]
+				first_data = false
+			else:
+				min_flux = min(min_flux, data["min"])
 		
+		print(Array(data['fluxes']).min())
 		spec_1d.add_series(data["fluxes"], Color(0.4 + xx, xx, 0.8), 2.0, false, 3.0, [], data.get("err", []), Color(1.0, 0.0, 0.0), 1.0, 5.0, true)
 		spec_1d.add_series(data["bestfit"], Color(0.0, 1.0, 0.0, 0.5), 2.0, false, 3.0, [])
 		xx += 0.2
 	
 	if max_flux > 0:
-		%Spec1d.set_limits(%Spec1d.x_min, %Spec1d.x_max, %Spec1d.y_min, max_flux, true)
+		# Set min value to 1.05 * min_value to accommodate negative values
+		var y_min = min_flux * 1.05 if min_flux < 0 else min_flux * 0.95
+		%Spec1d.set_limits(%Spec1d.x_min, %Spec1d.x_max, y_min, max_flux, true)
 
 func _load_2d_spectra(data2d: Dictionary) -> void:
 	# Clear existing spectra
