@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="ObjectManifest" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Server/object_manifest.gd" id="1_xq1fv"]
+
+[resource]
+script = ExtResource("1_xq1fv")
+object_id = "uma-03_02379"
+object_name = "uma-03_02379"
+band_count = 7
+observation_date = ""
+redshift = 1.49154
+spectrum_1d_paths = {
+"F150W": "./processed/uma-03_02379_1d_F150W.tres",
+"F200W": "./processed/uma-03_02379_1d_F200W.tres"
+}
+spectrum_2d_paths = {
+"F150W_PA": "./processed/uma-03_02379_2d_PA_F150W.tres",
+"F150W_PA318.0": "./processed/uma-03_02379_2d_PA318.0_F150W.tres",
+"F200W_PA": "./processed/uma-03_02379_2d_PA_F200W.tres",
+"F200W_PA318.0": "./processed/uma-03_02379_2d_PA318.0_F200W.tres",
+"F200W_PA319.0": "./processed/uma-03_02379_2d_PA319.0_F200W.tres"
+}
+spectrum_2d_paths_by_pa = {
+"": {
+"F150W": "./processed/uma-03_02379_2d_PA_F150W.tres",
+"F200W": "./processed/uma-03_02379_2d_PA_F200W.tres"
+},
+"318.0": {
+"F150W": "./processed/uma-03_02379_2d_PA318.0_F150W.tres",
+"F200W": "./processed/uma-03_02379_2d_PA318.0_F200W.tres"
+},
+"319.0": {
+"F200W": "./processed/uma-03_02379_2d_PA319.0_F200W.tres"
+}
+}
+direct_image_paths = {
+"F150W": "./processed/uma-03_02379_direct_F150W.tres",
+"F200W": "./processed/uma-03_02379_direct_F200W.tres"
+}
+redshift_path = "./processed/uma-03_02379_redshift.tres"
+metadata = {
+"input_directory": "./data/",
+"output_directory": "./processed/",
+"processing_date": "2025-05-22T16:13:25"
+}

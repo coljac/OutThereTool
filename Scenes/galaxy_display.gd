@@ -30,9 +30,20 @@ var redshift = 1.0
 var asset_helper: AssetHelper
 # = AssetHelper.new()
 
+# Visibility flags for 1D plot series
+var show_flux: bool = true
+var show_bestfit: bool = true
+var show_errors: bool = true
+
+# Store series indices for toggling
+var flux_series: Array = []
+var bestfit_series: Array = []
+var error_series: Array = []
+
 func set_object_id(new_id: String) -> void:
 	object_id = new_id
 	# Reload the object with the new ID
+	$CanvasLayer/RedshiftLabel.text = ""
 	if is_inside_tree():
 		load_object()
 	
@@ -46,6 +57,7 @@ func _ready():
 		tab_toolbar.zoom_in_pressed.connect(_on_zoom_in_pressed)
 		tab_toolbar.zoom_out_pressed.connect(_on_zoom_out_pressed)
 	set_process_input(true)
+	$CanvasLayer/RedshiftLabel.text = ""
 	
 	# Connect the aligned_displayer to the plot_display
 	var aligned_container = %Spec2DContainer
@@ -105,6 +117,7 @@ func oned_zoomed():
 
 
 func set_redshift(z: float) -> void:
+	$CanvasLayer/RedshiftLabel.text = ""
 	if z == redshift:
 		return
 	redshift = z
@@ -160,6 +173,10 @@ func _on_object_loaded(success: bool) -> void:
 		pofz.clear_series()
 	if spec_1d:
 		spec_1d.clear_series()
+		# Clear series tracking arrays
+		flux_series.clear()
+		bestfit_series.clear()
+		error_series.clear()
 		# Reset zoom to default when loading new object
 		spec_1d.reset_zoom()
 	
@@ -269,8 +286,20 @@ func _load_1d_spectrum(oned_spec: Dictionary) -> void:
 				min_flux = min(min_flux, data["min"])
 		
 		print(Array(data['fluxes']).min())
-		spec_1d.add_series(data["fluxes"], Color(0.4 + xx, xx, 0.8), 2.0, false, 3.0, [], data.get("err", []), Color(1.0, 0.0, 0.0), 1.0, 5.0, true)
-		spec_1d.add_series(data["bestfit"], Color(0.0, 1.0, 0.0, 0.5), 2.0, false, 3.0, [])
+		
+		# Add flux series (without errors) and track index
+		var flux_index = spec_1d.add_series(data["fluxes"], Color(0.4 + xx, xx, 0.8), 2.0, false, 3.0, [], [], Color.TRANSPARENT, 1.0, 5.0, false)
+		flux_series.append(flux_index)
+		
+		# Add error bars as separate series and track index
+		if data.has("err") and data["err"].size() > 0:
+			var error_index = spec_1d.add_series(data["fluxes"], Color.TRANSPARENT, 0.0, false, 3.0, [], data["err"], Color(1.0, 0.0, 0.0), 1.0, 5.0, false)
+			error_series.append(error_index)
+		
+		# Add bestfit series and track index
+		var bestfit_index = spec_1d.add_series(data["bestfit"], Color(0.0, 1.0, 0.0, 0.5), 2.0, false, 3.0, [])
+		bestfit_series.append(bestfit_index)
+		
 		xx += 0.2
 	
 	if max_flux > 0:
@@ -552,3 +581,19 @@ func _on_zoom_out_pressed() -> void:
 
 func _on_redshift_plot_left_clicked(position: Vector2) -> void:
 	set_redshift(position.x)
+
+# Toggle methods for 1D plot series
+func toggle_flux_visibility(visible: bool) -> void:
+	show_flux = visible
+	for index in flux_series:
+		spec_1d.set_series_visible(index, visible)
+
+func toggle_bestfit_visibility(visible: bool) -> void:
+	show_bestfit = visible
+	for index in bestfit_series:
+		spec_1d.set_series_visible(index, visible)
+
+func toggle_errors_visibility(visible: bool) -> void:
+	show_errors = visible
+	for index in error_series:
+		spec_1d.set_series_visible(index, visible)

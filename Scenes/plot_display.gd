@@ -477,7 +477,8 @@ func add_series(points: Array, color: Color = Color(0, 0, 1), line_width: float 
 		"error_color": error_color if error_color != Color.TRANSPARENT else color,
 		"error_line_width": error_line_width,
 		"error_cap_size": error_cap_size,
-		"draw_as_steps": draw_as_steps
+		"draw_as_steps": draw_as_steps,
+		"visible": true
 	}
 	
 	series_list.append(series)
@@ -490,6 +491,20 @@ func remove_series(index: int) -> bool:
 		series_list.remove_at(index)
 		queue_redraw()
 		return true
+	return false
+
+# Toggle series visibility by index
+func set_series_visible(index: int, visible: bool) -> bool:
+	if index >= 0 and index < series_list.size():
+		series_list[index]["visible"] = visible
+		queue_redraw()
+		return true
+	return false
+
+# Get series visibility by index
+func is_series_visible(index: int) -> bool:
+	if index >= 0 and index < series_list.size():
+		return series_list[index]["visible"]
 	return false
 
 # Clear all series
@@ -625,6 +640,10 @@ func clip_line_to_plot(p1: Vector2, p2: Vector2) -> Array:
 # Draw all series
 func draw_series(plot_rect: Rect2):
 	for series in series_list:
+		# Skip invisible series
+		if not series.get("visible", true):
+			continue
+			
 		var points = series.points
 		var color = series.color
 		var line_width = series.line_width

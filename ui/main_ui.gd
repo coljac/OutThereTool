@@ -10,6 +10,9 @@ extends Control
 @onready var min_redshift = $VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/RedshiftRangeContainer/MinRedshift
 @onready var max_redshift = $VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/RedshiftRangeContainer/MaxRedshift
 @onready var field_list = $VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/FieldList
+@onready var cb_flux = %CBFlux
+@onready var cb_bestfit = %CBBestfit
+@onready var cb_errors = %CBErrors
 
 # Path to the GalaxyDisplay scene
 const GALAXY_DISPLAY_SCENE = "res://Scenes/galaxy_display.tscn"
@@ -38,6 +41,16 @@ func _ready():
 	search_button.pressed.connect(_on_search_button_pressed)
 	apply_filters_button.pressed.connect(_on_apply_filters_button_pressed)
 	field_list.item_selected.connect(_on_field_selected)
+	
+	# Connect checkbox signals
+	cb_flux.toggled.connect(_on_flux_toggled)
+	cb_bestfit.toggled.connect(_on_bestfit_toggled)
+	cb_errors.toggled.connect(_on_errors_toggled)
+	
+	# Set default checkbox states
+	cb_flux.button_pressed = true
+	cb_bestfit.button_pressed = true
+	cb_errors.button_pressed = true
 	
 	# Set the tab scene for the tab container
 	tab_container.set_tab_scene(GALAXY_DISPLAY_SCENE)
@@ -355,3 +368,19 @@ func _on_objects_list_item_selected(index: int) -> void:
 		return
 	var obj = %ObjectsList.get_item_text(index)
 	get_object(obj)
+
+# Checkbox callbacks for 1D plot visibility
+func _on_flux_toggled(pressed: bool) -> void:
+	var galaxy_display = %SimpleTab.get_tab_control(0)
+	if galaxy_display and galaxy_display.has_method("toggle_flux_visibility"):
+		galaxy_display.toggle_flux_visibility(pressed)
+
+func _on_bestfit_toggled(pressed: bool) -> void:
+	var galaxy_display = %SimpleTab.get_tab_control(0)
+	if galaxy_display and galaxy_display.has_method("toggle_bestfit_visibility"):
+		galaxy_display.toggle_bestfit_visibility(pressed)
+
+func _on_errors_toggled(pressed: bool) -> void:
+	var galaxy_display = %SimpleTab.get_tab_control(0)
+	if galaxy_display and galaxy_display.has_method("toggle_errors_visibility"):
+		galaxy_display.toggle_errors_visibility(pressed)

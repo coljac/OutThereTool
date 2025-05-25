@@ -1,0 +1,440 @@
+Pre-processing started at 2025-05-22 16:13:25
+Initialized metadata file at ./processed/object_metadata.txt
+Scanning directory: ./data/
+Found 23 objects to process
+Processing object 1/23: uma-03_08154
+Processing object: uma-03_08154
+  Processing 1D spectra from: ./data/uma-03_08154.1D.fits
+    Saved 1D spectrum for filter: F150W
+    Saved 1D spectrum for filter: F200W
+  Processing 2D spectra from: ./data/uma-03_08154.stack.fits
+    Saved 2D spectrum for PA 318.0 and filter: F150W
+    Saved 2D spectrum for PA 318.0 and filter: F200W
+    Saved 2D spectrum for PA  and filter: F150W
+    Saved 2D spectrum for PA  and filter: F200W
+  Processing direct images from: ./data/uma-03_08154.beams.fits
+    Saved segmentation map data for F150W
+    Saved direct image for filter: F150W
+    Saved segmentation map data for F200W
+    Saved direct image for filter: F200W
+  Processing redshift data from: ./data/uma-03_08154.full.fits
+    Saved redshift data with best z = 1.59737277030945
+Finished processing object: uma-03_08154
+Processing object 2/23: uma-03_03763
+Processing object: uma-03_03763
+  Processing 1D spectra from: ./data/uma-03_03763.1D.fits
+    Saved 1D spectrum for filter: F150W
+    Saved 1D spectrum for filter: F200W
+  Processing 2D spectra from: ./data/uma-03_03763.stack.fits
+    Saved 2D spectrum for PA 319.0 and filter: F150W
+    Saved 2D spectrum for PA 319.0 and filter: F200W
+    Saved 2D spectrum for PA  and filter: F150W
+    Saved 2D spectrum for PA  and filter: F200W
+  Processing direct images from: ./data/uma-03_03763.beams.fits
+    Saved segmentation map data for F200W
+    Saved direct image for filter: F200W
+    Saved segmentation map data for F150W
+    Saved direct image for filter: F150W
+  Processing redshift data from: ./data/uma-03_03763.full.fits
+    Saved redshift data with best z = 4.88319778442383
+Finished processing object: uma-03_03763
+Processing object 3/23: uma-03_05325
+Processing object: uma-03_05325
+  Processing 1D spectra from: ./data/uma-03_05325.1D.fits
+    Saved 1D spectrum for filter: F150W
+    Saved 1D spectrum for filter: F200W
+  Processing 2D spectra from: ./data/uma-03_05325.stack.fits
+    Saved 2D spectrum for PA 318.0 and filter: F150W
+    Saved 2D spectrum for PA 318.0 and filter: F200W
+    Saved 2D spectrum for PA  and filter: F150W
+    Saved 2D spectrum for PA  and filter: F200W
+  Processing direct images from: ./data/uma-03_05325.beams.fits
+    Saved segmentation map data for F150W
+    Saved direct image for filter: F150W
+    Saved segmentation map data for F200W
+    Saved direct image for filter: F200W
+  Processing redshift data from: ./data/uma-03_05325.full.fits
+    Saved redshift data with best z = 3.39514470100403
+Finished processing object: uma-03_05325
+Processing object 4/23: uma-03_03917
+Processing object: uma-03_03917
+  Processing 1D spectra from: ./data/uma-03_03917.1D.fits
+    Saved 1D spectrum for filter: F150W
+    Saved 1D spectrum for filter: F200W
+  Processing 2D spectra from: ./data/uma-03_03917.stack.fits
+    Saved 2D spectrum for PA 318.0 and filter: F150W
+    Saved 2D spectrum for PA 318.0 and filter: F200W
+    Saved 2D spectrum for PA 319.0 and filter: F150W
+    Saved 2D spectrum for PA 319.0 and filter: F200W
+    Saved 2D spectrum for PA  and filter: F150W
+    Saved 2D spectrum for PA  and filter: F200W
+  Processing direct images from: ./data/uma-03_03917.beams.fits
+    Saved segmentation map data for F150W
+    Saved direct image for filter: F150W
+    Saved segmentation map data for F200W
+    Saved direct image for filter: F200W
+  Processing redshift data from: ./data/uma-03_03917.full.fits
+    Saved redshift data with best z = 1.98768985271454
+Finished processing object: uma-03_03917
+Processing object 5/23: uma-03_13797
+Processing object: uma-03_13797
+  Processing 1D spectra from: ./data/uma-03_13797.1D.fits
+    Saved 1D spectrum for filter: F150W
+    Saved 1D spectrum for filter: F200W
+  Processing 2D spectra from: ./data/uma-03_13797.stack.fits
+    Saved 2D spectrum for PA 319.0 and filter: F150W
+    Saved 2D spectrum for PA 319.0 and filter: F200W
+    Saved 2D spectrum for PA  and filter: F150W
+    Saved 2D spectrum for PA  and filter: F200W
+  Processing direct images from: ./data/uma-03_13797.beams.fits
+    Saved segmentation map data for F200W
+    Saved direct image for filter: F200W
+    Saved segmentation map data for F150W
+    Saved direct image for filter: F150W
+  Processing redshift data from: ./data/uma-03_13797.full.fits
+    Saved redshift data with best z = 1.29079854488373
+Finished processing object: uma-03_13797
+Processing object 6/23: uma-03_04365
+Processing object: uma-03_04365
+  Processing 1D spectra from: ./data/uma-03_04365.1D.fits
+    Saved 1D spectrum for filter: F150W
+    Saved 1D spectrum for filter: F200W
+  Processing 2D spectra from: ./data/uma-03_04365.stack.fits
+    Saved 2D spectrum for PA 318.0 and filter: F150W
+    Saved 2D spectrum for PA 318.0 and filter: F200W
+    Saved 2D spectrum for PA 319.0 and filter: F150W
+    Saved 2D spectrum for PA 319.0 and filter: F200W
+    Saved 2D spectrum for PA  and filter: F150W
+    Saved 2D spectrum for PA  and filter: F200W
+  Processing direct images from: ./data/uma-03_04365.beams.fits
+    Saved segmentation map data for F150W
+    Saved direct image for filter: F150W
+    Saved segmentation map data for F200W
+    Saved direct image for filter: F200W
+  Processing redshift data from: ./data/uma-03_04365.full.fits
+    Saved redshift data with best z = 4.85268449783325
+Finished processing object: uma-03_04365
+Processing object 7/23: uma-03_02379
+Processing object: uma-03_02379
+  Processing 1D spectra from: ./data/uma-03_02379.1D.fits
+    Saved 1D spectrum for filter: F150W
+    Saved 1D spectrum for filter: F200W
+  Processing 2D spectra from: ./data/uma-03_02379.stack.fits
+    Saved 2D spectrum for PA 318.0 and filter: F150W
+    Saved 2D spectrum for PA 318.0 and filter: F200W
+    Saved 2D spectrum for PA  and filter: F150W
+    Saved 2D spectrum for PA  and filter: F200W
+    Saved 2D spectrum for PA 319.0 and filter: F200W
+  Processing direct images from: ./data/uma-03_02379.beams.fits
+    Saved segmentation map data for F150W
+    Saved direct image for filter: F150W
+    Saved segmentation map data for F200W
+    Saved direct image for filter: F200W
+  Processing redshift data from: ./data/uma-03_02379.full.fits
+    Saved redshift data with best z = 1.49153864383698
+Finished processing object: uma-03_02379
+Processing object 8/23: uma-03_06833
+Processing object: uma-03_06833
+  Processing 1D spectra from: ./data/uma-03_06833.1D.fits
+    Saved 1D spectrum for filter: F150W
+    Saved 1D spectrum for filter: F200W
+  Processing 2D spectra from: ./data/uma-03_06833.stack.fits
+    Saved 2D spectrum for PA 318.0 and filter: F150W
+    Saved 2D spectrum for PA 318.0 and filter: F200W
+    Saved 2D spectrum for PA 319.0 and filter: F150W
+    Saved 2D spectrum for PA 319.0 and filter: F200W
+    Saved 2D spectrum for PA  and filter: F150W
+    Saved 2D spectrum for PA  and filter: F200W
+  Processing direct images from: ./data/uma-03_06833.beams.fits
+    Saved segmentation map data for F150W
+    Saved direct image for filter: F150W
+    Saved segmentation map data for F200W
+    Saved direct image for filter: F200W
+  Processing redshift data from: ./data/uma-03_06833.full.fits
+    Saved redshift data with best z = 9.85363960266113
+Finished processing object: uma-03_06833
+Processing object 9/23: uma-03_04056
+Processing object: uma-03_04056
+  Processing 1D spectra from: ./data/uma-03_04056.1D.fits
+    Saved 1D spectrum for filter: F150W
+    Saved 1D spectrum for filter: F200W
+  Processing 2D spectra from: ./data/uma-03_04056.stack.fits
+    Saved 2D spectrum for PA 318.0 and filter: F150W
+    Saved 2D spectrum for PA 318.0 and filter: F200W
+    Saved 2D spectrum for PA 319.0 and filter: F150W
+    Saved 2D spectrum for PA 319.0 and filter: F200W
+    Saved 2D spectrum for PA  and filter: F150W
+    Saved 2D spectrum for PA  and filter: F200W
+  Processing direct images from: ./data/uma-03_04056.beams.fits
+    Saved segmentation map data for F150W
+    Saved direct image for filter: F150W
+    Saved segmentation map data for F200W
+    Saved direct image for filter: F200W
+  Processing redshift data from: ./data/uma-03_04056.full.fits
+    Saved redshift data with best z = 3.45354533195496
+Finished processing object: uma-03_04056
+Processing object 10/23: uma-03_02624
+Processing object: uma-03_02624
+  Processing 1D spectra from: ./data/uma-03_02624.1D.fits
+    Saved 1D spectrum for filter: F150W
+    Saved 1D spectrum for filter: F200W
+  Processing 2D spectra from: ./data/uma-03_02624.stack.fits
+    Saved 2D spectrum for PA 319.0 and filter: F150W
+    Saved 2D spectrum for PA 319.0 and filter: F200W
+    Saved 2D spectrum for PA  and filter: F150W
+    Saved 2D spectrum for PA  and filter: F200W
+  Processing direct images from: ./data/uma-03_02624.beams.fits
+    Saved segmentation map data for F200W
+    Saved direct image for filter: F200W
+    Saved segmentation map data for F150W
+    Saved direct image for filter: F150W
+  Processing redshift data from: ./data/uma-03_02624.full.fits
+    Saved redshift data with best z = 2.20688629150391
+Finished processing object: uma-03_02624
+Processing object 11/23: uma-03_16420
+Processing object: uma-03_16420
+  Processing 1D spectra from: ./data/uma-03_16420.1D.fits
+    Saved 1D spectrum for filter: F150W
+    Saved 1D spectrum for filter: F200W
+  Processing 2D spectra from: ./data/uma-03_16420.stack.fits
+    Saved 2D spectrum for PA 319.0 and filter: F150W
+    Saved 2D spectrum for PA 319.0 and filter: F200W
+    Saved 2D spectrum for PA  and filter: F150W
+    Saved 2D spectrum for PA  and filter: F200W
+  Processing direct images from: ./data/uma-03_16420.beams.fits
+    Saved segmentation map data for F200W
+    Saved direct image for filter: F200W
+    Saved segmentation map data for F150W
+    Saved direct image for filter: F150W
+  Processing redshift data from: ./data/uma-03_16420.full.fits
+    Saved redshift data with best z = 0.98835998773575
+Finished processing object: uma-03_16420
+Processing object 12/23: uma-03_04404
+Processing object: uma-03_04404
+  Processing 1D spectra from: ./data/uma-03_04404.1D.fits
+    Saved 1D spectrum for filter: F150W
+    Saved 1D spectrum for filter: F200W
+  Processing 2D spectra from: ./data/uma-03_04404.stack.fits
+    Saved 2D spectrum for PA 319.0 and filter: F150W
+    Saved 2D spectrum for PA 319.0 and filter: F200W
+    Saved 2D spectrum for PA  and filter: F150W
+    Saved 2D spectrum for PA  and filter: F200W
+    Saved 2D spectrum for PA 318.0 and filter: F200W
+  Processing direct images from: ./data/uma-03_04404.beams.fits
+    Saved segmentation map data for F200W
+    Saved direct image for filter: F200W
+    Saved segmentation map data for F150W
+    Saved direct image for filter: F150W
+  Processing redshift data from: ./data/uma-03_04404.full.fits
+    Saved redshift data with best z = 2.16609978675842
+Finished processing object: uma-03_04404
+Processing object 13/23: outthere-hudfn_04375
+Processing object: outthere-hudfn_04375
+  Processing 1D spectra from: ./data/outthere-hudfn_04375.1D.fits
+    Saved 1D spectrum for filter: F150W
+    Saved 1D spectrum for filter: F200W
+  Processing 2D spectra from: ./data/outthere-hudfn_04375.stack.fits
+    Saved 2D spectrum for PA 318.0 and filter: F150W
+    Saved 2D spectrum for PA 319.0 and filter: F150W
+    Saved 2D spectrum for PA 319.0 and filter: F200W
+    Saved 2D spectrum for PA  and filter: F150W
+    Saved 2D spectrum for PA  and filter: F200W
+  Processing direct images from: ./data/outthere-hudfn_04375.beams.fits
+    Saved segmentation map data for F150W
+    Saved direct image for filter: F150W
+    Saved segmentation map data for F200W
+    Saved direct image for filter: F200W
+  Processing redshift data from: ./data/outthere-hudfn_04375.full.fits
+    Saved redshift data with best z = 2.27520489692688
+Finished processing object: outthere-hudfn_04375
+Processing object 14/23: uma-03_09395
+Processing object: uma-03_09395
+  Processing 1D spectra from: ./data/uma-03_09395.1D.fits
+    Saved 1D spectrum for filter: F150W
+    Saved 1D spectrum for filter: F200W
+  Processing 2D spectra from: ./data/uma-03_09395.stack.fits
+    Saved 2D spectrum for PA 318.0 and filter: F150W
+    Saved 2D spectrum for PA 318.0 and filter: F200W
+    Saved 2D spectrum for PA  and filter: F150W
+    Saved 2D spectrum for PA  and filter: F200W
+  Processing direct images from: ./data/uma-03_09395.beams.fits
+    Saved segmentation map data for F150W
+    Saved direct image for filter: F150W
+    Saved segmentation map data for F200W
+    Saved direct image for filter: F200W
+  Processing redshift data from: ./data/uma-03_09395.full.fits
+    Saved redshift data with best z = 3.12761783599854
+Finished processing object: uma-03_09395
+Processing object 15/23: uma-03_05961
+Processing object: uma-03_05961
+  Processing 1D spectra from: ./data/uma-03_05961.1D.fits
+    Saved 1D spectrum for filter: F150W
+    Saved 1D spectrum for filter: F200W
+  Processing 2D spectra from: ./data/uma-03_05961.stack.fits
+    Saved 2D spectrum for PA 318.0 and filter: F150W
+    Saved 2D spectrum for PA 318.0 and filter: F200W
+    Saved 2D spectrum for PA  and filter: F150W
+    Saved 2D spectrum for PA  and filter: F200W
+    Saved 2D spectrum for PA 319.0 and filter: F200W
+  Processing direct images from: ./data/uma-03_05961.beams.fits
+    Saved segmentation map data for F150W
+    Saved direct image for filter: F150W
+    Saved segmentation map data for F200W
+    Saved direct image for filter: F200W
+  Processing redshift data from: ./data/uma-03_05961.full.fits
+    Saved redshift data with best z = 2.26513290405273
+Finished processing object: uma-03_05961
+Processing object 16/23: uma-03_08325
+Processing object: uma-03_08325
+  Processing 1D spectra from: ./data/uma-03_08325.1D.fits
+    Saved 1D spectrum for filter: F150W
+    Saved 1D spectrum for filter: F200W
+  Processing 2D spectra from: ./data/uma-03_08325.stack.fits
+    Saved 2D spectrum for PA 319.0 and filter: F150W
+    Saved 2D spectrum for PA 319.0 and filter: F200W
+    Saved 2D spectrum for PA  and filter: F150W
+    Saved 2D spectrum for PA  and filter: F200W
+  Processing direct images from: ./data/uma-03_08325.beams.fits
+    Saved segmentation map data for F200W
+    Saved direct image for filter: F200W
+    Saved segmentation map data for F150W
+    Saved direct image for filter: F150W
+  Processing redshift data from: ./data/uma-03_08325.full.fits
+    Saved redshift data with best z = 2.11213874816895
+Finished processing object: uma-03_08325
+Processing object 17/23: uma-03_09164
+Processing object: uma-03_09164
+  Processing 1D spectra from: ./data/uma-03_09164.1D.fits
+    Saved 1D spectrum for filter: F150W
+    Saved 1D spectrum for filter: F200W
+  Processing 2D spectra from: ./data/uma-03_09164.stack.fits
+    Saved 2D spectrum for PA 319.0 and filter: F150W
+    Saved 2D spectrum for PA 319.0 and filter: F200W
+    Saved 2D spectrum for PA  and filter: F150W
+    Saved 2D spectrum for PA  and filter: F200W
+  Processing direct images from: ./data/uma-03_09164.beams.fits
+    Saved segmentation map data for F200W
+    Saved direct image for filter: F200W
+    Saved segmentation map data for F150W
+    Saved direct image for filter: F150W
+  Processing redshift data from: ./data/uma-03_09164.full.fits
+    Saved redshift data with best z = 0.49316865205765
+Finished processing object: uma-03_09164
+Processing object 18/23: uma-03_04668
+Processing object: uma-03_04668
+  Processing 1D spectra from: ./data/uma-03_04668.1D.fits
+    Saved 1D spectrum for filter: F150W
+    Saved 1D spectrum for filter: F200W
+  Processing 2D spectra from: ./data/uma-03_04668.stack.fits
+    Saved 2D spectrum for PA 319.0 and filter: F150W
+    Saved 2D spectrum for PA 319.0 and filter: F200W
+    Saved 2D spectrum for PA  and filter: F150W
+    Saved 2D spectrum for PA  and filter: F200W
+    Saved 2D spectrum for PA 318.0 and filter: F200W
+  Processing direct images from: ./data/uma-03_04668.beams.fits
+    Saved segmentation map data for F200W
+    Saved direct image for filter: F200W
+    Saved segmentation map data for F150W
+    Saved direct image for filter: F150W
+  Processing redshift data from: ./data/uma-03_04668.full.fits
+    Saved redshift data with best z = 1.86939287185669
+Finished processing object: uma-03_04668
+Processing object 19/23: uma-03_05858
+Processing object: uma-03_05858
+  Processing 1D spectra from: ./data/uma-03_05858.1D.fits
+    Saved 1D spectrum for filter: F150W
+    Saved 1D spectrum for filter: F200W
+  Processing 2D spectra from: ./data/uma-03_05858.stack.fits
+    Saved 2D spectrum for PA 318.0 and filter: F150W
+    Saved 2D spectrum for PA 318.0 and filter: F200W
+    Saved 2D spectrum for PA  and filter: F150W
+    Saved 2D spectrum for PA  and filter: F200W
+    Saved 2D spectrum for PA 319.0 and filter: F200W
+  Processing direct images from: ./data/uma-03_05858.beams.fits
+    Saved segmentation map data for F150W
+    Saved direct image for filter: F150W
+    Saved segmentation map data for F200W
+    Saved direct image for filter: F200W
+  Processing redshift data from: ./data/uma-03_05858.full.fits
+    Saved redshift data with best z = 2.26643919944763
+Finished processing object: uma-03_05858
+Processing object 20/23: uma-03_03269
+Processing object: uma-03_03269
+  Processing 1D spectra from: ./data/uma-03_03269.1D.fits
+    Saved 1D spectrum for filter: F150W
+    Saved 1D spectrum for filter: F200W
+  Processing 2D spectra from: ./data/uma-03_03269.stack.fits
+    Saved 2D spectrum for PA 318.0 and filter: F150W
+    Saved 2D spectrum for PA 318.0 and filter: F200W
+    Saved 2D spectrum for PA 319.0 and filter: F150W
+    Saved 2D spectrum for PA 319.0 and filter: F200W
+    Saved 2D spectrum for PA  and filter: F150W
+    Saved 2D spectrum for PA  and filter: F200W
+  Processing direct images from: ./data/uma-03_03269.beams.fits
+    Saved segmentation map data for F150W
+    Saved direct image for filter: F150W
+    Saved segmentation map data for F200W
+    Saved direct image for filter: F200W
+  Processing redshift data from: ./data/uma-03_03269.full.fits
+    Saved redshift data with best z = 2.29135870933533
+Finished processing object: uma-03_03269
+Processing object 21/23: uma-03_02122
+Processing object: uma-03_02122
+  Processing 1D spectra from: ./data/uma-03_02122.1D.fits
+    Saved 1D spectrum for filter: F150W
+    Saved 1D spectrum for filter: F200W
+  Processing 2D spectra from: ./data/uma-03_02122.stack.fits
+    Saved 2D spectrum for PA 319.0 and filter: F150W
+    Saved 2D spectrum for PA 319.0 and filter: F200W
+    Saved 2D spectrum for PA  and filter: F150W
+    Saved 2D spectrum for PA  and filter: F200W
+    Saved 2D spectrum for PA 318.0 and filter: F200W
+  Processing direct images from: ./data/uma-03_02122.beams.fits
+    Saved segmentation map data for F200W
+    Saved direct image for filter: F200W
+    Saved segmentation map data for F150W
+    Saved direct image for filter: F150W
+  Processing redshift data from: ./data/uma-03_02122.full.fits
+    Saved redshift data with best z = 1.42858839035034
+Finished processing object: uma-03_02122
+Processing object 22/23: uma-03_02484
+Processing object: uma-03_02484
+  Processing 1D spectra from: ./data/uma-03_02484.1D.fits
+    Saved 1D spectrum for filter: F150W
+    Saved 1D spectrum for filter: F200W
+  Processing 2D spectra from: ./data/uma-03_02484.stack.fits
+    Saved 2D spectrum for PA 318.0 and filter: F150W
+    Saved 2D spectrum for PA 318.0 and filter: F200W
+    Saved 2D spectrum for PA 319.0 and filter: F150W
+    Saved 2D spectrum for PA 319.0 and filter: F200W
+    Saved 2D spectrum for PA  and filter: F150W
+    Saved 2D spectrum for PA  and filter: F200W
+  Processing direct images from: ./data/uma-03_02484.beams.fits
+    Saved segmentation map data for F150W
+    Saved direct image for filter: F150W
+    Saved segmentation map data for F200W
+    Saved direct image for filter: F200W
+  Processing redshift data from: ./data/uma-03_02484.full.fits
+    Saved redshift data with best z = 0.53802704811096
+Finished processing object: uma-03_02484
+Processing object 23/23: uma-03_09452
+Processing object: uma-03_09452
+  Processing 1D spectra from: ./data/uma-03_09452.1D.fits
+    Saved 1D spectrum for filter: F150W
+    Saved 1D spectrum for filter: F200W
+  Processing 2D spectra from: ./data/uma-03_09452.stack.fits
+    Saved 2D spectrum for PA 319.0 and filter: F150W
+    Saved 2D spectrum for PA 319.0 and filter: F200W
+    Saved 2D spectrum for PA  and filter: F150W
+    Saved 2D spectrum for PA  and filter: F200W
+  Processing direct images from: ./data/uma-03_09452.beams.fits
+    Saved segmentation map data for F200W
+    Saved direct image for filter: F200W
+    Saved segmentation map data for F150W
+    Saved direct image for filter: F150W
+  Processing redshift data from: ./data/uma-03_09452.full.fits
+    Saved redshift data with best z = 1.04561913013458
+Finished processing object: uma-03_09452
+Directory processing completed
+Successful: 23, Errors: 0
+Pre-processing completed at 2025-05-22 16:13:27
