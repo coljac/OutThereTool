@@ -70,6 +70,31 @@ func set_current_field(field: String) -> void:
 func get_current_field() -> String:
 	return current_field
 
+func get_gals_by_ids(object_ids: Array) -> Array:
+	if object_ids.size() == 0:
+		return []
+	
+	# Create condition for multiple IDs
+	var id_conditions = []
+	for id in object_ids:
+		id_conditions.append("id = '" + str(id) + "'")
+	var condition = "(" + " OR ".join(id_conditions) + ")"
+	
+	var gals = database.select_rows("galaxy", condition, ["*"])
+	
+	# Create a dictionary to preserve order of input IDs
+	var id_to_gal = {}
+	for gal in gals:
+		id_to_gal[gal["id"]] = gal
+	
+	# Return objects in the same order as input IDs, skip missing ones
+	var ordered_gals = []
+	for id in object_ids:
+		if id_to_gal.has(str(id)):
+			ordered_gals.append(id_to_gal[str(id)])
+	
+	return ordered_gals
+
 func update_gal(id: String, status: int, comment: String) -> void:
 	database.update_rows("galaxy", "id = '" + id + "'", {"status": status, "comments": comment})
 	updated_data.emit(true)

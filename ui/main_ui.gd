@@ -186,6 +186,76 @@ func _on_tab_closed(tab_index):
 	# Handle a tab being closed
 	print("Tabclosedatindex: ", tab_index)
 
+func _on_import_button_pressed():
+	# Handle the import button press
+	print("Import button pressed")
+	
+	# Create and configure file dialog
+	var file_dialog = FileDialog.new()
+	file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	file_dialog.add_filter("*.txt", "Text files")
+	file_dialog.add_filter("*.csv", "CSV files")
+	file_dialog.title = "Import Object IDs"
+	
+	# Add to scene tree temporarily
+	add_child(file_dialog)
+	
+	# Connect signal and show dialog
+	file_dialog.file_selected.connect(_on_file_selected)
+	file_dialog.popup_centered(Vector2i(800, 600))
+
+func _on_file_selected(path: String):
+	print("Selected file: ", path)
+	
+	# Read the file
+	var file = FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		push_error("Failed to open file: " + path)
+		return
+	
+	var object_ids = []
+	var line_number = 0
+	
+	# Parse file line by line to extract object IDs
+	while not file.eof_reached():
+		line_number += 1
+		var line = file.get_line().strip_edges()
+		
+		# Skip empty lines
+		if line.length() == 0:
+			continue
+			
+		# Handle CSV - take first column if comma-separated
+		if path.ends_with(".csv"):
+			var parts = line.split(",")
+			if parts.size() > 0:
+				line = parts[0].strip_edges()
+		
+		object_ids.append(line)
+	
+	file.close()
+	
+	print("Found ", object_ids.size(), " object IDs, querying database...")
+	
+	# Query full object data from database
+	var imported_objects = DataManager.get_gals_by_ids(object_ids)
+	
+	print("Successfully imported ", imported_objects.size(), " objects from database")
+	
+	# Replace current objects with imported ones
+	_set_objects(imported_objects)
+	
+	# Reset to first object and load it
+	obj_index = 0
+	if imported_objects.size() > 0:
+		_goto_object(0)
+	
+	# Clean up file dialog
+	for child in get_children():
+		if child is FileDialog:
+			child.queue_free()
+	
 func _on_search_button_pressed():
 	# Get the object ID from the text field
 	var object_id = object_id_edit.text
