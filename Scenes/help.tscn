@@ -47,14 +47,14 @@ theme_override_font_sizes/bold_font_size = 34
 bbcode_enabled = true
 text = "Keyboard shortcuts:
 
-[b]1[/b]: Mark good
-[b]2[/b]: Mark OK
-[b]3[/b]: Mark bad
+[b]1[/b] - [b]5[/b]: Set quality flag
 
-[b]a[/b]: prev
-[b]d[/b]: next
+[b]b[/b]: prev spectrum
+[b]n[/b]: next spectrum
 [b]/[/b]: focus comment (ctrl+Enter to save)
+[b]z[/b]: Focus redshift
 [b]?[/b]: toggle this help
 
+[b]→[/b] [b]←[/b]: z up/down
 
 "

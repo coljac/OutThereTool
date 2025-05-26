@@ -168,11 +168,9 @@ func _goto_object(step: int = 1) -> void:
 	# newbox.load_object()
 # 
 func _add_initial_tab():
-	# Add the first tab with a GalaxyDisplay
-	var tab_index = tab_container.create_tab("GalaxyView")
-	
-	# Select the first tab
-	tab_container.current_tab = tab_index
+	# Use the existing GalaxyDisplay in SimpleTab instead of creating a new one
+	# The SimpleTab already has a pre-instantiated GalaxyDisplay
+	pass
 
 func _on_more_options_pressed():
 	# Handle the more options button press

@@ -24,10 +24,10 @@ func _process(_delta):
 		move_child(plus_tab, get_tab_count() - 1)
 
 func _on_tab_changed(tab_index: int):
-	# If the "+" tab is selected, create a new tab and select it
+	# Temporarily disabled - only use the existing GalaxyDisplay tab
+	# If the "+" tab is selected, switch back to the main tab
 	if tab_index == plus_tab.get_index():
-		var new_tab_index = _create_new_tab()
-		current_tab = new_tab_index
+		current_tab = 0  # Switch back to the existing GalaxyDisplay tab
 
 func _create_new_tab() -> int:
 	# Create a new tab with a default name
