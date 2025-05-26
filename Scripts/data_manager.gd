@@ -109,7 +109,7 @@ func set_user_data(item: String, value: String) -> void:
 func get_user_data(item: String) -> String:
 	var result = database.select_rows("userdata", "item = '" + item + "'", ["item_value"])
 	if result.size() > 0:
-		return result[0]["item_value"]
+		return result[0]["ITEM_VALUE"]
 	return ""
 
 func get_user_credentials() -> Dictionary:

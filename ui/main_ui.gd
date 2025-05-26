@@ -22,6 +22,7 @@ var zoom_level = 100
 
 var objects = []
 var obj_index = 0
+var dialog_open = false
 
 func _ready():
 	# Connect signals from the left panel	
@@ -51,7 +52,6 @@ func _ready():
 	cb_flux.button_pressed = true
 	cb_bestfit.button_pressed = true
 	cb_errors.button_pressed = true
-	%TopBar.get_node("%SettingsButton").pressed.connect(show_settings)
 	# Set the tab scene for the tab container
 	tab_container.set_tab_scene(GALAXY_DISPLAY_SCENE)
 	# Add an initial tab
@@ -69,6 +69,10 @@ func update_cache(success: bool):
 		_set_objects(DataManager.get_gals(0.0, 10.0, 0, DataManager.get_current_field()))
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Block all input when dialog is open
+	if dialog_open:
+		return
+		
 	if event.is_action_released("next"):
 		print("NEXT")
 		next_object()
@@ -177,8 +181,7 @@ func _on_more_options_pressed():
 	print("Moreoptionspressed")
 
 func _on_settings_pressed():
-	# Handle the settings button press
-	print("Settingspressed")
+	show_settings()
 
 func _on_tab_added(tab_index):
 	# Handle a new tab being added
@@ -385,10 +388,17 @@ func _on_errors_toggled(pressed: bool) -> void:
 
 func show_settings():
 	# Show the settings dialog
+	dialog_open = true
 	%UserEntry.show()
+	
+	# Load existing user data if available
+	var credentials = DataManager.get_user_credentials()
+	if %UserEntry.has_method("set_user_data"):
+		%UserEntry.set_user_data(credentials.username, credentials.password)
 
 func set_user_details(user: String, password: String) -> void:
 	%UserEntry.hide()
+	dialog_open = false
 	print("User details set: ", user)
 	DataManager.set_user_data("user.name", user)
 	DataManager.set_user_data("user.password", password)

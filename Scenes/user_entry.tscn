@@ -42,7 +42,8 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 33
 text = "Username: "
 
-[node name="LineEdit" type="LineEdit" parent="MarginContainer/GridContainer"]
+[node name="Username" type="LineEdit" parent="MarginContainer/GridContainer"]
+unique_name_in_owner = true
 layout_mode = 2
 
 [node name="Label2" type="Label" parent="MarginContainer/GridContainer"]
@@ -50,7 +51,8 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 33
 text = "Password:"
 
-[node name="LineEdit2" type="LineEdit" parent="MarginContainer/GridContainer"]
+[node name="Password" type="LineEdit" parent="MarginContainer/GridContainer"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 secret = true
@@ -61,7 +63,10 @@ layout_mode = 2
 [node name="Control2" type="Control" parent="MarginContainer/GridContainer"]
 layout_mode = 2
 
-[node name="Button" type="Button" parent="MarginContainer/GridContainer"]
+[node name="SaveButton" type="Button" parent="MarginContainer/GridContainer"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 33
 text = "Save"
+
+[connection signal="pressed" from="MarginContainer/GridContainer/SaveButton" to="." method="button_pressed"]

@@ -1,6 +1,5 @@
-[gd_scene load_steps=3 format=3 uid="uid://chkibjuan7g8k"]
+[gd_scene load_steps=2 format=3 uid="uid://bc7g2ra0qcbaj"]
 
-[ext_resource type="Script" path="res://Scenes/out_there.gd" id="1_wy0b7"]
 [ext_resource type="PackedScene" uid="uid://g0255w6yhbnl" path="res://Scenes/galaxy_display.tscn" id="2_mxkbm"]
 
 [node name="OutThere" type="Control"]
@@ -12,7 +11,6 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-script = ExtResource("1_wy0b7")
 
 [node name="ColorRect" type="ColorRect" parent="."]
 visible = false
