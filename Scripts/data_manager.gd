@@ -98,3 +98,21 @@ func get_gals_by_ids(object_ids: Array) -> Array:
 func update_gal(id: String, status: int, comment: String) -> void:
 	database.update_rows("galaxy", "id = '" + id + "'", {"status": status, "comments": comment})
 	updated_data.emit(true)
+
+func set_user_data(item: String, value: String) -> void:
+	var existing = database.select_rows("userdata", "item = '" + item + "'", ["*"])
+	if existing.size() > 0:
+		database.update_rows("userdata", "item = '" + item + "'", {"item_value": value})
+	else:
+		database.insert_row("userdata", {"item": item, "item_value": value})
+
+func get_user_data(item: String) -> String:
+	var result = database.select_rows("userdata", "item = '" + item + "'", ["item_value"])
+	if result.size() > 0:
+		return result[0]["item_value"]
+	return ""
+
+func get_user_credentials() -> Dictionary:
+	var username = get_user_data("user.name")
+	var password = get_user_data("user.password")
+	return {"username": username, "password": password}

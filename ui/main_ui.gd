@@ -51,7 +51,7 @@ func _ready():
 	cb_flux.button_pressed = true
 	cb_bestfit.button_pressed = true
 	cb_errors.button_pressed = true
-	
+	%TopBar.get_node("%SettingsButton").pressed.connect(show_settings)
 	# Set the tab scene for the tab container
 	tab_container.set_tab_scene(GALAXY_DISPLAY_SCENE)
 	# Add an initial tab
@@ -382,3 +382,13 @@ func _on_errors_toggled(pressed: bool) -> void:
 	var galaxy_display = %SimpleTab.get_tab_control(0)
 	if galaxy_display and galaxy_display.has_method("toggle_errors_visibility"):
 		galaxy_display.toggle_errors_visibility(pressed)
+
+func show_settings():
+	# Show the settings dialog
+	%UserEntry.show()
+
+func set_user_details(user: String, password: String) -> void:
+	%UserEntry.hide()
+	print("User details set: ", user)
+	DataManager.set_user_data("user.name", user)
+	DataManager.set_user_data("user.password", password)

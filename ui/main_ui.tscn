@@ -1,12 +1,13 @@
-[gd_scene load_steps=8 format=3 uid="uid://cvip6m8f24inr"]
+[gd_scene load_steps=9 format=3 uid="uid://cvip6m8f24inr"]
 
 [ext_resource type="Script" uid="uid://ds6nukonfixo4" path="res://ui/main_ui.gd" id="1_78d5d"]
-[ext_resource type="PackedScene" path="res://ui/top_bar.tscn" id="2_852uu"]
+[ext_resource type="PackedScene" uid="uid://dqne2t68jyax2" path="res://ui/top_bar.tscn" id="2_852uu"]
 [ext_resource type="PackedScene" uid="uid://de384mqpjawph" path="res://ui/tab_container.tscn" id="3_5ris2"]
 [ext_resource type="PackedScene" uid="uid://c7rq6fiqo8bv4" path="res://Scenes/object_viewing.tscn" id="4_186kx"]
 [ext_resource type="Texture2D" uid="uid://cpg7bchl457ac" path="res://theme/assets/icons/theme/SplitGrabber2.svg" id="4_podmt"]
 [ext_resource type="PackedScene" uid="uid://75flqcgsoecp" path="res://Scenes/simple_tab.tscn" id="5_186kx"]
 [ext_resource type="PackedScene" uid="uid://cubtixgrjj65y" path="res://Scenes/help.tscn" id="7_ti1yg"]
+[ext_resource type="PackedScene" uid="uid://twlr3oy3ddyb" path="res://Scenes/user_entry.tscn" id="8_fa42e"]
 
 [node name="MainUI" type="Control"]
 layout_mode = 3
@@ -27,6 +28,7 @@ grow_vertical = 2
 theme_override_constants/separation = 0
 
 [node name="TopBar" parent="VBoxContainer" instance=ExtResource("2_852uu")]
+unique_name_in_owner = true
 layout_mode = 2
 
 [node name="HSplitContainer" type="HSplitContainer" parent="VBoxContainer"]
@@ -213,9 +215,26 @@ size_flags_vertical = 3
 visible = false
 layout_mode = 1
 
+[node name="UserEntry" parent="." instance=ExtResource("8_fa42e")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchors_preset = 0
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 864.0
+offset_top = 288.0
+offset_right = 1364.0
+offset_bottom = 788.0
+grow_horizontal = 1
+grow_vertical = 1
+
 [connection signal="item_selected" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/FieldList" to="." method="_on_field_selected"]
 [connection signal="item_selected" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/ObjectsList" to="." method="_on_objects_list_item_selected"]
 [connection signal="pressed" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/SearchButton" to="." method="_on_search_button_pressed"]
 [connection signal="pressed" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/ImportButton" to="." method="_on_import_button_pressed"]
 [connection signal="pressed" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/ApplyFiltersButton" to="." method="_on_apply_filters_button_pressed"]
 [connection signal="save_galaxy" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/ObjectViewing" to="." method="save_galaxy"]
+[connection signal="user_set" from="UserEntry" to="." method="set_user_details"]

@@ -38,9 +38,9 @@ func _on_settings_pressed():
 	
 	# Create a popup menu with placeholder items
 	var popup = PopupMenu.new()
-	popup.add_item("Display Settings", 0)
-	popup.add_item("Theme Settings", 1)
-	popup.add_separator()
+	# popup.add_item("Display Settings", 0)
+	# popup.add_item("Theme Settings", 1)
+	# popup.add_separator()
 	popup.add_item("Preferences", 2)
 	
 	# Connect the popup's id_pressed signal

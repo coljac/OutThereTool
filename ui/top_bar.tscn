@@ -1,8 +1,8 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=4 format=3 uid="uid://dqne2t68jyax2"]
 
-[ext_resource type="Script" path="res://ui/top_bar.gd" id="1_x4rqo"]
-[ext_resource type="Texture2D" path="res://theme/assets/icons/More.svg" id="2_71075"]
-[ext_resource type="Texture2D" path="res://theme/assets/icons/Gear.svg" id="3_xl5uh"]
+[ext_resource type="Script" uid="uid://b0chxryrp7cqn" path="res://ui/top_bar.gd" id="1_x4rqo"]
+[ext_resource type="Texture2D" uid="uid://byemachyi6iem" path="res://theme/assets/icons/More.svg" id="2_71075"]
+[ext_resource type="Texture2D" uid="uid://csbgxldkaguwc" path="res://theme/assets/icons/Gear.svg" id="3_xl5uh"]
 
 [node name="TopBar" type="HBoxContainer"]
 offset_right = 52.0
@@ -23,6 +23,7 @@ icon = ExtResource("2_71075")
 icon_alignment = 1
 
 [node name="SettingsButton" type="Button" parent="LeftSide"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 2
 focus_mode = 0
