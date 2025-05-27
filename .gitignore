@@ -21,3 +21,4 @@ data
 bin
 lib/
 processed/
+release/
