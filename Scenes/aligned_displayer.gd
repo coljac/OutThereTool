@@ -237,6 +237,139 @@ func position_textures():
 		
 		# Move to next row
 		current_y_pos += height_per_row + row_spacing
+	
+	# Apply overlap clipping after positioning and scaling
+	apply_overlap_clipping()
+
+func apply_overlap_clipping() -> void:
+	# Clip overlapping images at their midpoints to eliminate visual overlap
+	for row_index in range(rows.size()):
+		var row_children = rows[row_index]
+		
+		if row_children.size() <= 1:
+			# Reset any existing clipping for single images
+			for child in row_children:
+				var img = child as OTImage
+				if img:
+					reset_image_clipping(img)
+			continue
+		
+		# Process each pair of adjacent images in wavelength order
+		for i in range(row_children.size() - 1):
+			var current_img = row_children[i] as OTImage
+			var next_img = row_children[i + 1] as OTImage
+			
+			if not current_img or not next_img or not current_img.scaling or not next_img.scaling:
+				continue
+			
+			# Check if images overlap in wavelength space
+			var current_right = current_img.scaling['right']
+			var next_left = next_img.scaling['left']
+			
+			if current_right > next_left:
+				# Images overlap - calculate midpoint for clipping
+				var midpoint = (current_right + next_left) / 2.0
+				
+				# Clip the current image's right side at the midpoint
+				clip_image_right(current_img, midpoint)
+				
+				# Clip the next image's left side at the midpoint  
+				clip_image_left(next_img, midpoint)
+
+func reset_image_clipping(img: OTImage) -> void:
+	# Reset any clipping on an image
+	if not img or not img.fits_img:
+		return
+	
+	# Create a clipping Control node if it doesn't exist
+	var clipper = img.get_node_or_null("Clipper")
+	if clipper:
+		# Remove the clipping wrapper and restore original structure
+		var texture_rect = clipper.get_node_or_null("FitsImageShow")
+		if texture_rect:
+			clipper.remove_child(texture_rect)
+			img.add_child(texture_rect)
+			texture_rect.name = "FitsImageShow"
+			img.fits_img = texture_rect
+		clipper.queue_free()
+
+func clip_image_right(img: OTImage, clip_wavelength: float) -> void:
+	# Clip the right side of an image at the specified wavelength using Control clipping
+	if not img or not img.fits_img or not img.fits_img.texture or not img.scaling:
+		return
+	
+	var img_left = img.scaling['left']
+	var img_right = img.scaling['right']
+	var img_width_wavelength = img_right - img_left
+	
+	# Calculate what fraction of the image to keep (from left edge to clip point)
+	var keep_fraction = (clip_wavelength - img_left) / img_width_wavelength
+	keep_fraction = clamp(keep_fraction, 0.0, 1.0)
+	
+	# Create or get clipping wrapper
+	var clipper = setup_clipper(img)
+	
+	# Set the clipper size to show only the fraction we want to keep
+	var original_width = img.fits_img.texture.get_width() * img.scale.x
+	clipper.size.x = original_width * keep_fraction
+	clipper.size.y = img.fits_img.texture.get_height() * img.scale.y
+	
+	# Update the image's scaling to reflect the new boundaries
+	img.scaling['right'] = clip_wavelength
+
+func clip_image_left(img: OTImage, clip_wavelength: float) -> void:
+	# Clip the left side of an image at the specified wavelength using Control clipping
+	if not img or not img.fits_img or not img.fits_img.texture or not img.scaling:
+		return
+	
+	var img_left = img.scaling['left']
+	var img_right = img.scaling['right']
+	var img_width_wavelength = img_right - img_left
+	
+	# Calculate what fraction of the image to remove from the left
+	var remove_fraction = (clip_wavelength - img_left) / img_width_wavelength
+	remove_fraction = clamp(remove_fraction, 0.0, 1.0)
+	
+	# Create or get clipping wrapper
+	var clipper = setup_clipper(img)
+	
+	# Move the texture rect to the left to hide the portion we want to clip
+	var original_width = img.fits_img.texture.get_width() * img.scale.x
+	img.fits_img.position.x = -original_width * remove_fraction
+	
+	# Set clipper size to show only the remaining portion
+	clipper.size.x = original_width * (1.0 - remove_fraction)
+	clipper.size.y = img.fits_img.texture.get_height() * img.scale.y
+	
+	# Update the image's scaling to reflect the new boundaries
+	img.scaling['left'] = clip_wavelength
+	
+	# Adjust the image position to account for the clipped left portion
+	var left_pixel = _microns_to_pixels(clip_wavelength)
+	img.position.x = left_pixel
+
+func setup_clipper(img: OTImage) -> Control:
+	# Create a Control node that will clip its contents
+	var clipper = img.get_node_or_null("Clipper")
+	
+	if not clipper:
+		clipper = Control.new()
+		clipper.name = "Clipper"
+		clipper.clip_contents = true
+		
+		# Move the texture rect into the clipper
+		var texture_rect = img.fits_img
+		img.remove_child(texture_rect)
+		clipper.add_child(texture_rect)
+		img.add_child(clipper)
+		
+		# Reset texture rect position
+		texture_rect.position = Vector2.ZERO
+		
+		# Update reference
+		img.fits_img = texture_rect
+	
+	return clipper
 
 func clear_labels() -> void:
 	# Remove all existing row labels
