@@ -86,6 +86,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			$HelpPanel.hide()
 		else:
 			$HelpPanel.show()
+		get_viewport().set_input_as_handled()
 	if event.is_action("qop_1"):
 		update_status(0)
 		get_viewport().set_input_as_handled()
@@ -113,7 +114,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action("flag_ok"):
 		update_status(1)
 		get_viewport().set_input_as_handled()
-	if event.is_action("comment"):
+	if event.is_action("comment") and not event.shift_pressed:
 		%ObjectViewing.get_node("%Comments").grab_focus()
 
 
