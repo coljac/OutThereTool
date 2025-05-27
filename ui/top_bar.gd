@@ -2,6 +2,7 @@ extends HBoxContainer
 
 signal more_options_pressed
 signal settings_pressed
+signal preferences_selected
 
 @onready var more_options_button = $LeftSide/MoreOptions
 @onready var settings_button = $LeftSide/SettingsButton
@@ -41,7 +42,8 @@ func _on_settings_pressed():
 	# popup.add_item("Display Settings", 0)
 	# popup.add_item("Theme Settings", 1)
 	# popup.add_separator()
-	popup.add_item("Preferences", 2)
+	popup.add_item("Preferences", 0)
+	popup.add_item("Reset DB", 1)
 	
 	# Connect the popup's id_pressed signal
 	popup.id_pressed.connect(_on_settings_popup_id_pressed)
@@ -69,8 +71,11 @@ func _on_popup_id_pressed(id):
 func _on_settings_popup_id_pressed(id):
 	match id:
 		0: # Display Settings
-			print("Display Settings selected")
-		1: # Theme Settings
-			print("Theme Settings selected")
-		2: # Preferences
+			# print("Display Settings selected")
+		# 1: # Theme Settings
+			# print("Theme Settings selected")
+		# 2: # Preferences
 			print("Preferences selected")
+			emit_signal("preferences_selected")
+		1:
+			DataManager.reset_db()

@@ -331,9 +331,12 @@ func _load_2d_spectra(data2d: Dictionary) -> void:
 				spec_display.is_2d_spectrum = true
 				spec_display.res = data2d[pa][f]
 				spec_display._load_object()
+				spec_display.hide_label()
+				# spec_display.set_label(str(pa))
 				spec_display.visible = true
 				# Add the spectrum to the row corresponding to its position angle
 				%Spec2Ds1.add_spectrum(spec_display, pa_index)
+				%Spec2Ds1.set_label(0, "PA 318°")
 
 		pa_index += 1
 	

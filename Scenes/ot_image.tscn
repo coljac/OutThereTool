@@ -29,6 +29,8 @@ stretch_mode = 5
 [node name="Label" type="Label" parent="."]
 visible = false
 layout_mode = 2
-theme_override_colors/font_color = Color(0, 0, 0, 1)
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(0.953905, 0.825031, 0, 1)
+theme_override_font_sizes/font_size = 22
 text = "Label"
 horizontal_alignment = 1

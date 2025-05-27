@@ -50,7 +50,6 @@ func _ready() -> void:
 	gui_input.connect(_on_gui_input)
 	if res:
 		_load_object()
-	$Label.text = ""
 	
 	# Initialize shader
 	_init_shader()
@@ -71,9 +70,6 @@ func _set_image(tex: Texture2D) -> void:
 # 
 # func _on_mouse_exited():
 	# print("Mouse exited the TextureRect")
-
-func set_label(s: String):
-	$Label.text = s
 
 func _init_shader() -> void:
 	# Create shader material if it doesn't exist
@@ -195,6 +191,16 @@ func _load_object() -> void:
 		if res and "position_angle" in res:
 			set_label(res.position_angle)
 	_make_texture()
+
+func set_label(t: String):
+	$Label.text = t
+	# show_label()
+	
+func show_label():
+	$Label.visible = true
+
+func hide_label():
+	$Label.visible = false
 
 func _make_texture():
 	if image_data and fits_img:

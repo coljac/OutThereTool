@@ -6,7 +6,7 @@ func button_pressed():
 	var password = %Password.text.strip_edges()
 	
 	if username == "" or password == "":
-		$ErrorLabel.text = "Username and password cannot be empty."
+		# $ErrorLabel.text = "Username and password cannot be empty."
 		return
 	
 	# Emit signal with user credentials

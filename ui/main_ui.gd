@@ -29,6 +29,7 @@ func _ready():
 	# Connect signals from the top bar
 	top_bar.more_options_pressed.connect(_on_more_options_pressed)
 	top_bar.settings_pressed.connect(_on_settings_pressed)
+	top_bar.preferences_selected.connect(show_settings)
 	
 	# Initialize field selection
 	_populate_field_list()
@@ -181,7 +182,9 @@ func _on_more_options_pressed():
 	print("Moreoptionspressed")
 
 func _on_settings_pressed():
-	show_settings()
+	# This just opens the dropdown menu - actual preferences dialog 
+	# is triggered by the preferences_selected signal
+	pass
 
 func _on_tab_added(tab_index):
 	# Handle a new tab being added
@@ -393,8 +396,8 @@ func show_settings():
 	
 	# Load existing user data if available
 	var credentials = DataManager.get_user_credentials()
-	if %UserEntry.has_method("set_user_data"):
-		%UserEntry.set_user_data(credentials.username, credentials.password)
+	%UserEntry.get_node("%Username").text = credentials.username
+	%UserEntry.get_node("%Password").text = credentials.password
 
 func set_user_details(user: String, password: String) -> void:
 	%UserEntry.hide()

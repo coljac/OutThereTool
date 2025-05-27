@@ -16,6 +16,7 @@ var cursor_wavelength: float = 0.0 # Current wavelength position for the cursor 
 var cursor_height: int = 0 # Height for cursor line, calculated based on displayed images
 var row_heights: Array[float] = [] # Heights for each row
 var rows: Array[Array] = [] # Array of arrays containing children organized by row
+var row_labels: Array[Label] = [] # Label nodes for each row
 
 func _ready():
 	# Get reference to the PlotDisplay
@@ -74,6 +75,8 @@ func add_spectrum(spectrum: OTImage, row: int = -1) -> void:
 func organize_rows() -> void:
 	rows.clear()
 	row_heights.clear()
+	# Clear labels when reorganizing
+	clear_labels()
 	
 	# Get all visible OTImage children
 	var visible_children = []
@@ -118,6 +121,7 @@ func organize_rows() -> void:
 # Called when the control is resized
 func _on_resized() -> void:
 	position_textures()
+	_position_labels()
 	queue_redraw()
 
 # Called when the plot display's crosshair position changes
@@ -232,4 +236,47 @@ func position_textures():
 			f.position.y = current_y_pos
 		
 		# Move to next row
+		current_y_pos += height_per_row + row_spacing
+
+func clear_labels() -> void:
+	# Remove all existing row labels
+	for label in row_labels:
+		if is_instance_valid(label):
+			label.queue_free()
+	row_labels.clear()
+
+func set_label(row: int, text: String) -> void:
+	# Ensure we have enough labels
+	while row >= row_labels.size():
+		var new_label = Label.new()
+		new_label.add_theme_color_override("font_color", Color.WHITE)
+		new_label.add_theme_font_size_override("font_size", 44)
+		new_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		new_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		add_child(new_label)
+		# Ensure labels draw in front of other children
+		new_label.z_index = 100
+		row_labels.append(new_label)
+	
+	# Set the text for the specified row
+	if row < row_labels.size():
+		row_labels[row].text = text
+		_position_labels()
+
+func _position_labels() -> void:
+	# Position labels at the left edge of each row
+	if rows.size() == 0:
+		return
+	
+	var available_height = size.y
+	var total_spacing = (rows.size() - 1) * row_spacing
+	var height_per_row = (available_height - total_spacing) / rows.size()
+	var current_y_pos = 0.0
+	
+	for i in range(min(row_labels.size(), rows.size())):
+		if is_instance_valid(row_labels[i]):
+			row_labels[i].position.x = 5 # Small margin from the left edge
+			row_labels[i].position.y = current_y_pos + (height_per_row / 2) - (row_labels[i].size.y / 2)
+			row_labels[i].size.x = 0 # Let it auto-size based on text
+		
 		current_y_pos += height_per_row + row_spacing

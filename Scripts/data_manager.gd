@@ -11,13 +11,24 @@ func _ready() -> void:
 	if database.path == "":
 		database.path = "user://data.sqlite"
 		if not FileAccess.file_exists(database.path):
-			print("Copy initial database to user directory: ")
-			# Copy from res://data.sqlite if it exists to user://data.sqlite
-			if FileAccess.file_exists("res://data.sqlite"):
-				copy_file_from_res_to_user("data.sqlite")
-		else:
-			print("Using default database path: ", database.path)
+			_copy_db()
 	database.open_db()
+
+func _copy_db():
+	if FileAccess.file_exists("res://data.sqlite"):
+		if copy_file_from_res_to_user("data.sqlite"):
+			print("Database reset successfully.")
+		else:
+			print("Failed to reset database.")
+	else:
+		print("Initial database file not found in resources.")
+
+	
+func reset_db():
+	# Remove db at user://data.sqlite and copy from res://data.sqlite
+	# if FileAccess.file_exists("user://data.sqlite"):
+		# FileAccess.remove("user://data.sqlite")
+	_copy_db()
 
 func copy_file_from_res_to_user(file_path: String) -> bool:
 	var source_file = FileAccess.open("res://" + file_path, FileAccess.READ)
@@ -96,7 +107,7 @@ func get_gals_by_ids(object_ids: Array) -> Array:
 	return ordered_gals
 
 func update_gal(id: String, status: int, comment: String) -> void:
-	database.update_rows("galaxy", "id = '" + id + "'", {"status": status, "comments": comment})
+	database.update_rows("galaxy", "id = '" + id + "'", {"status": status, "comments": comment, "altered": 1})
 	updated_data.emit(true)
 
 func set_user_data(item: String, value: String) -> void:
