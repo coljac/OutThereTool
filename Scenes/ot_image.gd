@@ -205,6 +205,8 @@ func hide_label():
 func _make_texture():
 	if image_data and fits_img:
 		fits_img.texture = display_fits_image(width, height, black_level, white_level)
+		# Disable texture filtering for crisp, unsmoothed pixels
+		fits_img.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		# Re-apply shader after texture update
 		_init_shader()
 	

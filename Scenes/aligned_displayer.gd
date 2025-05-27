@@ -392,9 +392,9 @@ func set_label(row: int, text: String) -> void:
 		row_labels.append(new_label)
 	
 	# Set the text for the specified row
-	if row < row_labels.size():
-		row_labels[row].text = text
-		_position_labels()
+	# if row < row_labels.size():
+		# row_labels[row].text = text
+		# _position_labels()
 
 func _position_labels() -> void:
 	# Position labels at the left edge of each row
