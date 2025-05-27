@@ -10,6 +10,7 @@ signal preferences_selected
 func _ready():
 	more_options_button.pressed.connect(_on_more_options_pressed)
 	settings_button.pressed.connect(_on_settings_pressed)
+	%VersionLabel.text = "v" + ProjectSettings.get_setting("application/config/version")
 
 func _on_more_options_pressed():
 	emit_signal("more_options_pressed")

@@ -36,6 +36,9 @@ var drag_threshold: float = 0.10 # Time in seconds before considering it a drag
 var click_position: Vector2 = Vector2.ZERO
 var current_scale_index: int = 0 # Index to track position in show_scales array
 
+# Context menu
+var context_menu: PopupMenu
+var colormap_submenu: PopupMenu
 
 var RA: float = 0.0
 var dec: float = 0.0
@@ -59,6 +62,10 @@ func _ready() -> void:
 	drag_timer.one_shot = true
 	drag_timer.timeout.connect(_on_drag_timer_timeout)
 	add_child(drag_timer)
+	
+	# Initialize context menu
+	_create_context_menu()
+	
 	# white_level = get_percentile(fits.get_image_data_normalized(hdu), 95.5)
 
 func _set_image(tex: Texture2D) -> void:
@@ -126,7 +133,8 @@ func _on_gui_input(event):
 				potential_drag = false
 				is_dragging = false
 		elif event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
-			invert_color = not invert_color
+			# Show context menu instead of directly inverting
+			_show_context_menu(event.global_position)
 
 
 func _handle_mouse_motion(event: InputEventMouseMotion):
@@ -377,3 +385,91 @@ func _handle_quick_click(position: Vector2) -> void:
 	
 	# Set the new scale
 	_set_scale_pc(new_scale)
+
+func _create_context_menu() -> void:
+	# Create main context menu
+	context_menu = PopupMenu.new()
+	add_child(context_menu)
+	context_menu.connect("id_pressed", _on_context_menu_item_selected)
+		
+	# Add scale options
+	context_menu.add_item("Scale 90%", 0)
+	context_menu.add_item("Scale 95%", 1)
+	context_menu.add_item("Scale 99%", 2)
+	context_menu.add_item("Scale 99.5%", 3)
+	context_menu.add_separator()
+	
+	# Add invert option
+	context_menu.add_item("Invert Colors", 4)
+	context_menu.add_separator()
+	
+	# Create colormap submenu
+	colormap_submenu = PopupMenu.new()
+	colormap_submenu.name = "ColorMapSubmenu"
+	colormap_submenu.connect("id_pressed", _on_colormap_selected)
+	
+	# Add colormap options
+	colormap_submenu.add_item("Grayscale", ColorMap.GRAYSCALE)
+	colormap_submenu.add_item("Viridis", ColorMap.VIRIDIS)
+	colormap_submenu.add_item("Plasma", ColorMap.PLASMA)
+	colormap_submenu.add_item("Inferno", ColorMap.INFERNO)
+	colormap_submenu.add_item("Magma", ColorMap.MAGMA)
+	colormap_submenu.add_item("Jet", ColorMap.JET)
+	colormap_submenu.add_item("Hot", ColorMap.HOT)
+	colormap_submenu.add_item("Cool", ColorMap.COOL)
+	colormap_submenu.add_item("Rainbow", ColorMap.RAINBOW)
+	
+	# Add colormap submenu to main menu - submenu must be added as child first
+	context_menu.add_child(colormap_submenu)
+	context_menu.add_submenu_node_item("Color Map", colormap_submenu)
+
+func _show_context_menu(global_pos: Vector2) -> void:
+	# Update checkmarks for current settings
+	_update_context_menu_checkmarks()
+	
+	# Show the context menu at the mouse position
+	context_menu.popup(Rect2i(global_pos, Vector2i.ZERO))
+
+func _update_context_menu_checkmarks() -> void:
+	# Clear all checkmarks first
+	for i in range(context_menu.get_item_count()):
+		context_menu.set_item_checked(i, false)
+	
+	# Check the current scale option
+	var current_scale = scale_percent
+	if abs(current_scale - 90.0) < 0.1:
+		context_menu.set_item_checked(0, true)
+	elif abs(current_scale - 95.0) < 0.1:
+		context_menu.set_item_checked(1, true)
+	elif abs(current_scale - 99.0) < 0.1:
+		context_menu.set_item_checked(2, true)
+	elif abs(current_scale - 99.5) < 0.1:
+		context_menu.set_item_checked(3, true)
+	
+	# Check invert option
+	context_menu.set_item_checked(4, invert_color)
+	
+	# Update colormap submenu checkmarks
+	for i in range(colormap_submenu.get_item_count()):
+		colormap_submenu.set_item_checked(i, false)
+	colormap_submenu.set_item_checked(color_map, true)
+
+func _on_context_menu_item_selected(id: int) -> void:
+	match id:
+		0: # Scale 90%
+			_set_scale_pc(90.0)
+			current_scale_index = show_scales.find(90.0)
+		1: # Scale 95%
+			_set_scale_pc(95.0)
+			current_scale_index = show_scales.find(95.0)
+		2: # Scale 99%
+			_set_scale_pc(99.0)
+			current_scale_index = show_scales.find(99.0)
+		3: # Scale 99.5%
+			_set_scale_pc(99.5)
+			current_scale_index = show_scales.find(99.5)
+		4: # Invert
+			invert_color = not invert_color
+
+func _on_colormap_selected(colormap_id: int) -> void:
+	color_map = colormap_id
