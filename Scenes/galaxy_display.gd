@@ -351,9 +351,30 @@ func _load_2d_spectra(data2d: Dictionary) -> void:
 	%Spec2Ds1.position_textures()
 
 func _load_direct_images(directs: Dictionary) -> void:
+	# Hide all direct image containers first to handle missing bands
+	var all_filters = ["F115W", "F150W", "F200W"]
+	for filt in all_filters:
+		var container_name = "VBoxContainer/MarginContainer3/Imaging/IC%s" % filt
+		var container_node = get_node_or_null(container_name)
+		if container_node:
+			container_node.visible = false
+	
+	# Hide segmap by default
+	var segmap_node = %SegMap
+	if segmap_node:
+		segmap_node.visible = false
+	
+	# Show and load only available direct images
 	for filt in directs:
 		var direct = directs[filt]
 		if direct:
+			# Show the container
+			var container_name = "VBoxContainer/MarginContainer3/Imaging/IC%s" % filt
+			var container_node = get_node_or_null(container_name)
+			if container_node:
+				container_node.visible = true
+			
+			# Load the direct image
 			var node_name = "VBoxContainer/MarginContainer3/Imaging/IC%s/Direct%s" % [filt, filt]
 			var direct_node = get_node_or_null(node_name) as OTImage
 			if direct_node:
@@ -362,13 +383,15 @@ func _load_direct_images(directs: Dictionary) -> void:
 				direct_node._set_scale_pc(99.5)
 				direct_node.visible = true
 				direct_node.set_label(filt)
+				
+				# Handle segmap for F200W
 				if filt == "F200W":
-					var segmap_node = %SegMap
-					segmap_node.res = direct
-					segmap_node.segmap = true
-					segmap_node.visible = true
-					segmap_node._load_object()
-					segmap_node.set_label("SegMap")
+					if segmap_node:
+						segmap_node.res = direct
+						segmap_node.segmap = true
+						segmap_node.visible = true
+						segmap_node._load_object()
+						segmap_node.set_label("SegMap")
 
 func _check_loading_complete() -> void:
 	# Check if we have loaded the basic required resources
