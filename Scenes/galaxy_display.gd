@@ -193,7 +193,7 @@ func _on_object_loaded(success: bool) -> void:
 
 func _on_resource_ready(resource_name: String) -> void:
 	# A resource has been loaded, try to update the display
-	print("Resource ready: ", resource_name)
+	# print("Resource ready: ", resource_name)
 	# Only update if this resource belongs to current object
 	if resource_name.begins_with(object_id):
 		_update_single_resource(resource_name)

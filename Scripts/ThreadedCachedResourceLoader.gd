@@ -115,7 +115,7 @@ func load_resource(resource_id: String) -> void:
 	
 	# Check if already loading
 	if loading_resources.has(resource_id):
-		print("Already loading: ", resource_id)
+		# print("Already loading: ", resource_id)
 		return
 	
 	# Check file cache asynchronously

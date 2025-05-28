@@ -196,6 +196,10 @@ func _load_object() -> void:
 			scaling = res['scaling']
 			# print(scaling)
 			# scaling = {"left": - crpix * cdelt + crval, "right": (width - crpix) * cdelt + crval}
+			
+			# Apply filter-based trimming for 2D spectra
+			_apply_filter_trimming()
+			
 		if res and "position_angle" in res:
 			set_label(res.position_angle)
 	_make_texture()
@@ -473,3 +477,73 @@ func _on_context_menu_item_selected(id: int) -> void:
 
 func _on_colormap_selected(colormap_id: int) -> void:
 	color_map = colormap_id
+
+func _apply_filter_trimming() -> void:
+	# Apply hardcoded filter boundaries for alignment
+	# F115W: trim above 1.3 microns
+	# F150W: trim between 1.3 and 1.7 microns  
+	# F200W: trim before 1.7 microns
+	
+	if not scaling or not scaling.has('left') or not scaling.has('right'):
+		return
+	
+	var original_left = scaling['left']
+	var original_right = scaling['right']
+	var original_width_microns = original_right - original_left
+	
+	# Determine filter type based on wavelength range
+	var new_left = original_left
+	var new_right = original_right
+	
+	# F115W: left < 1.2, right covers ~1.3 region - trim above 1.3
+	if original_left < 1.2 and original_right > 1.25:
+		new_right = min(original_right, 1.3)
+	
+	# F150W: left >= 1.2, right <= 1.8 - trim below 1.3 and above 1.7
+	elif original_left >= 1.2 and original_left < 1.35 and original_right <= 1.8:
+		new_left = max(original_left, 1.3)
+		new_right = min(original_right, 1.7)
+	
+	# F200W: left >= 1.6 - trim before 1.7
+	elif original_left >= 1.6:
+		new_left = max(original_left, 1.7)
+	
+	# Only trim if boundaries actually changed
+	if abs(new_left - original_left) > 0.001 or abs(new_right - original_right) > 0.001:
+		_trim_texture_data(new_left, new_right, original_left, original_right)
+		
+		# Update scaling to reflect new boundaries
+		scaling['left'] = new_left
+		scaling['right'] = new_right
+
+func _trim_texture_data(new_left: float, new_right: float, original_left: float, original_right: float) -> void:
+	# Trim the image_data array to remove pixels outside the new wavelength boundaries
+	
+	var original_width_microns = original_right - original_left
+	var new_width_microns = new_right - new_left
+	
+	# Calculate pixel boundaries
+	var left_trim_fraction = (new_left - original_left) / original_width_microns
+	var right_trim_fraction = (original_right - new_right) / original_width_microns
+	
+	var pixels_to_trim_left = int(left_trim_fraction * width)
+	var pixels_to_trim_right = int(right_trim_fraction * width)
+	var new_width = width - pixels_to_trim_left - pixels_to_trim_right
+	
+	# Create new trimmed image data
+	var new_image_data = PackedFloat32Array()
+	new_image_data.resize(new_width * height)
+	
+	# Copy relevant pixels row by row
+	for y in range(height):
+		for x in range(new_width):
+			var original_x = x + pixels_to_trim_left
+			var old_index = y * width + original_x
+			var new_index = y * new_width + x
+			
+			if old_index < image_data.size():
+				new_image_data[new_index] = image_data[old_index]
+	
+	# Update image data and width
+	image_data = new_image_data
+	width = new_width
