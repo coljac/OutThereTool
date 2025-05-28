@@ -26,6 +26,7 @@ ThemeManager="*res://theme/ThemeManager.gd"
 DataManager="*res://Scripts/data_manager.gd"
 NetworkConfig="*res://Scripts/NetworkConfig.gd"
 GlobalResourceCache="*res://Scripts/GlobalResourceCache.gd"
+ImageSettingsManager="*res://Scripts/image_settings_manager.gd"
 
 [display]
 

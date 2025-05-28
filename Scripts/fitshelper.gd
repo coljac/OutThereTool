@@ -18,7 +18,7 @@ func zip_arr(inputs: Array[Array]) -> Array[Vector2]:
 
 func get_pz(object: String) -> Array[PackedFloat32Array]:
 	var fits_table = FITSReader.new()
-	print_debug("Loading ", object)
+	# print_debug("Loading ", object)
 	fits_table.load_fits(object)
 	var data = fits_table.get_table_data(2)
 	var zs = data['data']['zgrid']

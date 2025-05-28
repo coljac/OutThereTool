@@ -29,6 +29,9 @@ var shader_material: ShaderMaterial
 var z_min: float = 0.0
 var z_max: float = 1.0
 
+# Flag to suppress ImageSettingsManager notifications during programmatic updates
+var suppress_notifications: bool = false
+
 # Variables for drag timer
 var drag_timer: Timer
 var potential_drag: bool = false
@@ -65,6 +68,9 @@ func _ready() -> void:
 	
 	# Initialize context menu
 	_create_context_menu()
+	
+	# Register with ImageSettingsManager for synchronization
+	ImageSettingsManager.register_image(self)
 	
 	# white_level = get_percentile(fits.get_image_data_normalized(hdu), 95.5)
 
@@ -227,24 +233,66 @@ func _set_scale_pc(p: float):
 	if image_data:
 		white_level = get_percentile(p)
 		_make_texture()
+	# Notify ImageSettingsManager of the change (unless suppressed)
+	if not suppress_notifications:
+		ImageSettingsManager.on_image_setting_changed(self, "scale_percent", p)
 	
 func _set_black(b: float):
 	black_level = b
 	if image_data:
 		_make_texture()
+	# Notify ImageSettingsManager of the change (unless suppressed)
+	if not suppress_notifications:
+		ImageSettingsManager.on_image_setting_changed(self, "black_level", b)
 	
 func _set_white(w: float):
 	white_level = w
 	if image_data:
 		_make_texture()
+	# Notify ImageSettingsManager of the change (unless suppressed)
+	if not suppress_notifications:
+		ImageSettingsManager.on_image_setting_changed(self, "white_level", w)
 
 func _set_invert(i: bool):
 	invert_color = i
 	if image_data:
 		_make_texture()
+	# Notify ImageSettingsManager of the change (unless suppressed)
+	if not suppress_notifications:
+		ImageSettingsManager.on_image_setting_changed(self, "invert_color", i)
 
 func _set_colormap(cm: ColorMap):
 	color_map = cm
+	if image_data:
+		_make_texture()
+	# Notify ImageSettingsManager of the change (unless suppressed)
+	if not suppress_notifications:
+		ImageSettingsManager.on_image_setting_changed(self, "color_map", cm)
+
+# Batch update method for ImageSettingsManager to apply multiple settings efficiently
+func apply_settings_batch(settings: Dictionary) -> void:
+	suppress_notifications = true
+	
+	for setting_name in settings:
+		var value = settings[setting_name]
+		match setting_name:
+			"black_level":
+				black_level = value
+			"white_level":
+				white_level = value
+			"scale_percent":
+				scale_percent = value
+				# Special case: scale_percent also updates white_level
+				if image_data:
+					white_level = get_percentile(value)
+			"invert_color":
+				invert_color = value
+			"color_map":
+				color_map = value
+	
+	suppress_notifications = false
+	
+	# Single visual update after all settings applied
 	if image_data:
 		_make_texture()
 		
@@ -473,10 +521,10 @@ func _on_context_menu_item_selected(id: int) -> void:
 			_set_scale_pc(99.5)
 			current_scale_index = show_scales.find(99.5)
 		4: # Invert
-			invert_color = not invert_color
+			_set_invert(not invert_color)
 
 func _on_colormap_selected(colormap_id: int) -> void:
-	color_map = colormap_id
+	_set_colormap(colormap_id)
 
 func _apply_filter_trimming() -> void:
 	# Apply hardcoded filter boundaries for alignment

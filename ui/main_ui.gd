@@ -14,6 +14,9 @@ extends Control
 @onready var cb_bestfit = %CBBestfit
 @onready var cb_errors = %CBErrors
 @onready var cb_contam = %CBContam
+@onready var cb_img_lock = %CBImgLock
+@onready var cb_all = %CBAll
+@onready var img_reset_button = %ImgResetButton
 
 # Path to the GalaxyDisplay scene
 const GALAXY_DISPLAY_SCENE = "res://Scenes/galaxy_display.tscn"
@@ -50,12 +53,17 @@ func _ready():
 	cb_bestfit.toggled.connect(_on_bestfit_toggled)
 	cb_errors.toggled.connect(_on_errors_toggled)
 	cb_contam.toggled.connect(_on_contam_toggled)
+	cb_img_lock.toggled.connect(_on_img_lock_toggled)
+	cb_all.toggled.connect(_on_all_toggled)
+	img_reset_button.pressed.connect(_on_img_reset_pressed)
 	
 	# Set default checkbox states
 	cb_flux.button_pressed = true
 	cb_bestfit.button_pressed = true
 	cb_errors.button_pressed = true
 	cb_contam.button_pressed = true
+	cb_img_lock.button_pressed = false
+	cb_all.button_pressed = false
 	# Set the tab scene for the tab container
 	tab_container.set_tab_scene(GALAXY_DISPLAY_SCENE)
 	# Add an initial tab
@@ -398,6 +406,16 @@ func _on_contam_toggled(pressed: bool) -> void:
 	var galaxy_display = %SimpleTab.get_tab_control(0)
 	if galaxy_display and galaxy_display.has_method("toggle_contam_visibility"):
 		galaxy_display.toggle_contam_visibility(pressed)
+
+# Image settings control callbacks
+func _on_img_lock_toggled(pressed: bool) -> void:
+	ImageSettingsManager.set_lock_settings(pressed)
+
+func _on_all_toggled(pressed: bool) -> void:
+	ImageSettingsManager.set_apply_to_all(pressed)
+
+func _on_img_reset_pressed() -> void:
+	ImageSettingsManager.reset_all_to_defaults()
 
 func show_settings():
 	# Show the settings dialog

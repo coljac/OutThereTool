@@ -91,7 +91,6 @@ func _ready():
 	# %Spec2Ds.call_deferred("position_textures")
 
 func _exit_tree() -> void:
-	print_debug("Exiting tree")
 	$CanvasLayer/RedshiftLabel.text = ""
 	
 	# Clean up asset helper
@@ -182,6 +181,9 @@ func _on_object_loaded(success: bool) -> void:
 		contam_series.clear()
 		# Reset zoom to default when loading new object
 		spec_1d.reset_zoom()
+	
+	# Clear tracked images from ImageSettingsManager when switching objects
+	ImageSettingsManager.clear_tracked_images()
 	
 	# Check if all resources are already cached - if so, load synchronously
 	if _all_resources_cached():
