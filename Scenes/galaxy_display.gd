@@ -288,8 +288,6 @@ func _load_1d_spectrum(oned_spec: Dictionary) -> void:
 			else:
 				min_flux = min(min_flux, data["min"])
 		
-		print(Array(data['fluxes']).min())
-		
 		# Add flux series (without errors) and track index
 		var flux_index = spec_1d.add_series(data["fluxes"], Color(0.4 + xx, xx, 0.8), 2.0, false, 3.0, [], [], Color.TRANSPARENT, 1.0, 5.0, false)
 		flux_series.append(flux_index)
