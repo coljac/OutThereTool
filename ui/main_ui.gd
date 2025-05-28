@@ -299,7 +299,8 @@ func _set_objects(new_objects: Array) -> void:
 	%ObjectsList.clear()
 	%ObjectsList.add_item("%d objects" % objects.size())
 	# get_item_index(0).set_text("%d objects" % objects.size())
-	for i in range(min(objects.size(), 100)):
+	for i in range(objects.size()):
+	# for i in range(min(objects.size(), 100)):
 		%ObjectsList.add_item(objects[i]['id'])
 
 	# Update the GalaxyDisplay with the new objects
