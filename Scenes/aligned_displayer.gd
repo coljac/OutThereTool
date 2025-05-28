@@ -16,13 +16,19 @@ var cursor_wavelength: float = 0.0 # Current wavelength position for the cursor 
 var cursor_height: int = 0 # Height for cursor line, calculated based on displayed images
 var row_heights: Array[float] = [] # Heights for each row
 var rows: Array[Array] = [] # Array of arrays containing children organized by row
-var row_labels: Array[Label] = [] # Label nodes for each row
+var label_overlay: Control # Overlay container for spectrum labels
+var spectrum_labels: Array[Label] = [] # Label nodes for each spectrum
 
 func _ready():
 	# Get reference to the PlotDisplay
 	clip_contents = true
 	# Allow mouse events to pass through to children
 	mouse_filter = Control.MOUSE_FILTER_PASS
+	# Ensure this control draws on top for cursor line
+	z_index = 100
+	
+	# Create label overlay
+	_setup_label_overlay()
 
 	if plot_display_path:
 		plot_display = get_node(plot_display_path)
@@ -77,7 +83,7 @@ func organize_rows() -> void:
 	rows.clear()
 	row_heights.clear()
 	# Clear labels when reorganizing
-	clear_labels()
+	clear_spectrum_labels()
 	
 	# Get all visible OTImage children
 	var visible_children = []
@@ -122,7 +128,7 @@ func organize_rows() -> void:
 # Called when the control is resized
 func _on_resized() -> void:
 	position_textures()
-	_position_labels()
+	update_all_spectrum_labels()
 	queue_redraw()
 
 # Called when the plot display's crosshair position changes
@@ -239,49 +245,78 @@ func position_textures():
 		# Move to next row
 		current_y_pos += height_per_row + row_spacing
 	
+	# Update spectrum label positions after repositioning
+	update_all_spectrum_labels()
+	
 	# Note: Clipping is now handled by texture trimming in OTImage
 
 # Clipping logic removed - now handled by texture trimming in OTImage
 
-func clear_labels() -> void:
-	# Remove all existing row labels
-	for label in row_labels:
+func _setup_label_overlay() -> void:
+	# Create overlay container that sits above all spectrum images
+	label_overlay = Control.new()
+	label_overlay.name = "LabelOverlay"
+	label_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE # Allow clicks to pass through
+	label_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(label_overlay)
+	# Set moderate z_index so cursor line can still draw on top
+	label_overlay.z_index = 50
+
+func clear_spectrum_labels() -> void:
+	# Remove all existing spectrum labels
+	for label in spectrum_labels:
 		if is_instance_valid(label):
 			label.queue_free()
-	row_labels.clear()
-
-func set_label(row: int, text: String) -> void:
-	# Ensure we have enough labels
-	while row >= row_labels.size():
-		var new_label = Label.new()
-		new_label.add_theme_color_override("font_color", Color.WHITE)
-		new_label.add_theme_font_size_override("font_size", 44)
-		new_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-		new_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		add_child(new_label)
-		# Ensure labels draw in front of other children
-		new_label.z_index = 100
-		row_labels.append(new_label)
+	spectrum_labels.clear()
 	
-	# Set the text for the specified row
-	# if row < row_labels.size():
-		# row_labels[row].text = text
-		# _position_labels()
+	# Don't destroy the overlay itself, just clear its children
+	if is_instance_valid(label_overlay):
+		for child in label_overlay.get_children():
+			child.queue_free()
 
-func _position_labels() -> void:
-	# Position labels at the left edge of each row
-	if rows.size() == 0:
+func add_spectrum_label(spectrum: OTImage, text: String) -> void:
+	# Ensure label overlay exists and is valid
+	if not is_instance_valid(label_overlay):
+		_setup_label_overlay()
+	
+	print("Adding spectrum label: ", text)
+	
+	# Create a new label for this spectrum
+	var label = Label.new()
+	label.text = text
+	label.add_theme_color_override("font_color", Color.WHITE)
+	label.add_theme_font_size_override("font_size", 14)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	
+	# Add to overlay, not to the aligned displayer directly
+	label_overlay.add_child(label)
+	spectrum_labels.append(label)
+	
+	print("Label added, positioning at spectrum pos: ", spectrum.position)
+	
+	# Position the label at the spectrum's top-left corner
+	_position_spectrum_label(spectrum, label)
+
+func _position_spectrum_label(spectrum: OTImage, label: Label) -> void:
+	if not is_instance_valid(spectrum) or not is_instance_valid(label):
 		return
 	
-	var available_height = size.y
-	var total_spacing = (rows.size() - 1) * row_spacing
-	var height_per_row = (available_height - total_spacing) / rows.size()
-	var current_y_pos = 0.0
+	# Calculate where the spectrum's top-left corner appears in our coordinate space
+	var spectrum_pos = spectrum.position
 	
-	for i in range(min(row_labels.size(), rows.size())):
-		if is_instance_valid(row_labels[i]):
-			row_labels[i].position.x = 5 # Small margin from the left edge
-			row_labels[i].position.y = current_y_pos + (height_per_row / 2) - (row_labels[i].size.y / 2)
-			row_labels[i].size.x = 0 # Let it auto-size based on text
+	# Position label with small offset from spectrum's top-left
+	label.position.x = spectrum_pos.x + 5
+	label.position.y = spectrum_pos.y + 5
+
+func update_all_spectrum_labels() -> void:
+	# Update positions of all spectrum labels after layout changes
+	if not is_instance_valid(label_overlay):
+		return
 		
-		current_y_pos += height_per_row + row_spacing
+	var label_index = 0
+	for row in rows:
+		for spectrum in row:
+			if label_index < spectrum_labels.size() and is_instance_valid(spectrum_labels[label_index]):
+				_position_spectrum_label(spectrum, spectrum_labels[label_index])
+			label_index += 1

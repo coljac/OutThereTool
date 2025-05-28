@@ -91,7 +91,6 @@ func _ready():
 	# %Spec2Ds.call_deferred("position_textures")
 
 func _exit_tree() -> void:
-	print_debug("Exiting tree")
 	$CanvasLayer/RedshiftLabel.text = ""
 	
 	# Clean up asset helper
@@ -337,11 +336,11 @@ func _load_2d_spectra(data2d: Dictionary) -> void:
 				spec_display.res = data2d[pa][f]
 				spec_display._load_object()
 				spec_display.hide_label()
-				# spec_display.set_label(str(pa))
 				spec_display.visible = true
 				# Add the spectrum to the row corresponding to its position angle
 				%Spec2Ds1.add_spectrum(spec_display, pa_index)
-				%Spec2Ds1.set_label(0, "PA 318°")
+				# Add label for this spectrum showing filter and PA
+				%Spec2Ds1.add_spectrum_label(spec_display, f + " PA" + str(pa) + "°")
 
 		pa_index += 1
 	
