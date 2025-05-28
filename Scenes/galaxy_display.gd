@@ -299,6 +299,7 @@ func _load_1d_spectrum(oned_spec: Dictionary) -> void:
 		# Add bestfit series and track index
 		var bestfit_index = spec_1d.add_series(data["bestfit"], Color(0.0, 1.0, 0.0, 0.5), 2.0, false, 3.0, [])
 		bestfit_series.append(bestfit_index)
+		var contam_index = spec_1d.add_series(data["contam"], Color(0.3, 1.0, 1.0, 0.5), 2.0, false, 3.0, [])
 		
 		xx += 0.2
 	

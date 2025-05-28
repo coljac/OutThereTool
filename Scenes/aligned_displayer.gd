@@ -21,6 +21,8 @@ var row_labels: Array[Label] = [] # Label nodes for each row
 func _ready():
 	# Get reference to the PlotDisplay
 	clip_contents = true
+	# Allow mouse events to pass through to children
+	mouse_filter = Control.MOUSE_FILTER_PASS
 
 	if plot_display_path:
 		plot_display = get_node(plot_display_path)
@@ -35,8 +37,7 @@ func _ready():
 			# Set up to receive mouse movement updates
 			set_process(true)
 	
-	for c in get_children():
-		c.set_draw_behind_parent(true)
+	# Removed set_draw_behind_parent to fix input handling
 	
 	# Handle resizing
 	resized.connect(_on_resized)
@@ -61,7 +62,7 @@ func add_spectrum(spectrum: OTImage, row: int = -1) -> void:
 		
 		# Add to the appropriate row
 		rows[row].append(spectrum)
-		spectrum.set_draw_behind_parent(true)
+		# Removed set_draw_behind_parent to fix input handling
 		
 		# Update row height if needed
 		if spectrum.height > row_heights[row]:
