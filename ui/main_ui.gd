@@ -13,6 +13,7 @@ extends Control
 @onready var cb_flux = %CBFlux
 @onready var cb_bestfit = %CBBestfit
 @onready var cb_errors = %CBErrors
+@onready var cb_contam = %CBContam
 
 # Path to the GalaxyDisplay scene
 const GALAXY_DISPLAY_SCENE = "res://Scenes/galaxy_display.tscn"
@@ -48,11 +49,13 @@ func _ready():
 	cb_flux.toggled.connect(_on_flux_toggled)
 	cb_bestfit.toggled.connect(_on_bestfit_toggled)
 	cb_errors.toggled.connect(_on_errors_toggled)
+	cb_contam.toggled.connect(_on_contam_toggled)
 	
 	# Set default checkbox states
 	cb_flux.button_pressed = true
 	cb_bestfit.button_pressed = true
 	cb_errors.button_pressed = true
+	cb_contam.button_pressed = true
 	# Set the tab scene for the tab container
 	tab_container.set_tab_scene(GALAXY_DISPLAY_SCENE)
 	# Add an initial tab
@@ -390,6 +393,11 @@ func _on_errors_toggled(pressed: bool) -> void:
 	var galaxy_display = %SimpleTab.get_tab_control(0)
 	if galaxy_display and galaxy_display.has_method("toggle_errors_visibility"):
 		galaxy_display.toggle_errors_visibility(pressed)
+
+func _on_contam_toggled(pressed: bool) -> void:
+	var galaxy_display = %SimpleTab.get_tab_control(0)
+	if galaxy_display and galaxy_display.has_method("toggle_contam_visibility"):
+		galaxy_display.toggle_contam_visibility(pressed)
 
 func show_settings():
 	# Show the settings dialog

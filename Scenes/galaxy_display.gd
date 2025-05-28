@@ -34,11 +34,13 @@ var asset_helper: AssetHelper
 var show_flux: bool = true
 var show_bestfit: bool = true
 var show_errors: bool = true
+var show_contam: bool = true
 
 # Store series indices for toggling
 var flux_series: Array = []
 var bestfit_series: Array = []
 var error_series: Array = []
+var contam_series: Array = []
 
 func set_object_id(new_id: String) -> void:
 	object_id = new_id
@@ -177,6 +179,7 @@ func _on_object_loaded(success: bool) -> void:
 		flux_series.clear()
 		bestfit_series.clear()
 		error_series.clear()
+		contam_series.clear()
 		# Reset zoom to default when loading new object
 		spec_1d.reset_zoom()
 	
@@ -299,7 +302,10 @@ func _load_1d_spectrum(oned_spec: Dictionary) -> void:
 		# Add bestfit series and track index
 		var bestfit_index = spec_1d.add_series(data["bestfit"], Color(0.0, 1.0, 0.0, 0.5), 2.0, false, 3.0, [])
 		bestfit_series.append(bestfit_index)
+		
+		# Add contam series and track index
 		var contam_index = spec_1d.add_series(data["contam"], Color(0.3, 1.0, 1.0, 0.5), 2.0, false, 3.0, [])
+		contam_series.append(contam_index)
 		
 		xx += 0.2
 	
@@ -600,4 +606,9 @@ func toggle_bestfit_visibility(visible: bool) -> void:
 func toggle_errors_visibility(visible: bool) -> void:
 	show_errors = visible
 	for index in error_series:
+		spec_1d.set_series_visible(index, visible)
+
+func toggle_contam_visibility(visible: bool) -> void:
+	show_contam = visible
+	for index in contam_series:
 		spec_1d.set_series_visible(index, visible)
