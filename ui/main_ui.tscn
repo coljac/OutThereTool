@@ -7,7 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://cpg7bchl457ac" path="res://theme/assets/icons/theme/SplitGrabber2.svg" id="4_podmt"]
 [ext_resource type="PackedScene" uid="uid://75flqcgsoecp" path="res://Scenes/simple_tab.tscn" id="5_186kx"]
 [ext_resource type="PackedScene" uid="uid://cubtixgrjj65y" path="res://Scenes/help.tscn" id="7_ti1yg"]
-[ext_resource type="PackedScene" uid="uid://twlr3oy3ddyb" path="res://Scenes/user_entry.tscn" id="8_fa42e"]
+[ext_resource type="PackedScene" path="res://Scenes/user_entry.tscn" id="8_fa42e"]
 
 [node name="MainUI" type="Control"]
 layout_mode = 3

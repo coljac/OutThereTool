@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://kiiwnpbw1pv" path="res://Scenes/aligned_displayer.tscn" id="3_tc3t6"]
 [ext_resource type="PackedScene" uid="uid://cr74tp6o0s73g" path="res://Scenes/ot_image.tscn" id="5_1oh7d"]
 [ext_resource type="PackedScene" path="res://ui/tab_toolbar.tscn" id="5_uxvqo"]
-[ext_resource type="Script" uid="uid://iniihm3olvps" path="res://Scenes/redshift_label.gd" id="6_1oh7d"]
+[ext_resource type="Script" path="res://Scenes/redshift_label.gd" id="6_1oh7d"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_01ug0"]
 bg_color = Color(0.0980392, 0.0980392, 0.14902, 1)

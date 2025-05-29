@@ -38,7 +38,7 @@ func load_resource(resource_id: String) -> void:
 	# Check file cache
 	var cache_path = cache_dir + resource_id
 	if FileAccess.file_exists(cache_path):
-		print_debug("Loading from file cache: ", resource_id)
+		# print_debug("Loading from file cache: ", resource_id)
 		_load_from_cache(resource_id, cache_path)
 		return
 	
