@@ -200,6 +200,7 @@ func position_textures():
 		
 		for child in row_children:
 			var f = child as OTImage
+
 			if not f or not is_instance_valid(f) or not f.scaling or not f.scaling.has('left') or not f.scaling.has('right'):
 				continue
 			
@@ -214,7 +215,6 @@ func position_textures():
 			var x_scale = float(pixel_width) / texture_width
 			
 			# Apply the x scale - we want to stretch the image to match the wavelength range
-			f.scale.x = x_scale
 			# print("----" , pixel_width, ", ", texture_width, ", ", x_scale, ", ",
 				# f.scaling['left'], ", ", f.scaling['right'], ", ", left_pixel, ", ", right_pixel)
 			# print(left_pixel, ", ", texture_width*x_scale, ", ", right_pixel)
@@ -222,8 +222,8 @@ func position_textures():
 			var target_height = min(height_per_row, f.height * max_y_scale)
 			var y_scale = target_height / f.height
 			
-			# Ensure a reasonable minimum scale
-			f.scale.y = max(0.2, y_scale)
+			# Scale only the TextureRect, not the entire component
+			f.set_texture_scale(Vector2(x_scale, max(0.2, y_scale)))
 			
 			# Apply a consistent size for better readability
 			if height_per_row > 40: # Only if we have enough space

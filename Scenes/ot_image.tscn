@@ -8,8 +8,10 @@ shader = ExtResource("2_48rgr")
 shader_parameter/z_min = 0.0
 shader_parameter/z_max = 1.0
 
-[node name="OTImage" type="MarginContainer"]
+[node name="OTImage" type="Control"]
 custom_minimum_size = Vector2(100, 100)
+layout_mode = 3
+anchors_preset = 0
 offset_left = 8.0
 offset_right = 149.0
 offset_bottom = 110.0
@@ -29,9 +31,17 @@ flip_v = true
 
 [node name="Label" type="Label" parent="."]
 visible = false
-layout_mode = 2
+layout_mode = 1
+offset_right = 57.0
+offset_bottom = 31.0
 size_flags_vertical = 0
-theme_override_colors/font_color = Color(0.953905, 0.825031, 0, 1)
+theme_override_colors/font_color = Color(0.908464, 0.671644, 0.115331, 1)
+theme_override_colors/font_shadow_color = Color(0.0443225, 0, 0.480242, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = -2
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/outline_size = 6
+theme_override_constants/shadow_outline_size = 4
 theme_override_font_sizes/font_size = 22
 text = "Label"
 horizontal_alignment = 1
