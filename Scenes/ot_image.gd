@@ -204,9 +204,15 @@ func _load_object() -> void:
 			set_label(res.position_angle)
 	_make_texture()
 
+
+func set_texture_scale(t: Vector2):
+	fits_img.scale = t
+
+
 func set_label(t: String):
 	$Label.text = t
-	# show_label()
+	if t != "" and is_2d_spectrum:
+		show_label()
 	
 func show_label():
 	$Label.visible = true
@@ -483,7 +489,6 @@ func _apply_filter_trimming() -> void:
 	# F115W: trim above 1.3 microns
 	# F150W: trim between 1.3 and 1.7 microns  
 	# F200W: trim before 1.7 microns
-	
 	if not scaling or not scaling.has('left') or not scaling.has('right'):
 		return
 	
@@ -518,7 +523,6 @@ func _apply_filter_trimming() -> void:
 
 func _trim_texture_data(new_left: float, new_right: float, original_left: float, original_right: float) -> void:
 	# Trim the image_data array to remove pixels outside the new wavelength boundaries
-	
 	var original_width_microns = original_right - original_left
 	var new_width_microns = new_right - new_left
 	
