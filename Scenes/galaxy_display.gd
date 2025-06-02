@@ -398,21 +398,27 @@ func _create_spectrum_image(resource: Resource, data_type: String) -> OTImage:
 	
 	# Fix dimensions for contam/model data which may differ from science image
 	if data_type != "image_data":
-		# Calculate dimensions from data array size
-		# For contamination/model data, we need to determine the correct width/height
-		# This is a bit tricky without more info from the FITS file
-		# For now, assume square-ish aspect ratio or use science image ratio
-		var total_pixels = data_array.size()
-		var science_aspect_ratio = float(resource.width) / float(resource.height)
-		
-		# Try to maintain similar aspect ratio
-		var new_height = sqrt(total_pixels / science_aspect_ratio)
-		var new_width = total_pixels / new_height
-		
-		modified_resource.width = int(new_width)
-		modified_resource.height = int(new_height)
-		
-		print("Adjusted dimensions for ", data_type, ": ", modified_resource.width, "x", modified_resource.height, " (was ", resource.width, "x", resource.height, ")")
+		# Use the proper dimensions stored in the resource
+		if data_type == "contam_data" and "contam_width" in resource and "contam_height" in resource:
+			modified_resource.width = resource.contam_width
+			modified_resource.height = resource.contam_height
+			print("Using stored contam dimensions: ", modified_resource.width, "x", modified_resource.height)
+		elif data_type == "model_data" and "model_width" in resource and "model_height" in resource:
+			modified_resource.width = resource.model_width
+			modified_resource.height = resource.model_height
+			print("Using stored model dimensions: ", modified_resource.width, "x", modified_resource.height)
+		else:
+			# Fallback: calculate dimensions from data array size
+			var total_pixels = data_array.size()
+			var science_aspect_ratio = float(resource.width) / float(resource.height)
+			
+			var new_height = sqrt(total_pixels / science_aspect_ratio)
+			var new_width = total_pixels / new_height
+			
+			modified_resource.width = int(new_width)
+			modified_resource.height = int(new_height)
+			
+			print("Calculated dimensions for ", data_type, ": ", modified_resource.width, "x", modified_resource.height, " (was ", resource.width, "x", resource.height, ")")
 	
 	var spec_display: OTImage = otimg.instantiate()
 	if spec_display:

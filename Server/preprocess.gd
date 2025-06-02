@@ -245,8 +245,17 @@ func preprocess_2d_spectra(object_id: String, fits_path: String, output_dir: Str
 			var header = fits_reader.get_header_info(hdu_index)
 			var image_data = fits_reader.get_image_data_normalized(hdu_index)
 			if "CONTAM" in data_2d[pa]:
+				var contam_header = fits_reader.get_header_info(data_2d[pa]['CONTAM']['index'])
+				var model_header = fits_reader.get_header_info(data_2d[pa]['MODEL']['index'])
+				
 				resource.contam_data = fits_reader.get_image_data_normalized(data_2d[pa]['CONTAM']['index'])
 				resource.model_data = fits_reader.get_image_data_normalized(data_2d[pa]['MODEL']['index'])
+				
+				# Store the actual dimensions of contam/model data
+				resource.contam_width = int(contam_header.get("NAXIS1")) #, width))
+				resource.contam_height = int(contam_header.get("NAXIS2")) #, height))
+				resource.model_width = int(model_header.get("NAXIS1")) #, width))
+				resource.model_height = int(model_header.get("NAXIS2")) #, height))
 			
 			if image_data.size() == 0:
 				log_message("    Error: Failed to extract image data for PA " + pa + ", filter " + filter_name)
