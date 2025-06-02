@@ -221,8 +221,8 @@ func preprocess_2d_spectra(object_id: String, fits_path: String, output_dir: Str
 	var result = {}
 	
 	# Get 2D spectrum data using FitsHelper
-	var spectrum_indices = fits_helper.get_2d_spectrum(fits_path)
-	if spectrum_indices.is_empty():
+	var data_2d = fits_helper.get_2d_spectrum(fits_path)
+	if data_2d.is_empty():
 		log_message("    Error: Failed to extract 2D spectrum indices from " + fits_path)
 		return result
 	
@@ -233,16 +233,20 @@ func preprocess_2d_spectra(object_id: String, fits_path: String, output_dir: Str
 		return result
 	
 	# Process each PA and filter combination
-	for pa in spectrum_indices:
+	for pa in data_2d:
 		# Initialize PA entry in result dictionary if it doesn't exist
 		if not pa in result:
 			result[pa] = {}
 			
-		for filter_name in spectrum_indices[pa]:
-			var filt_data: Dictionary = spectrum_indices[pa][filter_name]['SCI']
+		for filter_name in data_2d[pa]:
+			var resource = Spectrum2DResource.new()
+			var filt_data: Dictionary = data_2d[pa][filter_name]
 			var hdu_index = filt_data['index']
 			var header = fits_reader.get_header_info(hdu_index)
 			var image_data = fits_reader.get_image_data_normalized(hdu_index)
+			if "CONTAM" in data_2d[pa]:
+				resource.contam_data = fits_reader.get_image_data_normalized(data_2d[pa]['CONTAM']['index'])
+				resource.model_data = fits_reader.get_image_data_normalized(data_2d[pa]['MODEL']['index'])
 			
 			if image_data.size() == 0:
 				log_message("    Error: Failed to extract image data for PA " + pa + ", filter " + filter_name)
@@ -269,7 +273,6 @@ func preprocess_2d_spectra(object_id: String, fits_path: String, output_dir: Str
 			}
 			
 			# Create resource with raw image data
-			var resource = Spectrum2DResource.new()
 			resource.object_id = object_id
 			resource.filter_name = filter_name
 			resource.image_data = image_data

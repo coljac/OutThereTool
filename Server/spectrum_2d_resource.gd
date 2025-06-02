@@ -17,6 +17,8 @@ extends Resource
 
 ## Raw image data as a PackedFloat32Array
 @export var image_data: PackedFloat32Array
+@export var contam_data: PackedFloat32Array
+@export var model_data: PackedFloat32Array
 
 ## Wavelength scaling information for aligning the spectrum
 @export var scaling: Dictionary = {"left": 0.0, "right": 0.0}
