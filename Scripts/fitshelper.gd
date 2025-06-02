@@ -185,12 +185,16 @@ func get_2d_spectrum(object: String) -> Dictionary:
 	var res2 = {}
 	for hdu in fits_file.get_info()['hdus']:
 		if "name" in hdu:
-			if hdu['name'] in ["SCI"]:
+			if hdu['name'] in ["SCI", "CONTAM", "MODEL"]:
 				var nm = hdu['name']
 				var deets = {}
 				var hdr = fits_file.get_header_info(hdu['index'])
 				var extname = hdr['EXTVER']
-				var filter = hdr['GRISM']
+				var filter = ""
+				if "GRISM" in hdr:
+					filter = hdr['GRISM']
+				else:
+					filter = extname.split(",")[0]
 				deets['index'] = hdu['index']
 				deets['extname'] = extname
 				deets['fits'] = fits_file
@@ -202,13 +206,14 @@ func get_2d_spectrum(object: String) -> Dictionary:
 				# res[filter].append(deets)
 				res2[pa] = res2[pa] if pa in res2 else {}
 				res2[pa][filter] = {} if filter not in res2[pa] else res2[pa][filter]
-				res2[pa][filter] = deets
+				res2[pa][filter][nm] = deets
 				print("XX", res2)
 			elif hdu['name'] in ["CONTAM", "MODEL"]:
 				var nm = hdu['name']
 				var deets = {}
 				var hdr = fits_file.get_header_info(hdu['index'])
 				var extname = hdr['EXTVER']
+				var filter = extname.split(",")[0]
 				deets['index'] = hdu['index']
 				deets['extname'] = extname
 				deets['fits'] = fits_file
@@ -220,7 +225,7 @@ func get_2d_spectrum(object: String) -> Dictionary:
 				# res[filter].append(deets)
 				res2[pa] = res2[pa] if pa in res2 else {}
 				res2[pa][nm] = {} if nm not in res2[pa] else res2[pa][nm]
-				res2[pa][nm] = deets
+				res2[pa][filter][nm] = deets
 				print("XX ", nm, " ", res2)
 
 	return res2
