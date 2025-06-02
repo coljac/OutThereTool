@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=5 format=3 uid="uid://dtv363hjjk5om"]
 
 [ext_resource type="Script" uid="uid://c7c3q7sykilaq" path="res://ui/tab_toolbar.gd" id="1_uxvqo"]
 [ext_resource type="Texture2D" uid="uid://n5o4avv1c0uw" path="res://assets/icons/Visuals.svg" id="2_n3qjt"]
@@ -28,6 +28,7 @@ icon = ExtResource("2_n3qjt")
 icon_alignment = 1
 
 [node name="Reference" type="Button" parent="ViewportOptions/LeftMenu"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 2
 focus_mode = 0
@@ -67,3 +68,5 @@ layout_mode = 2
 focus_mode = 0
 theme_type_variation = &"IconButton"
 text = "+"
+
+[connection signal="pressed" from="ViewportOptions/LeftMenu/Reference" to="." method="_on_reference_pressed"]

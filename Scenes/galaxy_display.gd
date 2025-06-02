@@ -42,6 +42,12 @@ var bestfit_series: Array = []
 var error_series: Array = []
 var contam_series: Array = []
 
+# Store different sets of 2D spectrum images
+var science_images: Array = []  # Regular image_data OTImages
+var contam_images: Array = []   # contam_data OTImages
+var model_images: Array = []    # model_data OTImages
+var is_showing_science: bool = true  # Toggle state
+
 func set_object_id(new_id: String) -> void:
 	object_id = new_id
 	# Reload the object with the new ID
@@ -325,30 +331,76 @@ func _load_2d_spectra(data2d: Dictionary) -> void:
 	for child in aligned.get_children():
 		child.queue_free()
 	
-	# Add all spectra from different position angles
+	# Clear our image arrays
+	science_images.clear()
+	contam_images.clear()
+	model_images.clear()
+	
+	# Add all spectra from different position angles (science data)
 	var pa_index = 0
 	for pa in data2d.keys():
 		for f in ['F115W', 'F150W', 'F200W']:
 			if f not in data2d[pa]:
 				continue
 			
-			var spec_display: OTImage = otimg.instantiate()
+			# Create science image (regular image_data)
+			var spec_display: OTImage = _create_spectrum_image(data2d[pa][f], "image_data")
 			if spec_display:
-				spec_display.color_map = OTImage.ColorMap.JET
-				spec_display.is_2d_spectrum = true
-				spec_display.res = data2d[pa][f]
-				spec_display._load_object()
-				spec_display.hide_label()
-				# spec_display.set_label(str(pa))
-				spec_display.visible = true
-				# Add the spectrum to the row corresponding to its position angle
+				science_images.append(spec_display)
 				%Spec2Ds1.add_spectrum(spec_display, pa_index)
 				%Spec2Ds1.set_label(0, "PA 318°")
+				
+			# For blank PA (""), also create contamination and model images
+			if pa == "":
+				# Create contamination image
+				var contam_display: OTImage = _create_spectrum_image(data2d[pa][f], "contam_data")
+				if contam_display:
+					contam_display.visible = false  # Hidden initially
+					contam_images.append(contam_display)
+					%Spec2Ds1.add_spectrum(contam_display, 0)  # Row 0 for contamination
+					
+				# Create model image
+				var model_display: OTImage = _create_spectrum_image(data2d[pa][f], "model_data")
+				if model_display:
+					model_display.visible = false  # Hidden initially
+					model_images.append(model_display)
+					%Spec2Ds1.add_spectrum(model_display, 1)  # Row 1 for model
 
 		pa_index += 1
 	
+	# Set labels for contamination/model rows (will be hidden initially)
+	if contam_images.size() > 0:
+		%Spec2Ds1.set_label(0, "Contamination")
+	if model_images.size() > 0:
+		%Spec2Ds1.set_label(1, "Model")
+	
 	# Position all textures after adding all spectra
 	%Spec2Ds1.position_textures()
+
+# Helper function to create a spectrum image from a resource using specific data type
+func _create_spectrum_image(resource: Resource, data_type: String) -> OTImage:
+	if not resource or not (data_type in resource):
+		return null
+	
+	# Check if the requested data exists and has content
+	var data_array = resource.get(data_type)
+	if not data_array or data_array.size() == 0:
+		return null
+	
+	# Create a new resource with the specified data type as image_data
+	var modified_resource = resource.duplicate()
+	modified_resource.image_data = data_array
+	
+	var spec_display: OTImage = otimg.instantiate()
+	if spec_display:
+		spec_display.color_map = OTImage.ColorMap.JET
+		spec_display.is_2d_spectrum = true
+		spec_display.res = modified_resource
+		spec_display._load_object()
+		spec_display.hide_label()
+		spec_display.visible = true
+	
+	return spec_display
 
 func _load_direct_images(directs: Dictionary) -> void:
 	# Hide all direct image containers first to handle missing bands
@@ -635,3 +687,30 @@ func toggle_contam_visibility(visible: bool) -> void:
 	show_contam = visible
 	for index in contam_series:
 		spec_1d.set_series_visible(index, visible)
+
+# Toggle between showing science data and contamination/model data in 2D spectra
+func toggle_2d_data() -> void:
+	is_showing_science = !is_showing_science
+	
+	if is_showing_science:
+		# Show science images, hide contam/model
+		_show_image_set(science_images, true)
+		_show_image_set(contam_images, false)
+		_show_image_set(model_images, false)
+	else:
+		# Hide science images, show contam/model
+		_show_image_set(science_images, false)
+		_show_image_set(contam_images, true)
+		_show_image_set(model_images, true)
+	
+	# Update aligned displayer positioning
+	%Spec2Ds1.organize_rows()
+	%Spec2Ds1.position_textures()
+
+func _show_image_set(image_set: Array, visible: bool) -> void:
+	for img in image_set:
+		if is_instance_valid(img):
+			img.visible = visible
+
+func _on_tab_toolbar_reference_pressed():
+	toggle_2d_data()

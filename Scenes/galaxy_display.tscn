@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://cyh72nd7q1v85" path="res://Scenes/plot_display.tscn" id="2_oanb5"]
 [ext_resource type="PackedScene" uid="uid://kiiwnpbw1pv" path="res://Scenes/aligned_displayer.tscn" id="3_tc3t6"]
 [ext_resource type="PackedScene" uid="uid://cr74tp6o0s73g" path="res://Scenes/ot_image.tscn" id="5_1oh7d"]
-[ext_resource type="PackedScene" path="res://ui/tab_toolbar.tscn" id="5_uxvqo"]
+[ext_resource type="PackedScene" uid="uid://dtv363hjjk5om" path="res://ui/tab_toolbar.tscn" id="5_uxvqo"]
 [ext_resource type="Script" uid="uid://iniihm3olvps" path="res://Scenes/redshift_label.gd" id="6_1oh7d"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_01ug0"]
@@ -204,6 +204,7 @@ theme_override_font_sizes/font_size = 44
 text = "z  = 1.0"
 script = ExtResource("6_1oh7d")
 
+[connection signal="reference_pressed" from="VBoxContainer/TabToolbar" to="." method="_on_tab_toolbar_reference_pressed"]
 [connection signal="zoomed" from="VBoxContainer/MarginContainer5/Spec1d" to="." method="oned_zoomed"]
 [connection signal="plot_left_clicked" from="VBoxContainer/MarginContainer6/VBoxContainer/Redshift" to="." method="_on_redshift_plot_left_clicked"]
 [connection signal="value_changed" from="VBoxContainer/MarginContainer6/VBoxContainer/MarginContainer/HSlider" to="." method="_on_h_slider_value_changed"]
