@@ -181,45 +181,51 @@ func get_emission_line_maps(object: String) -> Dictionary:
 func get_2d_spectrum(object: String) -> Dictionary:
 	var fits_file = FITSReader.new()
 	fits_file.load_fits(object)
-	var res = {"F115W": [], "F150W": [], "F200W": []}
+	# var res = {"F115W": [], "F150W": [], "F200W": []}
 	var res2 = {}
 	for hdu in fits_file.get_info()['hdus']:
-		if "name" in hdu and hdu['name'] == "SCI":
-			var deets = {}
-			var hdr = fits_file.get_header_info(hdu['index'])
-			var extname = hdr['EXTVER']
-			var filter = hdr['GRISM']
-			deets['index'] = hdu['index']
-			deets['extname'] = extname
-			deets['fits'] = fits_file
-			var pa = ""
-			deets['pa'] = null
-			if "PA" in hdr:
-				pa = String(hdr['PA'])
-				deets['pa'] = hdr['PA']
-			res[filter].append(deets)
-			res2[pa] = res2[pa] if pa in res2 else {}
-			res2[pa][filter] = deets
+		if "name" in hdu:
+			if hdu['name'] in ["SCI"]:
+				var nm = hdu['name']
+				var deets = {}
+				var hdr = fits_file.get_header_info(hdu['index'])
+				var extname = hdr['EXTVER']
+				var filter = hdr['GRISM']
+				deets['index'] = hdu['index']
+				deets['extname'] = extname
+				deets['fits'] = fits_file
+				var pa = ""
+				deets['pa'] = null
+				if "PA" in hdr:
+					pa = String(hdr['PA'])
+					deets['pa'] = hdr['PA']
+				# res[filter].append(deets)
+				res2[pa] = res2[pa] if pa in res2 else {}
+				res2[pa][filter] = {} if filter not in res2[pa] else res2[pa][filter]
+				res2[pa][filter] = deets
+				print("XX", res2)
+			elif hdu['name'] in ["CONTAM", "MODEL"]:
+				var nm = hdu['name']
+				var deets = {}
+				var hdr = fits_file.get_header_info(hdu['index'])
+				var extname = hdr['EXTVER']
+				deets['index'] = hdu['index']
+				deets['extname'] = extname
+				deets['fits'] = fits_file
+				var pa = ""
+				deets['pa'] = null
+				if "PA" in hdr:
+					pa = String(hdr['PA'])
+					deets['pa'] = hdr['PA']
+				# res[filter].append(deets)
+				res2[pa] = res2[pa] if pa in res2 else {}
+				res2[pa][nm] = {} if nm not in res2[pa] else res2[pa][nm]
+				res2[pa][nm] = deets
+				print("XX ", nm, " ", res2)
 
 	return res2
-	# OLD	
-	var f200w = get_hdu_by_name_ver(fits_file, "SCI", "F200W")
-	if f200w:
-		res['F200W'] = f200w['index']
-	var f150w = get_hdu_by_name_ver(fits_file, "SCI", "F150W")
-	if f150w:
-		res['F150W'] = f150w['index']
-	var f115w = get_hdu_by_name_ver(fits_file, "SCI", "F115W")
-	if f115w:
-		res['F115W'] = f115w['index']
-	return res
-	#return f200w['index']
-	## Nancy
-	# sci_i = hdu['SCI', '{0},{1}'.format(g, pa)]
-			# wht_i = hdu['WHT', '{0},{1}'.format(g, pa)]
-			# contam_i = hdu['CONTAM', '{0},{1}'.format(g, pa)]
-			# model_i = hdu['MODEL', '{0},{1}'.format(g, pa)]
-	
+
+
 func log10(f: float):
 	return log(f) / c_log10
 		

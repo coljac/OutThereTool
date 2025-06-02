@@ -239,7 +239,8 @@ func preprocess_2d_spectra(object_id: String, fits_path: String, output_dir: Str
 			result[pa] = {}
 			
 		for filter_name in spectrum_indices[pa]:
-			var hdu_index = spectrum_indices[pa][filter_name]['index']
+			var filt_data: Dictionary = spectrum_indices[pa][filter_name]['SCI']
+			var hdu_index = filt_data['index']
 			var header = fits_reader.get_header_info(hdu_index)
 			var image_data = fits_reader.get_image_data_normalized(hdu_index)
 			
