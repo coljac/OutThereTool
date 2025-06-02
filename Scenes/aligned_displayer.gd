@@ -81,8 +81,10 @@ func organize_rows() -> void:
 	
 	# Get all visible OTImage children
 	var visible_children = []
+	var sss = 0
 	for child in get_children():
 		var img = child as OTImage
+		print(str(sss) + " > ", img)
 		if img and is_instance_valid(img) and img.visible and img.scaling and img.fits_img.texture:
 			visible_children.append(img)
 	

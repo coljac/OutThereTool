@@ -336,7 +336,7 @@ func _load_2d_spectra(data2d: Dictionary) -> void:
 	contam_images.clear()
 	model_images.clear()
 	
-	# Add all spectra from different position angles (science data)
+	# Create all image types but only add science images to aligned displayer initially
 	var pa_index = 0
 	for pa in data2d.keys():
 		for f in ['F115W', 'F150W', 'F200W']:
@@ -350,29 +350,28 @@ func _load_2d_spectra(data2d: Dictionary) -> void:
 				%Spec2Ds1.add_spectrum(spec_display, pa_index)
 				%Spec2Ds1.set_label(0, "PA 318°")
 				
-			# For blank PA (""), also create contamination and model images
+			# For blank PA (""), also create contamination and model images (but don't add to displayer yet)
 			if pa == "":
 				# Create contamination image
 				var contam_display: OTImage = _create_spectrum_image(data2d[pa][f], "contam_data")
 				if contam_display:
-					contam_display.visible = false  # Hidden initially
+					print("Created contam image for filter: ", f)
 					contam_images.append(contam_display)
-					%Spec2Ds1.add_spectrum(contam_display, 0)  # Row 0 for contamination
+				else:
+					print("Failed to create contam image for filter: ", f)
 					
 				# Create model image
 				var model_display: OTImage = _create_spectrum_image(data2d[pa][f], "model_data")
 				if model_display:
-					model_display.visible = false  # Hidden initially
+					print("Created model image for filter: ", f)
 					model_images.append(model_display)
-					%Spec2Ds1.add_spectrum(model_display, 1)  # Row 1 for model
+				else:
+					print("Failed to create model image for filter: ", f)
 
 		pa_index += 1
 	
-	# Set labels for contamination/model rows (will be hidden initially)
-	if contam_images.size() > 0:
-		%Spec2Ds1.set_label(0, "Contamination")
-	if model_images.size() > 0:
-		%Spec2Ds1.set_label(1, "Model")
+	# Reset to science mode
+	is_showing_science = true
 	
 	# Position all textures after adding all spectra
 	%Spec2Ds1.position_textures()
@@ -380,16 +379,40 @@ func _load_2d_spectra(data2d: Dictionary) -> void:
 # Helper function to create a spectrum image from a resource using specific data type
 func _create_spectrum_image(resource: Resource, data_type: String) -> OTImage:
 	if not resource or not (data_type in resource):
+		print("Resource missing or no ", data_type, " field")
 		return null
 	
 	# Check if the requested data exists and has content
 	var data_array = resource.get(data_type)
 	if not data_array or data_array.size() == 0:
+		print(data_type, " exists but is empty or null")
 		return null
+	
+	print("Successfully creating image for ", data_type, " with ", data_array.size(), " elements")
+	print("Scaling info: ", resource.scaling if "scaling" in resource else "no scaling")
+	print("Dimensions: ", resource.width, "x", resource.height, " filter: ", resource.filter_name if "filter_name" in resource else "unknown")
 	
 	# Create a new resource with the specified data type as image_data
 	var modified_resource = resource.duplicate()
 	modified_resource.image_data = data_array
+	
+	# Fix dimensions for contam/model data which may differ from science image
+	if data_type != "image_data":
+		# Calculate dimensions from data array size
+		# For contamination/model data, we need to determine the correct width/height
+		# This is a bit tricky without more info from the FITS file
+		# For now, assume square-ish aspect ratio or use science image ratio
+		var total_pixels = data_array.size()
+		var science_aspect_ratio = float(resource.width) / float(resource.height)
+		
+		# Try to maintain similar aspect ratio
+		var new_height = sqrt(total_pixels / science_aspect_ratio)
+		var new_width = total_pixels / new_height
+		
+		modified_resource.width = int(new_width)
+		modified_resource.height = int(new_height)
+		
+		print("Adjusted dimensions for ", data_type, ": ", modified_resource.width, "x", modified_resource.height, " (was ", resource.width, "x", resource.height, ")")
 	
 	var spec_display: OTImage = otimg.instantiate()
 	if spec_display:
@@ -691,26 +714,74 @@ func toggle_contam_visibility(visible: bool) -> void:
 # Toggle between showing science data and contamination/model data in 2D spectra
 func toggle_2d_data() -> void:
 	is_showing_science = !is_showing_science
+	print("Toggling to: ", "science" if is_showing_science else "contam/model")
+	print("Science images count: ", science_images.size())
+	print("Contam images count: ", contam_images.size())
+	print("Model images count: ", model_images.size())
+	_rebuild_2d_display()
+
+# Rebuild the 2D display based on current mode
+func _rebuild_2d_display() -> void:
+	var aligned = %Spec2Ds1
+	
+	# Clear existing rows but don't free the stored images
+	aligned.rows.clear()
+	aligned.row_heights.clear()
+	aligned.clear_labels()
+	
+	# Remove all children temporarily
+	for child in aligned.get_children():
+		aligned.remove_child(child)
 	
 	if is_showing_science:
-		# Show science images, hide contam/model
-		_show_image_set(science_images, true)
-		_show_image_set(contam_images, false)
-		_show_image_set(model_images, false)
+		# Recreate the original PA-based organization
+		# Group science images by PA and add them properly
+		var images_by_pa = {}
+		for img in science_images:
+			if is_instance_valid(img):
+				var img_pa = img.res.position_angle if "position_angle" in img.res else ""
+				if not images_by_pa.has(img_pa):
+					images_by_pa[img_pa] = []
+				images_by_pa[img_pa].append(img)
+		
+		# Add images PA by PA (same as original loading logic)
+		var pa_index = 0
+		for pa in images_by_pa.keys():
+			for img in images_by_pa[pa]:
+				img.visible = true
+				aligned.add_spectrum(img, pa_index)  # add_spectrum handles add_child
+			
+			# Set label for this PA
+			if pa != "":
+				aligned.set_label(pa_index, "PA 318°")
+			pa_index += 1
+		
 	else:
-		# Hide science images, show contam/model
-		_show_image_set(science_images, false)
-		_show_image_set(contam_images, true)
-		_show_image_set(model_images, true)
+		# Add contam/model images with fixed row organization
+		# Row 0: Contamination
+		print("Adding ", contam_images.size(), " contamination images")
+		for img in contam_images:
+			if is_instance_valid(img):
+				print("Adding contam image for filter: ", img.res.filter_name if "filter_name" in img.res else "unknown")
+				img.visible = true
+				aligned.add_spectrum(img, 0)  # add_spectrum handles add_child
+		if contam_images.size() > 0:
+			aligned.set_label(0, "Contamination")
+		
+		# Row 1: Model  
+		print("Adding ", model_images.size(), " model images")
+		for img in model_images:
+			if is_instance_valid(img):
+				print("Adding model image for filter: ", img.res.filter_name if "filter_name" in img.res else "unknown")
+				img.visible = true
+				aligned.add_spectrum(img, 1)  # add_spectrum handles add_child
+		if model_images.size() > 0:
+			aligned.set_label(1, "Model")
 	
-	# Update aligned displayer positioning
-	%Spec2Ds1.organize_rows()
-	%Spec2Ds1.position_textures()
+	# Don't call organize_rows() since we've manually assigned rows
+	# Just position the textures with our existing row structure
+	aligned.position_textures()
 
-func _show_image_set(image_set: Array, visible: bool) -> void:
-	for img in image_set:
-		if is_instance_valid(img):
-			img.visible = visible
 
 func _on_tab_toolbar_reference_pressed():
 	toggle_2d_data()
