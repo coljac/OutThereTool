@@ -5,6 +5,7 @@ const ThemeUtils = preload("res://theme/ThemeUtils.gd")
 # Signals
 signal zoom_in_pressed
 signal zoom_out_pressed
+signal reference_pressed
 
 # Node references
 @onready var visuals_button = $ViewportOptions/LeftMenu/Visuals
@@ -41,3 +42,6 @@ func _on_zoom_out_button_pressed():
 	zoom_level = max(zoom_level - 25, 25)
 	zoom_label.text = str(zoom_level) + "%"
 	emit_signal("zoom_out_pressed")
+
+func _on_reference_pressed():
+	reference_pressed.emit()

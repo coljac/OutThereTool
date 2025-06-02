@@ -221,8 +221,8 @@ func preprocess_2d_spectra(object_id: String, fits_path: String, output_dir: Str
 	var result = {}
 	
 	# Get 2D spectrum data using FitsHelper
-	var spectrum_indices = fits_helper.get_2d_spectrum(fits_path)
-	if spectrum_indices.is_empty():
+	var data_2d = fits_helper.get_2d_spectrum(fits_path)
+	if data_2d.is_empty():
 		log_message("    Error: Failed to extract 2D spectrum indices from " + fits_path)
 		return result
 	
@@ -233,15 +233,53 @@ func preprocess_2d_spectra(object_id: String, fits_path: String, output_dir: Str
 		return result
 	
 	# Process each PA and filter combination
-	for pa in spectrum_indices:
+	for pa in data_2d:
 		# Initialize PA entry in result dictionary if it doesn't exist
 		if not pa in result:
 			result[pa] = {}
 			
-		for filter_name in spectrum_indices[pa]:
-			var hdu_index = spectrum_indices[pa][filter_name]['index']
-			var header = fits_reader.get_header_info(hdu_index)
-			var image_data = fits_reader.get_image_data_normalized(hdu_index)
+		for filter_name in data_2d[pa]:
+			# Skip non-filter entries like CONTAM, MODEL, etc.
+			if filter_name not in ['F115W', 'F150W', 'F200W']:
+				continue
+				
+			var resource = Spectrum2DResource.new()
+			
+			# Get science data
+			var sci_data = data_2d[pa][filter_name]['SCI']
+			var sci_hdu_index = sci_data['index']
+			var header = fits_reader.get_header_info(sci_hdu_index)
+			var image_data = fits_reader.get_image_data_normalized(sci_hdu_index)
+			# Check for contamination and model data
+			if 'CONTAM' in data_2d[pa][filter_name] and 'MODEL' in data_2d[pa][filter_name]:
+				var contam_data = data_2d[pa][filter_name]['CONTAM']
+				var model_data = data_2d[pa][filter_name]['MODEL']
+				
+				var contam_header = fits_reader.get_header_info(contam_data['index'])
+				var model_header = fits_reader.get_header_info(model_data['index'])
+				
+				resource.contam_data = fits_reader.get_image_data_normalized(contam_data['index'])
+				var raw_model_data = fits_reader.get_image_data_normalized(model_data['index'])
+				
+				# Calculate SCI - MODEL (science minus model) for model_data
+				# This shows the science data with the model subtracted
+				var sci_minus_model = PackedFloat32Array()
+				if image_data.size() == raw_model_data.size():
+					sci_minus_model.resize(image_data.size())
+					for i in range(image_data.size()):
+						sci_minus_model[i] = image_data[i] - raw_model_data[i]
+					resource.model_data = sci_minus_model
+					log_message("    Calculated SCI - MODEL subtraction for PA " + pa + ", filter " + filter_name)
+				else:
+					# Fallback if dimensions don't match
+					resource.model_data = raw_model_data
+					log_message("    Warning: SCI and MODEL dimensions don't match, using raw MODEL data for PA " + pa + ", filter " + filter_name)
+				
+				# Store the actual dimensions of contam/model data
+				resource.contam_width = int(contam_header.get("NAXIS1", 0))
+				resource.contam_height = int(contam_header.get("NAXIS2", 0))
+				resource.model_width = int(model_header.get("NAXIS1", 0))
+				resource.model_height = int(model_header.get("NAXIS2", 0))
 			
 			if image_data.size() == 0:
 				log_message("    Error: Failed to extract image data for PA " + pa + ", filter " + filter_name)
@@ -268,7 +306,6 @@ func preprocess_2d_spectra(object_id: String, fits_path: String, output_dir: Str
 			}
 			
 			# Create resource with raw image data
-			var resource = Spectrum2DResource.new()
 			resource.object_id = object_id
 			resource.filter_name = filter_name
 			resource.image_data = image_data
