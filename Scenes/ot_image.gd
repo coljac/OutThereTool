@@ -69,7 +69,10 @@ func _ready() -> void:
 	_create_context_menu()
 	add_to_group("images")
 	settings_changed.connect(get_tree().current_scene.image_settings_changed)
-	
+	var main_ui = get_tree().current_scene
+	settings_changed.connect(main_ui.image_settings_changed)
+	if main_ui.locked and main_ui.image_settings.size() > 0:
+		use_settings(main_ui.image_settings)
 	# white_level = get_percentile(fits.get_image_data_normalized(hdu), 95.5)
 
 func _set_image(tex: Texture2D) -> void:

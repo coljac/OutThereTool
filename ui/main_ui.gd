@@ -178,7 +178,8 @@ func _goto_object(step: int = 1) -> void:
 	%ObjectViewing.set_galaxy_details(objects[obj_index])
 	gal_display.name = objects[obj_index]['id']
 	print("DEBUG: Object switch completed")
-	
+
+
 	# Preload next object in background
 	_preload_next_object()
 

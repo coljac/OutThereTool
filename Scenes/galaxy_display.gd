@@ -563,6 +563,11 @@ func _finalize_loading() -> void:
 	_is_loading = false
 	set_redshift(redshift)
 	call_deferred("oned_zoomed")
+	
+	# Apply locked image settings if enabled
+	# var main_ui = get_tree().current_scene
+	# if main_ui and main_ui.locked and main_ui.image_settings.size() > 0:
+	# 	main_ui.image_settings_changed(main_ui.image_settings)
 
 # func _unhandled_input(event: InputEvent) -> void:
 # 	if Input.is_action_just_pressed("flag_bad"):
