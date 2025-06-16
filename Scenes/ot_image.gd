@@ -2,7 +2,9 @@ extends Control
 class_name OTImage
 
 signal mouse_coords(Vector2)
+signal settings_changed(Dictionary)
 #@export var fits_file: String
+
 @export_range(0.0, 1.0) var black_level: float = 0.0: set = _set_black
 @export var white_level: float = 100.0: set = _set_white
 @export_range(90, 99.5, 0.5) var scale_percent: float = 99.5: set = _set_scale_pc
@@ -65,6 +67,8 @@ func _ready() -> void:
 	
 	# Initialize context menu
 	_create_context_menu()
+	add_to_group("images")
+	settings_changed.connect(get_tree().current_scene.image_settings_changed)
 	
 	# white_level = get_percentile(fits.get_image_data_normalized(hdu), 95.5)
 
@@ -208,6 +212,12 @@ func _load_object() -> void:
 func set_texture_scale(t: Vector2):
 	fits_img.scale = t
 
+func _settings_changed():
+	settings_changed.emit({
+		"scale": scale_percent,
+		"colormap": color_map,
+		"invert_color": invert_color
+	})
 
 func set_label(t: String):
 	$Label.text = t
@@ -233,6 +243,16 @@ func _set_scale_pc(p: float):
 	if image_data:
 		white_level = get_percentile(p)
 		_make_texture()
+		# if not external:
+			# settings_changed.emit({"scale": p})
+
+func use_settings(settings: Dictionary):
+	if "scale" in settings:
+		_set_scale_pc(settings['scale'])
+	if 'colormap' in settings:
+		_set_colormap(settings['colormap'])
+	if "invert_color" in settings:
+		_set_invert(settings['invert_color'])
 	
 func _set_black(b: float):
 	black_level = b
@@ -395,6 +415,7 @@ func _handle_quick_click(position: Vector2) -> void:
 	
 	# Set the new scale
 	_set_scale_pc(new_scale)
+	_settings_changed()
 
 func _create_context_menu() -> void:
 	# Create main context menu
@@ -480,9 +501,12 @@ func _on_context_menu_item_selected(id: int) -> void:
 			current_scale_index = show_scales.find(99.5)
 		4: # Invert
 			invert_color = not invert_color
+	_settings_changed()
 
 func _on_colormap_selected(colormap_id: int) -> void:
 	color_map = colormap_id
+	_settings_changed()
+	
 
 func _apply_filter_trimming() -> void:
 	# Apply hardcoded filter boundaries for alignment

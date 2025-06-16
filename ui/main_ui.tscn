@@ -222,7 +222,7 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Lock"
 
-[node name="CBAll" type="CheckBox" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/GridContainer/GridContainer2"]
+[node name="CBAll" type="CheckBox" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/GridContainer/GridContainer2" groups=["images"]]
 unique_name_in_owner = true
 layout_mode = 2
 text = "All"
@@ -277,4 +277,6 @@ grow_vertical = 1
 [connection signal="pressed" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/ImportButton" to="." method="_on_import_button_pressed"]
 [connection signal="pressed" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/ApplyFiltersButton" to="." method="_on_apply_filters_button_pressed"]
 [connection signal="save_galaxy" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/ObjectViewing" to="." method="save_galaxy"]
+[connection signal="toggled" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/GridContainer/GridContainer2/CBImgLock" to="." method="on_cb_lock_toggled"]
+[connection signal="toggled" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/GridContainer/GridContainer2/CBAll" to="." method="on_cb_all_toggled"]
 [connection signal="user_set" from="UserEntry" to="." method="set_user_details"]

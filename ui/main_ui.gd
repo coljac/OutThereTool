@@ -14,6 +14,9 @@ extends Control
 @onready var cb_bestfit = %CBBestfit
 @onready var cb_errors = %CBErrors
 @onready var cb_contam = %CBContam
+var all_lock = false
+var locked = false
+var image_settings = {}
 
 # Path to the GalaxyDisplay scene
 const GALAXY_DISPLAY_SCENE = "res://Scenes/galaxy_display.tscn"
@@ -67,6 +70,16 @@ func _ready():
 	DataManager.connect("updated_data", update_cache)
 	set_process(false) # Disable _process by default
 	_goto_object(0)
+	for otimage in get_tree().get_nodes_in_group("images"):
+		if otimage as OTImage:
+			otimage.settings_changed.connect(image_settings_changed)
+
+func image_settings_changed(settings: Dictionary):
+	image_settings = settings
+	if all_lock:
+		for otimage in get_tree().get_nodes_in_group("images"):
+			if otimage as OTImage:
+				otimage.use_settings(settings)
 
 func update_cache(success: bool):
 	if success:
@@ -415,3 +428,9 @@ func set_user_details(user: String, password: String) -> void:
 	print("User details set: ", user)
 	DataManager.set_user_data("user.name", user)
 	DataManager.set_user_data("user.password", password)
+
+func on_cb_lock_toggled(on: bool) -> void:
+	locked = on
+
+func on_cb_all_toggled(on: bool) -> void:
+	all_lock = on
