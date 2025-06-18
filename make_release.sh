@@ -16,7 +16,33 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}🚀 OutThere Release Script${NC}"
+# Parse command line arguments
+BUILD_ONLY=false
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --build-only|-b)
+            BUILD_ONLY=true
+            shift
+            ;;
+        --help|-h)
+            echo "Usage: $0 [--build-only|-b] [--help|-h]"
+            echo "  --build-only, -b    Build binaries only, skip tagging and release"
+            echo "  --help, -h          Show this help message"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
+if [ "$BUILD_ONLY" = true ]; then
+    echo -e "${GREEN}🔨 OutThere Build Script (Build Only)${NC}"
+else
+    echo -e "${GREEN}🚀 OutThere Release Script${NC}"
+fi
 echo "=================================="
 
 # Check if we're in a git repository
@@ -48,18 +74,20 @@ fi
 
 echo -e "${GREEN}📋 Found version: $VERSION${NC}"
 
-# Check if tag already exists
-if git rev-parse "v$VERSION" >/dev/null 2>&1; then
-    echo -e "${YELLOW}⚠️  Warning: Tag v$VERSION already exists${NC}"
-    read -p "Do you want to continue and overwrite? (y/N): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${YELLOW}🛑 Release cancelled${NC}"
-        exit 0
+# Check if tag already exists (only when doing full release)
+if [ "$BUILD_ONLY" = false ]; then
+    if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+        echo -e "${YELLOW}⚠️  Warning: Tag v$VERSION already exists${NC}"
+        read -p "Do you want to continue and overwrite? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo -e "${YELLOW}🛑 Release cancelled${NC}"
+            exit 0
+        fi
+        # Delete existing tag
+        git tag -d "v$VERSION" 2>/dev/null || true
+        git push origin :refs/tags/"v$VERSION" 2>/dev/null || true
     fi
-    # Delete existing tag
-    git tag -d "v$VERSION" 2>/dev/null || true
-    git push origin :refs/tags/"v$VERSION" 2>/dev/null || true
 fi
 
 # Check for uncommitted changes
@@ -86,6 +114,11 @@ PCK_FILE="releases/OutThere.pck"
 LINUX_ZIP="releases/OutThere-Linux-$VERSION.zip"
 WINDOWS_ZIP="releases/OutThere-Windows-$VERSION.zip"
 MAC_ZIP="releases/OutThere-macOS-$VERSION.zip"
+
+# SQLite library paths
+LINUX_SQLITE_LIB="addons/godot-sqlite/bin/libgdsqlite.linux.template_release.x86_64.so"
+WINDOWS_SQLITE_LIB="addons/godot-sqlite/bin/libgdsqlite.windows.template_release.x86_64.dll"
+MAC_SQLITE_FRAMEWORK="addons/godot-sqlite/bin/libgdsqlite.macos.template_release.framework"
 
 echo -e "${GREEN}📦 Exporting platform binaries...${NC}"
 
@@ -124,6 +157,37 @@ if [ ! -f "$PCK_FILE" ]; then
     exit 1
 fi
 echo -e "${GREEN}✅ Created: $PCK_FILE${NC}"
+
+# Prepare SQLite libraries for each platform
+echo -e "${GREEN}📚 Preparing SQLite libraries...${NC}"
+
+# Create lib directory for all platforms
+mkdir -p releases/lib
+
+# Copy Linux library to lib/
+if [ -f "$LINUX_SQLITE_LIB" ]; then
+    cp "$LINUX_SQLITE_LIB" releases/lib/libgdsqlite.linux.template_release.x86_64.so
+    echo -e "${GREEN}✅ Copied Linux SQLite library to lib/${NC}"
+else
+    echo -e "${RED}❌ Warning: Linux SQLite library not found at $LINUX_SQLITE_LIB${NC}"
+fi
+
+# Copy Windows SQLite DLL to root
+if [ -f "$WINDOWS_SQLITE_LIB" ]; then
+    cp "$WINDOWS_SQLITE_LIB" releases/
+    echo -e "${GREEN}✅ Copied Windows SQLite library to root${NC}"
+else
+    echo -e "${RED}❌ Warning: Windows SQLite library not found at $WINDOWS_SQLITE_LIB${NC}"
+fi
+
+# Copy addons structure for macOS (needed for framework loading)
+mkdir -p releases/addons/godot-sqlite/bin
+if [ -d "addons/godot-sqlite" ]; then
+    # cp -r addons/godot-sqlite releases/addons/
+    echo -e "${GREEN}✅ Copied godot-sqlite addon structure for macOS${NC}"
+else
+    echo -e "${RED}❌ Warning: godot-sqlite addon directory not found${NC}"
+fi
 
 # Create README files for each platform
 create_readme() {
@@ -185,54 +249,75 @@ EOF
 # Create platform-specific zip files
 echo -e "${GREEN}🗜️  Creating platform zip archives...${NC}"
 
-# Linux zip
-echo -e "${GREEN}🐧 Creating Linux zip...${NC}"
+# Create temporary directories for each platform
+mkdir -p releases/temp-linux releases/temp-windows releases/temp-macos
+
+# Prepare Linux package
+cp "$LINUX_BINARY" "$PCK_FILE" releases/temp-linux/
+cp -r releases/lib releases/temp-linux/
 create_readme "Linux"
-cd releases
-zip -q "$(basename "$LINUX_ZIP")" "$(basename "$LINUX_BINARY")" "$(basename "$PCK_FILE")" "README-Linux-$VERSION.txt"
-cd ..
+cp "releases/README-Linux-$VERSION.txt" releases/temp-linux/
+
+# Prepare Windows package
+cp "$WINDOWS_BINARY" "$PCK_FILE" releases/temp-windows/
+cp -r releases/lib releases/temp-windows/
+cp "releases/$(basename $WINDOWS_SQLITE_LIB)" releases/temp-windows/
+create_readme "Windows"
+cp "releases/README-Windows-$VERSION.txt" releases/temp-windows/
+
+# Prepare macOS package
+cp -r "$MAC_APP" "$PCK_FILE" releases/temp-macos/
+# cp -r releases/addons releases/temp-macos/
+create_readme "macOS"
+cp "releases/README-macOS-$VERSION.txt" releases/temp-macos/
+
+# Create zip files from temporary directories
+echo -e "${GREEN}🐧 Creating Linux zip...${NC}"
+cd releases/temp-linux
+zip -r -q "../$(basename "$LINUX_ZIP")" *
+cd ../..
 if [ ! -f "$LINUX_ZIP" ]; then
     echo -e "${RED}❌ Error: Failed to create Linux zip file${NC}"
     exit 1
 fi
 echo -e "${GREEN}✅ Created: $LINUX_ZIP${NC}"
 
-# Windows zip
 echo -e "${GREEN}🪟 Creating Windows zip...${NC}"
-create_readme "Windows"
-cd releases
-zip -q "$(basename "$WINDOWS_ZIP")" "$(basename "$WINDOWS_BINARY")" "$(basename "$PCK_FILE")" "README-Windows-$VERSION.txt"
-cd ..
+cd releases/temp-windows
+zip -r -q "../$(basename "$WINDOWS_ZIP")" *
+cd ../..
 if [ ! -f "$WINDOWS_ZIP" ]; then
     echo -e "${RED}❌ Error: Failed to create Windows zip file${NC}"
     exit 1
 fi
 echo -e "${GREEN}✅ Created: $WINDOWS_ZIP${NC}"
 
-# macOS zip
 echo -e "${GREEN}🍎 Creating macOS zip...${NC}"
-create_readme "macOS"
-cd releases
-zip -r -q "$(basename "$MAC_ZIP")" "$(basename "$MAC_APP")" "$(basename "$PCK_FILE")" "README-macOS-$VERSION.txt"
-cd ..
+cd releases/temp-macos
+zip -r -q "../$(basename "$MAC_ZIP")" *
+cd ../..
 if [ ! -f "$MAC_ZIP" ]; then
     echo -e "${RED}❌ Error: Failed to create macOS zip file${NC}"
     exit 1
 fi
 echo -e "${GREEN}✅ Created: $MAC_ZIP${NC}"
 
-# Create git tag
-echo -e "${GREEN}🏷️  Creating git tag v$VERSION...${NC}"
-git tag -a "v$VERSION" -m "Release version $VERSION"
+# Clean up temporary directories
+rm -rf releases/temp-linux releases/temp-windows releases/temp-macos
 
-# Push tag to remote
-echo -e "${GREEN}⬆️  Pushing tag to remote...${NC}"
-git push origin "v$VERSION"
+if [ "$BUILD_ONLY" = false ]; then
+    # Create git tag
+    echo -e "${GREEN}🏷️  Creating git tag v$VERSION...${NC}"
+    git tag -a "v$VERSION" -m "Release version $VERSION"
 
-# Create GitHub release
-echo -e "${GREEN}🎉 Creating GitHub release...${NC}"
+    # Push tag to remote
+    echo -e "${GREEN}⬆️  Pushing tag to remote...${NC}"
+    git push origin "v$VERSION"
 
-RELEASE_NOTES="# OutThere v$VERSION
+    # Create GitHub release
+    echo -e "${GREEN}🎉 Creating GitHub release...${NC}"
+
+    RELEASE_NOTES="# OutThere v$VERSION
 
 ## What's New
 - Version $VERSION release
@@ -241,7 +326,7 @@ RELEASE_NOTES="# OutThere v$VERSION
 
 ## Platform Downloads
 - **Windows**: \`OutThere-Windows-$VERSION.zip\` - Contains OutThere.exe and OutThere.pck
-- **macOS**: \`OutThere-macOS-$VERSION.zip\` - Contains OutThere.app and OutThere.pck  
+- **macOS**: \`OutThere-macOS-$VERSION.zip\` - Contains OutThere.app and OutThere.pck
 - **Linux**: \`OutThere-Linux-$VERSION.zip\` - Contains OutThere.x86_64 and OutThere.pck
 
 ## Installation
@@ -249,18 +334,27 @@ Each zip file contains platform-specific installation instructions in the README
 
 Built on $(date '+%Y-%m-%d') from commit $(git rev-parse --short HEAD)"
 
-gh release create "v$VERSION" \
-    "$LINUX_ZIP" \
-    "$WINDOWS_ZIP" \
-    "$MAC_ZIP" \
-    --title "OutThere v$VERSION" \
-    --notes "$RELEASE_NOTES" \
-    --latest
+    gh release create "v$VERSION" \
+        "$LINUX_ZIP" \
+        "$WINDOWS_ZIP" \
+        "$MAC_ZIP" \
+        --title "OutThere v$VERSION" \
+        --notes "$RELEASE_NOTES" \
+        --latest
 
-echo -e "${GREEN}🎊 Release completed successfully!${NC}"
-echo -e "${GREEN}📦 Files created:${NC}"
-echo -e "   - $LINUX_ZIP"
-echo -e "   - $WINDOWS_ZIP" 
-echo -e "   - $MAC_ZIP"
-echo -e "   - $PCK_FILE (included in all zips)"
-echo -e "${GREEN}🔗 GitHub release: $(gh release view v$VERSION --json url -q '.url')${NC}"
+    echo -e "${GREEN}🎊 Release completed successfully!${NC}"
+    echo -e "${GREEN}📦 Files created:${NC}"
+    echo -e "   - $LINUX_ZIP"
+    echo -e "   - $WINDOWS_ZIP"
+    echo -e "   - $MAC_ZIP"
+    echo -e "   - $PCK_FILE (included in all zips)"
+    echo -e "${GREEN}🔗 GitHub release: $(gh release view v$VERSION --json url -q '.url')${NC}"
+else
+    echo -e "${GREEN}🔨 Build completed successfully!${NC}"
+    echo -e "${GREEN}📦 Files created:${NC}"
+    echo -e "   - $LINUX_ZIP"
+    echo -e "   - $WINDOWS_ZIP"
+    echo -e "   - $MAC_ZIP"
+    echo -e "   - $PCK_FILE (included in all zips)"
+    echo -e "${YELLOW}ℹ️  Note: Skipped git tagging and GitHub release (build-only mode)${NC}"
+fi
