@@ -435,3 +435,13 @@ func on_cb_lock_toggled(on: bool) -> void:
 
 func on_cb_all_toggled(on: bool) -> void:
 	all_lock = on
+
+func pre_cache_current_field():
+	# Pre-cache the current field's data
+	var current_field = DataManager.get_current_field()
+	%CacheProgress.show()
+	if current_field:
+		print("Pre-caching field: ", current_field)
+		DataManager.pre_cache_field(current_field, %CacheProgress)
+	else:
+		print("No field selected for pre-caching")

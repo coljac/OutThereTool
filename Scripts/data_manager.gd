@@ -127,3 +127,24 @@ func get_user_credentials() -> Dictionary:
 	var username = get_user_data("user.name")
 	var password = get_user_data("user.password")
 	return {"username": username, "password": password}
+
+func pre_cache_field(field: String, progress: CacheProgress) -> void:
+	# This function can be used to pre-cache data for a specific field
+	print("Pre-caching data for field: ", field)
+	# Here you can implement the logic to load and cache data for the field
+	# For example, you might load images, metadata, etc.
+	# This is a placeholder implementation
+	var gals = get_gals(0.0, 10.0, 0, field)
+	for i in range(gals.size()):
+		var gal = gals[i]
+		var progress_value = (float(i) + 1) / gals.size() * 100.0
+		progress.update(progress_value, gal["id"])
+		await get_tree().process_frame # Yield to allow UI updates
+		# Simulate caching by printing the galaxy ID
+		# print("Caching galaxy ID: ", gal["id"])
+
+
+	if gals.size() > 0:
+		print("Pre-cached %d galaxies for field %s" % [gals.size(), field])
+	else:
+		print("No galaxies found to pre-cache for field %s" % field)

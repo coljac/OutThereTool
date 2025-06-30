@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://cvip6m8f24inr"]
+[gd_scene load_steps=10 format=3 uid="uid://cvip6m8f24inr"]
 
 [ext_resource type="Script" uid="uid://ds6nukonfixo4" path="res://ui/main_ui.gd" id="1_78d5d"]
 [ext_resource type="PackedScene" uid="uid://dqne2t68jyax2" path="res://ui/top_bar.tscn" id="2_852uu"]
@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://75flqcgsoecp" path="res://Scenes/simple_tab.tscn" id="5_186kx"]
 [ext_resource type="PackedScene" uid="uid://cubtixgrjj65y" path="res://Scenes/help.tscn" id="7_ti1yg"]
 [ext_resource type="PackedScene" uid="uid://twlr3oy3ddyb" path="res://Scenes/user_entry.tscn" id="8_fa42e"]
+[ext_resource type="PackedScene" uid="uid://dc7motmfva8rl" path="res://Scenes/cache_progress.tscn" id="9_ck7gc"]
 
 [node name="MainUI" type="Control"]
 layout_mode = 3
@@ -271,6 +272,12 @@ offset_bottom = 788.0
 grow_horizontal = 1
 grow_vertical = 1
 
+[node name="CacheProgress" parent="." instance=ExtResource("9_ck7gc")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+
+[connection signal="cache_field" from="VBoxContainer/TopBar" to="." method="pre_cache_current_field"]
 [connection signal="item_selected" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/FieldList" to="." method="_on_field_selected"]
 [connection signal="item_selected" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/ObjectsList" to="." method="_on_objects_list_item_selected"]
 [connection signal="pressed" from="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/SearchButton" to="." method="_on_search_button_pressed"]

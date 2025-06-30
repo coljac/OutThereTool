@@ -3,6 +3,7 @@ extends HBoxContainer
 signal more_options_pressed
 signal settings_pressed
 signal preferences_selected
+signal cache_field
 
 @onready var more_options_button = $LeftSide/MoreOptions
 @onready var settings_button = $LeftSide/SettingsButton
@@ -20,8 +21,9 @@ func _on_more_options_pressed():
 	popup.add_item("Open", 0)
 	popup.add_item("Save", 1)
 	popup.add_item("Export", 2)
+	popup.add_item("Cache", 3)
 	popup.add_separator()
-	popup.add_item("About", 3)
+	popup.add_item("About", 4)
 	
 	# Connect the popup's id_pressed signal
 	popup.id_pressed.connect(_on_popup_id_pressed)
@@ -67,6 +69,8 @@ func _on_popup_id_pressed(id):
 		2: # Export
 			print("Export selected")
 		3: # About
+			emit_signal("cache_field")
+		4: # About
 			print("About selected")
 
 func _on_settings_popup_id_pressed(id):
