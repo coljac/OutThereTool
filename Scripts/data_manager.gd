@@ -147,6 +147,9 @@ func pre_cache_field(field: String, progress: CacheProgress) -> void:
 var current_download_field: String = ""
 var current_download_progress: CacheProgress = null
 var current_download_http_request: HTTPRequest = null
+var current_download_zip_path: String = ""
+var current_download_total_size: int = 0
+var download_progress_timer: Timer = null
 
 func download_and_unzip_field(field: String, progress: CacheProgress) -> bool:
 	"""
@@ -159,11 +162,13 @@ func download_and_unzip_field(field: String, progress: CacheProgress) -> bool:
 	var zip_path = cache_dir + field + ".zip"
 	
 	print("Attempting to download field zip: ", zip_url)
-	progress.update(10.0, "Downloading field: " + field)
+	progress.update(5.0, "Starting download: " + field)
 	
 	# Store context for completion handler
 	current_download_field = field
 	current_download_progress = progress
+	current_download_zip_path = zip_path
+	current_download_total_size = 0
 	
 	# Create HTTPRequest for downloading
 	var http_request = HTTPRequest.new()
@@ -183,8 +188,60 @@ func download_and_unzip_field(field: String, progress: CacheProgress) -> bool:
 		_cleanup_download_request()
 		return false
 	
-	progress.update(30.0, "Downloading...")
+	# Start progress tracking timer
+	_start_download_progress_tracking()
+	
+	progress.update(10.0, "Connecting...")
 	return true
+
+func _start_download_progress_tracking() -> void:
+	"""Start timer to track download progress."""
+	if download_progress_timer:
+		download_progress_timer.queue_free()
+	
+	download_progress_timer = Timer.new()
+	add_child(download_progress_timer)
+	download_progress_timer.wait_time = 0.5  # Update every 500ms
+	download_progress_timer.timeout.connect(_update_download_progress)
+	download_progress_timer.start()
+
+func _update_download_progress() -> void:
+	"""Update download progress based on file size."""
+	if not current_download_progress or current_download_zip_path == "":
+		return
+	
+	if not FileAccess.file_exists(current_download_zip_path):
+		return
+	
+	var file = FileAccess.open(current_download_zip_path, FileAccess.READ)
+	if not file:
+		return
+	
+	var current_size = file.get_length()
+	file.close()
+	
+	if current_size == 0:
+		return
+	
+	# If we don't know total size yet, just show current size
+	if current_download_total_size == 0:
+		var size_mb = current_size / (1024.0 * 1024.0)
+		current_download_progress.update(15.0, "Downloading: %.1f MB" % size_mb)
+	else:
+		# Calculate progress percentage (10% to 60% range for download)
+		var progress_percent = (float(current_size) / current_download_total_size) * 50.0 + 10.0
+		progress_percent = min(progress_percent, 60.0)  # Cap at 60%
+		
+		var current_mb = current_size / (1024.0 * 1024.0)
+		var total_mb = current_download_total_size / (1024.0 * 1024.0)
+		
+		current_download_progress.update(progress_percent, "Downloading: %.1f MB / %.1f MB" % [current_mb, total_mb])
+
+func _stop_download_progress_tracking() -> void:
+	"""Stop the download progress timer."""
+	if download_progress_timer:
+		download_progress_timer.queue_free()
+		download_progress_timer = null
 
 func zip_download_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray) -> void:
 	"""
@@ -194,6 +251,16 @@ func zip_download_completed(result: int, response_code: int, headers: PackedStri
 	var progress = current_download_progress
 	var cache_dir = "user://cache/"
 	var zip_path = cache_dir + field + ".zip"
+	
+	# Stop progress tracking
+	_stop_download_progress_tracking()
+	
+	# Extract total size from headers if available
+	for header in headers:
+		if header.to_lower().begins_with("content-length:"):
+			var size_str = header.split(":")[1].strip_edges()
+			current_download_total_size = size_str.to_int()
+			break
 	
 	# Clean up HTTP request
 	_cleanup_download_request()
@@ -208,14 +275,29 @@ func zip_download_completed(result: int, response_code: int, headers: PackedStri
 		_fallback_to_individual_caching(field, progress)
 		return
 	
-	print("Field zip download completed successfully")
-	progress.update(60.0, "Download complete, extracting...")
+	# Show final download size
+	if FileAccess.file_exists(zip_path):
+		var file = FileAccess.open(zip_path, FileAccess.READ)
+		if file:
+			var final_size = file.get_length()
+			var size_mb = final_size / (1024.0 * 1024.0)
+			file.close()
+			print("Field zip download completed successfully: %.1f MB" % size_mb)
+			progress.update(60.0, "Downloaded %.1f MB, extracting..." % size_mb)
+		else:
+			print("Field zip download completed successfully")
+			progress.update(60.0, "Download complete, extracting...")
+	else:
+		progress.update(60.0, "Download complete, extracting...")
 	
 	# Extract the zip file
 	_extract_field_zip(zip_path, cache_dir, progress)
 
 func _cleanup_download_request() -> void:
 	"""Clean up the current download HTTP request."""
+	# Stop progress tracking
+	_stop_download_progress_tracking()
+	
 	if current_download_http_request:
 		if current_download_http_request.request_completed.is_connected(zip_download_completed):
 			current_download_http_request.request_completed.disconnect(zip_download_completed)
@@ -224,6 +306,8 @@ func _cleanup_download_request() -> void:
 	
 	current_download_field = ""
 	current_download_progress = null
+	current_download_zip_path = ""
+	current_download_total_size = 0
 
 func _extract_field_zip(zip_path: String, extract_to: String, progress: CacheProgress) -> void:
 	"""
