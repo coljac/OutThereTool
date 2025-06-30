@@ -9,7 +9,7 @@ extends Node
 const BASE_URL = "https://outthere.s3.us-east-1.amazonaws.com/processed/"
 
 ## Alternative URLs for testing/development  
-const TEST_URL = "http://localhost:8000/"
+const TEST_URL = "http://localhost:8123/"
 const DEV_URL = "https://dev.outthere.example.com/processed/"
 
 ## Current environment setting
@@ -20,7 +20,7 @@ enum AppEnvironemnt {
 }
 
 ## Change this to switch environments
-const CURRENT_ENVIRONMENT = AppEnvironemnt.PRODUCTION
+const CURRENT_ENVIRONMENT = AppEnvironemnt.TESTING
 
 ## Get the current base URL based on environment
 static func get_base_url() -> String:
