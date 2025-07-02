@@ -6,22 +6,30 @@ var current_field: String = "uma-03"
 
 
 func _ready() -> void:
+	Logger.logger.info("DataManager initializing")
 	database = SQLite.new()
 	database.path = OS.get_environment("OUTTHERE_DB")
 	if database.path == "":
 		database.path = "user://data.sqlite"
+		Logger.logger.debug("Using default database path: " + database.path)
 		if not FileAccess.file_exists(database.path):
+			Logger.logger.info("Database file not found, copying from resources")
 			_copy_db()
+	else:
+		Logger.logger.debug("Using environment database path: " + database.path)
 	database.open_db()
+	Logger.logger.info("DataManager initialized successfully")
 
 func _copy_db():
+	Logger.logger.info("Copying database from resources to user directory")
 	if FileAccess.file_exists("res://data.sqlite"):
+		Logger.logger.debug("Source database found at res://data.sqlite")
 		if copy_file_from_res_to_user("data.sqlite"):
-			print("Database reset successfully.")
+			Logger.logger.info("Database copied successfully from resources")
 		else:
-			print("Failed to reset database.")
+			Logger.logger.error("Failed to copy database from resources")
 	else:
-		print("Initial database file not found in resources.")
+		Logger.logger.error("Initial database file not found in resources at res://data.sqlite")
 
 	
 func reset_db():
@@ -129,7 +137,8 @@ func get_user_credentials() -> Dictionary:
 	return {"username": username, "password": password}
 
 func pre_cache_field(field: String, progress: CacheProgress) -> void:
-	print("Pre-caching data for field: ", field)
+	Logger.logger.info("Starting pre-cache operation for field: " + field)
+	Logger.logger.debug("Pre-cache strategy: attempting bulk field download first, fallback to individual galaxy caching")
 	
 	# Try to download and unzip the entire field
 	# The download_and_unzip_field method will handle completion asynchronously
@@ -137,8 +146,10 @@ func pre_cache_field(field: String, progress: CacheProgress) -> void:
 	
 	if not download_started:
 		# If download couldn't start, fall back to individual galaxy caching immediately
-		print("Field download could not start, falling back to individual galaxy caching for: ", field)
+		Logger.logger.warning("Field download could not start for " + field + ", falling back to individual galaxy caching")
 		_fallback_to_individual_caching(field, progress)
+	else:
+		Logger.logger.info("Field download initiated successfully for: " + field)
 	
 	# Note: If download started successfully, the zip_download_completed handler
 	# will take care of extraction or fallback to individual caching
@@ -151,6 +162,7 @@ var current_download_zip_path: String = ""
 var current_download_total_size: int = 0
 var download_progress_timer: Timer = null
 
+
 func download_and_unzip_field(field: String, progress: CacheProgress) -> bool:
 	"""
 	Initiates download of a field zip file from the server.
@@ -161,7 +173,9 @@ func download_and_unzip_field(field: String, progress: CacheProgress) -> bool:
 	var cache_dir = "user://cache/"
 	var zip_path = cache_dir + field + ".zip"
 	
-	print("Attempting to download field zip: ", zip_url)
+	Logger.logger.info("Initiating field zip download for: " + field)
+	Logger.logger.debug("Download URL: " + zip_url)
+	Logger.logger.debug("Target cache path: " + zip_path)
 	progress.update(5.0, "Starting download: " + field)
 	
 	# Store context for completion handler
@@ -184,15 +198,17 @@ func download_and_unzip_field(field: String, progress: CacheProgress) -> bool:
 	# Make the request
 	var request_error = http_request.request(zip_url)
 	if request_error != OK:
-		print("Failed to start HTTP request: ", request_error)
+		Logger.logger.error("Failed to start HTTP request for field " + field + ": " + str(request_error))
 		_cleanup_download_request()
 		return false
 	
 	# Start progress tracking timer
 	_start_download_progress_tracking()
+	Logger.logger.debug("HTTP request started successfully, progress tracking enabled")
 	
 	progress.update(10.0, "Connecting...")
 	return true
+
 
 func _start_download_progress_tracking() -> void:
 	"""Start timer to track download progress."""
@@ -201,9 +217,10 @@ func _start_download_progress_tracking() -> void:
 	
 	download_progress_timer = Timer.new()
 	add_child(download_progress_timer)
-	download_progress_timer.wait_time = 0.5  # Update every 500ms
+	download_progress_timer.wait_time = 0.5 # Update every 500ms
 	download_progress_timer.timeout.connect(_update_download_progress)
 	download_progress_timer.start()
+
 
 func _update_download_progress() -> void:
 	"""Update download progress based on file size."""
@@ -227,21 +244,25 @@ func _update_download_progress() -> void:
 	if current_download_total_size == 0:
 		var size_mb = current_size / (1024.0 * 1024.0)
 		current_download_progress.update(15.0, "Downloading: %.1f MB" % size_mb)
+		Logger.logger.debug("Download progress (unknown total): %.1f MB" % size_mb)
 	else:
 		# Calculate progress percentage (10% to 60% range for download)
 		var progress_percent = (float(current_size) / current_download_total_size) * 50.0 + 10.0
-		progress_percent = min(progress_percent, 60.0)  # Cap at 60%
+		progress_percent = min(progress_percent, 60.0) # Cap at 60%
 		
 		var current_mb = current_size / (1024.0 * 1024.0)
 		var total_mb = current_download_total_size / (1024.0 * 1024.0)
 		
 		current_download_progress.update(progress_percent, "Downloading: %.1f MB / %.1f MB" % [current_mb, total_mb])
+		Logger.logger.debug("Download progress: %.1f%% (%.1f MB / %.1f MB)" % [progress_percent, current_mb, total_mb])
+
 
 func _stop_download_progress_tracking() -> void:
 	"""Stop the download progress timer."""
 	if download_progress_timer:
 		download_progress_timer.queue_free()
 		download_progress_timer = null
+
 
 func zip_download_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray) -> void:
 	"""
@@ -252,6 +273,9 @@ func zip_download_completed(result: int, response_code: int, headers: PackedStri
 	var cache_dir = "user://cache/"
 	var zip_path = cache_dir + field + ".zip"
 	
+	Logger.logger.info("Field zip download completed for: " + field)
+	Logger.logger.debug("HTTP result: " + str(result) + ", response code: " + str(response_code))
+	
 	# Stop progress tracking
 	_stop_download_progress_tracking()
 	
@@ -260,18 +284,21 @@ func zip_download_completed(result: int, response_code: int, headers: PackedStri
 		if header.to_lower().begins_with("content-length:"):
 			var size_str = header.split(":")[1].strip_edges()
 			current_download_total_size = size_str.to_int()
+			Logger.logger.debug("Content-Length header found: " + str(current_download_total_size) + " bytes")
 			break
 	
 	# Clean up HTTP request
 	_cleanup_download_request()
 	
 	if result != HTTPRequest.RESULT_SUCCESS or response_code != 200:
-		print("Failed to download field zip. Result: ", result, " Response code: ", response_code)
+		Logger.logger.error("Field zip download failed for " + field + ". Result: " + str(result) + ", Response code: " + str(response_code))
 		# Clean up partial download
 		if FileAccess.file_exists(zip_path):
+			Logger.logger.debug("Removing partial download file: " + zip_path)
 			DirAccess.remove_absolute(zip_path)
 		
 		# Fall back to individual galaxy caching
+		Logger.logger.info("Falling back to individual galaxy caching due to download failure")
 		_fallback_to_individual_caching(field, progress)
 		return
 	
@@ -282,19 +309,22 @@ func zip_download_completed(result: int, response_code: int, headers: PackedStri
 			var final_size = file.get_length()
 			var size_mb = final_size / (1024.0 * 1024.0)
 			file.close()
-			print("Field zip download completed successfully: %.1f MB" % size_mb)
+			Logger.logger.info("Field zip download completed successfully for " + field + ": %.1f MB" % size_mb)
 			progress.update(60.0, "Downloaded %.1f MB, extracting..." % size_mb)
 		else:
-			print("Field zip download completed successfully")
+			Logger.logger.warning("Field zip download completed but cannot read file size for: " + field)
 			progress.update(60.0, "Download complete, extracting...")
 	else:
+		Logger.logger.warning("Field zip download completed but file not found at: " + zip_path)
 		progress.update(60.0, "Download complete, extracting...")
 	
 	# Extract the zip file
+	Logger.logger.info("Starting zip extraction for field: " + field)
 	_extract_field_zip(zip_path, cache_dir, progress)
 
 func _cleanup_download_request() -> void:
 	"""Clean up the current download HTTP request."""
+	Logger.logger.debug("Cleaning up download request for field: " + current_download_field)
 	# Stop progress tracking
 	_stop_download_progress_tracking()
 	
@@ -313,17 +343,20 @@ func _extract_field_zip(zip_path: String, extract_to: String, progress: CachePro
 	"""
 	Extracts the field zip file asynchronously.
 	"""
+	Logger.logger.info("Extracting field zip: " + zip_path + " to: " + extract_to)
 	var extract_success = await extract_zip_file(zip_path, extract_to, progress)
 	
 	# Clean up zip file after extraction
 	if FileAccess.file_exists(zip_path):
+		Logger.logger.debug("Cleaning up zip file after extraction: " + zip_path)
 		DirAccess.remove_absolute(zip_path)
 	
 	if extract_success:
 		progress.update(100.0, "Field cached successfully")
-		print("Successfully downloaded and cached field: ", current_download_field)
+		Logger.logger.info("Successfully downloaded and cached field: " + current_download_field)
 	else:
-		print("Failed to extract field zip: ", zip_path)
+		Logger.logger.error("Failed to extract field zip: " + zip_path)
+		Logger.logger.info("Falling back to individual galaxy caching due to extraction failure")
 		# Fall back to individual galaxy caching
 		_fallback_to_individual_caching(current_download_field, progress)
 
@@ -331,46 +364,49 @@ func _fallback_to_individual_caching(field: String, progress: CacheProgress) -> 
 	"""
 	Falls back to individual galaxy caching when field download fails.
 	"""
-	print("Field download failed, falling back to individual galaxy caching for: ", field)
+	Logger.logger.info("Initiating fallback to individual galaxy caching for field: " + field)
 	var gals = get_gals(0.0, 10.0, 0, field)
 	
 	if gals.size() == 0:
-		print("No galaxies found to pre-cache for field %s" % field)
+		Logger.logger.warning("No galaxies found to pre-cache for field: " + field)
 		progress.update(100.0, "No galaxies found")
 		return
 	
+	Logger.logger.info("Found " + str(gals.size()) + " galaxies to cache individually for field: " + field)
 	_cache_individual_galaxies(gals, progress)
 
 func _cache_individual_galaxies(gals: Array, progress: CacheProgress) -> void:
 	"""
 	Caches individual galaxies with progress updates.
 	"""
+	Logger.logger.info("Starting individual galaxy caching for " + str(gals.size()) + " galaxies")
 	for i in range(gals.size()):
 		var gal = gals[i]
 		var progress_value = (float(i) + 1) / gals.size() * 100.0
 		progress.update(progress_value, "Caching galaxy: " + gal["id"])
+		Logger.logger.debug("Caching galaxy " + str(i + 1) + "/" + str(gals.size()) + ": " + gal["id"])
 		await get_tree().process_frame # Yield to allow UI updates
 		# Individual galaxy caching logic would go here
 		# print("Caching galaxy ID: ", gal["id"])
 
-	print("Pre-cached %d galaxies individually" % gals.size())
+	Logger.logger.info("Completed individual caching of " + str(gals.size()) + " galaxies")
 
 func extract_zip_file(zip_path: String, extract_to: String, progress: CacheProgress) -> bool:
 	"""
 	Extracts a zip file to the specified directory.
 	Returns true if successful, false otherwise.
 	"""
-	print("Extracting zip file: ", zip_path, " to: ", extract_to)
+	Logger.logger.info("Starting zip extraction: " + zip_path + " to: " + extract_to)
 	
 	# Check if zip file exists
 	if not FileAccess.file_exists(zip_path):
-		print("Zip file does not exist: ", zip_path)
+		Logger.logger.error("Zip file does not exist: " + zip_path)
 		return false
 	
 	# Create a FileAccess to read the zip
 	var zip_file = FileAccess.open(zip_path, FileAccess.READ)
 	if not zip_file:
-		print("Cannot open zip file: ", zip_path)
+		Logger.logger.error("Cannot open zip file: " + zip_path)
 		return false
 	
 	#var zip_data = zip_file.get_buffer(zip_file.get_length())
@@ -381,13 +417,14 @@ func extract_zip_file(zip_path: String, extract_to: String, progress: CacheProgr
 	var open_result = zip_reader.open(zip_path)
 	
 	if open_result != OK:
-		print("Failed to open zip data: ", open_result)
+		Logger.logger.error("Failed to open zip data: " + str(open_result))
 		return false
 	
 	var files = zip_reader.get_files()
-	print("Found ", files.size(), " files in zip")
+	Logger.logger.info("Found " + str(files.size()) + " files in zip archive")
 	
 	if files.size() == 0:
+		Logger.logger.warning("Zip archive is empty")
 		zip_reader.close()
 		return false
 	
@@ -398,7 +435,7 @@ func extract_zip_file(zip_path: String, extract_to: String, progress: CacheProgr
 		var file_data = zip_reader.read_file(file_path)
 		
 		if file_data.size() == 0:
-			print("Warning: Empty file in zip: ", file_path)
+			Logger.logger.warning("Empty file in zip archive: " + file_path)
 			continue
 		
 		# Create full path for extraction
@@ -407,6 +444,7 @@ func extract_zip_file(zip_path: String, extract_to: String, progress: CacheProgr
 		# Create directories if needed
 		var dir_path = full_extract_path.get_base_dir()
 		if not DirAccess.dir_exists_absolute(dir_path):
+			Logger.logger.debug("Creating directory: " + dir_path)
 			DirAccess.make_dir_recursive_absolute(dir_path)
 		
 		# Write the file
@@ -415,15 +453,16 @@ func extract_zip_file(zip_path: String, extract_to: String, progress: CacheProgr
 			output_file.store_buffer(file_data)
 			output_file.close()
 			extracted_count += 1
+			Logger.logger.debug("Extracted file " + str(i + 1) + "/" + str(files.size()) + ": " + file_path + " (" + str(file_data.size()) + " bytes)")
 			
 			# Update progress
 			var extract_progress = 60.0 + (float(i + 1) / files.size()) * 35.0
 			progress.update(extract_progress, "Extracting: " + file_path.get_file())
 			await get_tree().process_frame
 		else:
-			print("Failed to create output file: ", full_extract_path)
+			Logger.logger.error("Failed to create output file: " + full_extract_path)
 	
 	zip_reader.close()
 	
-	print("Successfully extracted ", extracted_count, " files from ", files.size(), " total files")
+	Logger.logger.info("Zip extraction completed: " + str(extracted_count) + "/" + str(files.size()) + " files extracted successfully")
 	return extracted_count > 0

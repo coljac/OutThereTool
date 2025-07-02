@@ -103,35 +103,36 @@ func _exit_tree():
 func load_resource(resource_id: String) -> void:
 	# Check if this resource has failed before
 	if failed_resources.has(resource_id):
-		print("Resource previously failed, skipping: ", resource_id)
+		Logger.logger.debug("ThreadedCachedResourceLoader: Resource previously failed, skipping: " + resource_id)
 		resource_failed.emit(resource_id, "Resource previously failed")
 		return
 	
 	# Check in-memory cache first
 	if memory_cache.has(resource_id):
-		print("Loading from memory cache: ", resource_id)
+		Logger.logger.debug("ThreadedCachedResourceLoader: Loading from memory cache: " + resource_id)
 		resource_loaded.emit(resource_id, memory_cache[resource_id])
 		return
 	
 	# Check if already loading
 	if loading_resources.has(resource_id):
-		# print("Already loading: ", resource_id)
+		Logger.logger.debug("ThreadedCachedResourceLoader: Already loading: " + resource_id)
 		return
 	
 	# Check file cache asynchronously
 	var cache_path = cache_dir + resource_id
 	if FileAccess.file_exists(cache_path):
-		# print_debug("Loading from file cache: ", resource_id)
+		Logger.logger.info("ThreadedCachedResourceLoader: Loading from file cache: " + resource_id)
 		_load_from_cache_async(resource_id, cache_path)
 		return
 	
 	# Not in cache, fetch from network
-	print("Fetching from network: ", resource_id)
+	Logger.logger.info("ThreadedCachedResourceLoader: Fetching from network: " + resource_id)
 	_fetch_from_network(resource_id)
 
 # Load resource from file cache asynchronously
 func _load_from_cache_async(resource_id: String, cache_path: String) -> void:
 	loading_resources[resource_id] = true
+	Logger.logger.debug("ThreadedCachedResourceLoader: Starting async cache load for: " + resource_id)
 	
 	# Get a worker thread to load the resource
 	var worker = _get_available_worker()
@@ -201,21 +202,23 @@ func _on_cache_loaded(resource_id: String, resource: Resource, cache_path: Strin
 	loading_resources.erase(resource_id)
 	
 	if resource:
+		Logger.logger.info("ThreadedCachedResourceLoader: Successfully loaded from cache: " + resource_id)
 		memory_cache[resource_id] = resource
 		resource_loaded.emit(resource_id, resource)
 	else:
-		print("Failed to load from cache: ", resource_id, " - ", error_msg)
-		print("Cache file path: ", cache_path)
+		Logger.logger.warning("ThreadedCachedResourceLoader: Failed to load from cache: " + resource_id + " - " + error_msg)
+		Logger.logger.debug("ThreadedCachedResourceLoader: Cache file path: " + cache_path)
 		
 		# Mark as failed to prevent infinite retry loops
 		failed_resources[resource_id] = true
 		
 		# Check if this is a .res file that might not be a valid Godot resource
 		if resource_id.ends_with(".tres"):
-			print("Marking .res file as failed - might need preprocessor fix: ", resource_id)
-			resource_failed.emit(resource_id, "Failed to load .res file: " + error_msg)
+			Logger.logger.error("ThreadedCachedResourceLoader: Marking .tres file as failed - might need preprocessor fix: " + resource_id)
+			resource_failed.emit(resource_id, "Failed to load .tres file: " + error_msg)
 		else:
 			# Cache file might be corrupted, try network
+			Logger.logger.info("ThreadedCachedResourceLoader: Cache file corrupted, removing and trying network: " + resource_id)
 			_remove_from_cache(resource_id)
 			_fetch_from_network(resource_id)
 
@@ -223,7 +226,7 @@ func _on_cache_loaded(resource_id: String, resource: Resource, cache_path: Strin
 func _fetch_from_network(resource_id: String) -> void:
 	var http_request = _get_available_http_request()
 	if not http_request:
-		print("No available HTTP requests, queuing: ", resource_id)
+		Logger.logger.warning("ThreadedCachedResourceLoader: No available HTTP requests, failing: " + resource_id)
 		# Could implement a queue here, for now just fail
 		resource_failed.emit(resource_id, "No available HTTP requests")
 		return
@@ -231,6 +234,7 @@ func _fetch_from_network(resource_id: String) -> void:
 	loading_resources[resource_id] = true
 	
 	var url = BASE_URL + resource_id
+	Logger.logger.info("ThreadedCachedResourceLoader: Starting network fetch: " + url)
 	
 	# Connect to completion signal
 	if http_request.request_completed.is_connected(_on_network_request_completed):
@@ -240,6 +244,7 @@ func _fetch_from_network(resource_id: String) -> void:
 	# Make the request
 	var error = http_request.request(url)
 	if error != OK:
+		Logger.logger.error("ThreadedCachedResourceLoader: HTTP request failed to start for " + resource_id + ": " + str(error))
 		_return_http_request(http_request)
 		loading_resources.erase(resource_id)
 		resource_failed.emit(resource_id, "HTTP Request Error: " + str(error))
@@ -266,15 +271,22 @@ func _on_network_request_completed(result: int, response_code: int, headers: Pac
 	_return_http_request(http_request)
 	loading_resources.erase(resource_id)
 	
+	Logger.logger.info("ThreadedCachedResourceLoader: Network request completed for " + resource_id + " - Result: " + str(result) + ", Response: " + str(response_code))
+	
 	if result != HTTPRequest.RESULT_SUCCESS:
+		Logger.logger.error("ThreadedCachedResourceLoader: HTTP request failed for " + resource_id + ": " + str(result))
 		failed_resources[resource_id] = true
 		resource_failed.emit(resource_id, "HTTP Request Failed: " + str(result))
 		return
 	
 	if response_code != 200:
+		Logger.logger.error("ThreadedCachedResourceLoader: HTTP error for " + resource_id + ": " + str(response_code))
 		failed_resources[resource_id] = true
 		resource_failed.emit(resource_id, "HTTP Error: " + str(response_code))
 		return
+	
+	var body_size_mb = body.size() / (1024.0 * 1024.0)
+	Logger.logger.info("ThreadedCachedResourceLoader: Successfully downloaded " + resource_id + " (%.2f MB), saving to cache" % body_size_mb)
 	
 	# Save to cache asynchronously
 	var cache_path = cache_dir + resource_id
@@ -295,21 +307,25 @@ func _save_cache_worker(cache_path: String, data: PackedByteArray, resource_id: 
 
 func _on_cache_saved(resource_id: String, cache_path: String, save_success: bool) -> void:
 	if not save_success:
-		print("Failed to save to cache: ", cache_path)
+		Logger.logger.error("ThreadedCachedResourceLoader: Failed to save to cache: " + cache_path)
 		resource_failed.emit(resource_id, "Failed to save to cache")
 		return
 	
+	Logger.logger.info("ThreadedCachedResourceLoader: Successfully saved to cache: " + resource_id)
 	# Load the resource asynchronously
 	_load_from_cache_async(resource_id, cache_path)
 
 # Remove a resource from cache
 func _remove_from_cache(resource_id: String) -> void:
 	var cache_path = cache_dir + resource_id
+	Logger.logger.debug("ThreadedCachedResourceLoader: Removing from cache: " + resource_id)
 	if FileAccess.file_exists(cache_path):
 		DirAccess.remove_absolute(cache_path)
+		Logger.logger.debug("ThreadedCachedResourceLoader: Removed cache file: " + cache_path)
 	
 	if memory_cache.has(resource_id):
 		memory_cache.erase(resource_id)
+		Logger.logger.debug("ThreadedCachedResourceLoader: Removed from memory cache: " + resource_id)
 
 # Check if resource exists in cache
 func is_cached(resource_id: String) -> bool:
@@ -318,11 +334,17 @@ func is_cached(resource_id: String) -> bool:
 # Preload a resource (async, for prefetching)
 func preload_resource(resource_id: String) -> void:
 	if not is_cached(resource_id) and not loading_resources.has(resource_id):
+		Logger.logger.debug("ThreadedCachedResourceLoader: Preloading resource: " + resource_id)
 		load_resource(resource_id)
 
 # Clear all caches
 func clear_cache() -> void:
+	Logger.logger.info("ThreadedCachedResourceLoader: Clearing all caches")
+	var memory_count = memory_cache.size()
 	memory_cache.clear()
+	Logger.logger.debug("ThreadedCachedResourceLoader: Cleared " + str(memory_count) + " items from memory cache")
+	
+	var file_count = 0
 	var dir = DirAccess.open(cache_dir)
 	if dir:
 		dir.list_dir_begin()
@@ -330,7 +352,9 @@ func clear_cache() -> void:
 		while file_name != "":
 			if not dir.current_is_dir():
 				dir.remove(file_name)
+				file_count += 1
 			file_name = dir.get_next()
+	Logger.logger.info("ThreadedCachedResourceLoader: Cleared " + str(file_count) + " files from disk cache")
 
 # Get cache size in bytes
 func get_cache_size() -> int:

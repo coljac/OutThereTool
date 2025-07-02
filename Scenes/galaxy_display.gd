@@ -147,10 +147,11 @@ func load_object() -> void:
 		
 	# Reset loading state for new object (don't check _is_loading to prevent stuckness)
 	_is_loading = true
-	print("Loading object: ", object_id)
+	Logger.logger.info("GalaxyDisplay: Loading object: " + object_id)
 	
 	# Clean up existing asset helper
 	if asset_helper:
+		Logger.logger.debug("GalaxyDisplay: Cleaning up existing asset helper")
 		asset_helper.cleanup_connections()
 		asset_helper.queue_free()
 		asset_helper = null
@@ -164,13 +165,16 @@ func load_object() -> void:
 	asset_helper.resource_ready.connect(_on_resource_ready)
 	
 	# Start loading the object
+	Logger.logger.debug("GalaxyDisplay: Starting asset helper load for: " + object_id)
 	asset_helper.set_object(object_id)
 
 func _on_object_loaded(success: bool) -> void:
 	if not success:
-		print("Can't load " + object_id)
+		Logger.logger.error("GalaxyDisplay: Failed to load object: " + object_id)
 		_is_loading = false
 		return
+	
+	Logger.logger.info("GalaxyDisplay: Object loaded successfully: " + object_id)
 	
 	# Initial UI setup
 	get_node("VBoxContainer/MarginContainer/Label").text = object_id
@@ -191,20 +195,21 @@ func _on_object_loaded(success: bool) -> void:
 	
 	# Check if all resources are already cached - if so, load synchronously
 	if _all_resources_cached():
-		print("All resources cached, loading synchronously for: ", object_id)
+		Logger.logger.info("GalaxyDisplay: All resources cached, loading synchronously for: " + object_id)
 		_load_all_cached_resources_sync()
 		_finalize_loading()
 	else:
-		print("Some resources not cached, loading asynchronously for: ", object_id)
+		Logger.logger.info("GalaxyDisplay: Some resources not cached, loading asynchronously for: " + object_id)
 		# Fall back to async loading
 		asset_helper.load_all_resources()
 		_try_load_cached_resources()
 
 func _on_resource_ready(resource_name: String) -> void:
 	# A resource has been loaded, try to update the display
-	# print("Resource ready: ", resource_name)
+	Logger.logger.debug("GalaxyDisplay: Resource ready: " + resource_name)
 	# Only update if this resource belongs to current object
 	if resource_name.begins_with(object_id):
+		Logger.logger.debug("GalaxyDisplay: Updating display for resource: " + resource_name)
 		_update_single_resource(resource_name)
 
 func _update_single_resource(resource_name: String) -> void:
@@ -484,6 +489,7 @@ func _check_loading_complete() -> void:
 
 func preload_next_object(next_object_id: String) -> void:
 	# Preload resources for the next object in background
+	Logger.logger.info("GalaxyDisplay: Preloading next object: " + next_object_id)
 	if asset_helper:
 		asset_helper.preload_next_object(next_object_id)
 
@@ -533,33 +539,38 @@ func _all_resources_cached() -> bool:
 # Load all cached resources synchronously (no async calls)
 func _load_all_cached_resources_sync() -> void:
 	var start_time = Time.get_ticks_msec()
+	Logger.logger.info("GalaxyDisplay: Starting synchronous loading of cached resources for: " + object_id)
 	
 	# Load redshift data
 	var pz = asset_helper.get_pz()
 	if pz:
+		Logger.logger.debug("GalaxyDisplay: Loading redshift data from cache")
 		_load_redshift_data(pz)
 	
 	# Load 1D spectrum
 	var oned_spec = asset_helper.get_1d_spectrum(true)
 	if oned_spec.size() > 0:
+		Logger.logger.debug("GalaxyDisplay: Loading 1D spectrum data from cache (" + str(oned_spec.size()) + " filters)")
 		_load_1d_spectrum(oned_spec)
 	
 	# Load 2D spectra
 	var data2d = asset_helper.get_2d_spectra()
 	if data2d.size() > 0:
+		Logger.logger.debug("GalaxyDisplay: Loading 2D spectra from cache (" + str(data2d.size()) + " position angles)")
 		_load_2d_spectra(data2d)
 	
 	# Load direct images
 	var directs = asset_helper.get_directs()
 	if directs.size() > 0:
+		Logger.logger.debug("GalaxyDisplay: Loading direct images from cache (" + str(directs.size()) + " filters)")
 		_load_direct_images(directs)
 	
 	var load_time = Time.get_ticks_msec() - start_time
-	print("Synchronous loading completed in ", load_time, "ms for: ", object_id)
+	Logger.logger.info("GalaxyDisplay: Synchronous loading completed in " + str(load_time) + "ms for: " + object_id)
 
 # Finalize loading (called after sync or async loading is complete)
 func _finalize_loading() -> void:
-	print("Finalizing loading for: ", object_id)
+	Logger.logger.info("GalaxyDisplay: Finalizing loading for: " + object_id)
 	_is_loading = false
 	set_redshift(redshift)
 	call_deferred("oned_zoomed")

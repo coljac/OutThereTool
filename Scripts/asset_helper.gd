@@ -36,7 +36,8 @@ func set_object(objid: String) -> void:
 	var manifest_id = objid + "_manifest.tres"
 	
 	# Always try bundle first - either from cache or network
-	print("Attempting to load bundle for: ", objid)
+	Logger.logger.info("AssetHelper: Loading object " + objid)
+	Logger.logger.debug("AssetHelper: Attempting to load bundle: " + bundle_id)
 	loader.load_resource(bundle_id)
 
 func _on_resource_loaded(resource_id: String, resource: Resource) -> void:
@@ -46,23 +47,23 @@ func _on_resource_loaded(resource_id: String, resource: Resource) -> void:
 		
 	if resource_id.ends_with("_bundle.tres"):
 		# Handle bundled resource
-		print("Bundle resource received, type: ", resource.get_class() if resource else "null")
+		Logger.logger.info("AssetHelper: Bundle resource received for " + current_object_id + ", type: " + (resource.get_class() if resource else "null"))
 		
 		# Try multiple approaches to handle the bundle
 		var bundle = resource as ObjectBundle
 		if not bundle:
 			# Maybe it's a generic Resource, try to access properties directly
 			if resource and resource.has_method("get"):
-				print("Trying to access bundle as generic resource...")
+				Logger.logger.debug("AssetHelper: Trying to access bundle as generic resource")
 				if "manifest" in resource and "resources" in resource:
-					print("Found manifest and resources properties")
+					Logger.logger.debug("AssetHelper: Found manifest and resources properties in generic bundle")
 					manifest = resource.manifest
 					# Cache all bundled resources in memory
 					for resource_key in resource.resources:
 						var bundled_resource = resource.resources[resource_key]
 						var cache_key = current_object_id + "_" + resource_key + ".tres"
 						loader.memory_cache[cache_key] = bundled_resource
-					print("Bundle loaded for: ", current_object_id, " with ", resource.resources.size(), " resources")
+					Logger.logger.info("AssetHelper: Bundle loaded for " + current_object_id + " with " + str(resource.resources.size()) + " resources")
 					object_loaded.emit(true)
 					return
 		
@@ -73,21 +74,22 @@ func _on_resource_loaded(resource_id: String, resource: Resource) -> void:
 				var bundled_resource = bundle.resources[resource_key]
 				var cache_key = current_object_id + "_" + resource_key + ".tres"
 				loader.memory_cache[cache_key] = bundled_resource
-			print("Bundle loaded for: ", current_object_id, " with ", bundle.resources.size(), " resources")
+			Logger.logger.info("AssetHelper: Bundle loaded for " + current_object_id + " with " + str(bundle.resources.size()) + " resources")
 			object_loaded.emit(true)
 		else:
-			print("Bundle resource failed to cast to ObjectBundle or has no manifest")
+			Logger.logger.warning("AssetHelper: Bundle resource failed to cast to ObjectBundle or has no manifest")
 			# Fall back to manifest loading
-			print("Bundle failed, falling back to manifest for: ", current_object_id)
+			Logger.logger.info("AssetHelper: Bundle failed, falling back to manifest for " + current_object_id)
 			var manifest_id = current_object_id + "_manifest.tres"
 			loader.load_resource(manifest_id)
 	elif resource_id.ends_with("_manifest.tres"):
 		manifest = resource
-		print("Manifest loaded for: ", current_object_id)
+		Logger.logger.info("AssetHelper: Manifest loaded for " + current_object_id)
 		object_loaded.emit(manifest != null)
 	else:
 		# Other resource loaded, emit signal only if we're still loading this object
 		if current_object_id != "" and resource_id.begins_with(current_object_id):
+			Logger.logger.debug("AssetHelper: Individual resource loaded: " + resource_id)
 			resource_ready.emit(resource_id)
 
 func _on_resource_failed(resource_id: String, error: String) -> void:
@@ -95,27 +97,29 @@ func _on_resource_failed(resource_id: String, error: String) -> void:
 	if not resource_id.begins_with(current_object_id):
 		return
 		
-	print("Failed to load resource: ", resource_id, " Error: ", error)
+	Logger.logger.warning("AssetHelper: Failed to load resource " + resource_id + " - Error: " + error)
 	
 	if resource_id.ends_with("_bundle.tres"):
 		# Bundle failed, try manifest instead
-		print("Bundle failed, falling back to manifest for: ", current_object_id)
+		Logger.logger.info("AssetHelper: Bundle failed, falling back to manifest for " + current_object_id)
 		var manifest_id = current_object_id + "_manifest.tres"
 		loader.load_resource(manifest_id)
 	elif resource_id.ends_with("_manifest.tres"):
-		print("Both bundle and manifest failed for: ", current_object_id)
+		Logger.logger.error("AssetHelper: Both bundle and manifest failed for " + current_object_id)
 		object_loaded.emit(false)
 	else:
 		# Individual resource failed - this is normal for async loading
-		print("Individual resource failed (expected): ", resource_id)
+		Logger.logger.debug("AssetHelper: Individual resource failed (expected during async loading): " + resource_id)
 
 func get_pz() -> Resource:
 	if manifest and "redshift_path" in manifest:
 		# Check if already cached
 		var resource_id = _extract_resource_id(manifest.redshift_path)
 		if loader.memory_cache.has(resource_id):
+			Logger.logger.debug("AssetHelper: Redshift data found in memory cache: " + resource_id)
 			return loader.memory_cache[resource_id]
 		# Otherwise load it (will be async)
+		Logger.logger.debug("AssetHelper: Loading redshift data asynchronously: " + resource_id)
 		loader.load_resource(resource_id)
 	return null
 
@@ -140,11 +144,15 @@ func get_1d_spectrum(microns: bool = false) -> Dictionary:
 	
 	var oneds = manifest.spectrum_1d_paths
 	var res = {}
+	Logger.logger.debug("AssetHelper: Getting 1D spectra for " + str(oneds.size()) + " filters")
+	
 	for filt in oneds:
 		var resource_id = _extract_resource_id(oneds[filt])
 		if loader.memory_cache.has(resource_id):
+			Logger.logger.debug("AssetHelper: 1D spectrum found in memory cache for filter " + filt + ": " + resource_id)
 			var spec = loader.memory_cache[resource_id] as Spectrum1DResource
 			if not spec:
+				Logger.logger.warning("AssetHelper: Failed to cast 1D spectrum resource for filter " + filt)
 				continue
 			var waves = spec.wavelengths
 			var fluxes = spec.fluxes
@@ -162,8 +170,10 @@ func get_1d_spectrum(microns: bool = false) -> Dictionary:
 				"flat": spec.flat,
 				"max": max
 			}
+			Logger.logger.debug("AssetHelper: Processed 1D spectrum for filter " + filt + " with " + str(waves.size()) + " wavelength points")
 		else:
 			# Load resource asynchronously
+			Logger.logger.debug("AssetHelper: Loading 1D spectrum asynchronously for filter " + filt + ": " + resource_id)
 			loader.load_resource(resource_id)
 	
 	return res
@@ -172,12 +182,16 @@ func get_directs() -> Dictionary:
 	if not manifest or not "direct_image_paths" in manifest:
 		return {}
 	var res = {}
+	Logger.logger.debug("AssetHelper: Getting direct images for " + str(manifest.direct_image_paths.size()) + " filters")
+	
 	for filt in manifest.direct_image_paths:
 		var resource_id = _extract_resource_id(manifest.direct_image_paths[filt])
 		if loader.memory_cache.has(resource_id):
+			Logger.logger.debug("AssetHelper: Direct image found in memory cache for filter " + filt + ": " + resource_id)
 			res[filt] = loader.memory_cache[resource_id]
 		else:
 			# Load resource asynchronously
+			Logger.logger.debug("AssetHelper: Loading direct image asynchronously for filter " + filt + ": " + resource_id)
 			loader.load_resource(resource_id)
 	return res
 
@@ -186,15 +200,22 @@ func get_2d_spectra() -> Dictionary:
 	if not manifest or not "spectrum_2d_paths_by_pa" in manifest:
 		return {}
 	var res = {}
+	var total_spectra = 0
+	for pa in manifest.spectrum_2d_paths_by_pa:
+		total_spectra += manifest.spectrum_2d_paths_by_pa[pa].size()
+	Logger.logger.debug("AssetHelper: Getting 2D spectra for " + str(manifest.spectrum_2d_paths_by_pa.size()) + " position angles, " + str(total_spectra) + " total spectra")
+	
 	for pa in manifest.spectrum_2d_paths_by_pa:
 		if pa not in res:
 			res[pa] = {}
 		for filt in manifest.spectrum_2d_paths_by_pa[pa]:
 			var resource_id = _extract_resource_id(manifest.spectrum_2d_paths_by_pa[pa][filt])
 			if loader.memory_cache.has(resource_id):
+				Logger.logger.debug("AssetHelper: 2D spectrum found in memory cache for PA " + pa + ", filter " + filt + ": " + resource_id)
 				res[pa][filt] = loader.memory_cache[resource_id]
 			else:
 				# Load resource asynchronously
+				Logger.logger.debug("AssetHelper: Loading 2D spectrum asynchronously for PA " + pa + ", filter " + filt + ": " + resource_id)
 				loader.load_resource(resource_id)
 	return res
 
@@ -219,13 +240,15 @@ func preload_next_object(next_object_id: String) -> void:
 	if next_object_id == "" or next_object_id == current_object_id:
 		return
 	
-	print("Preloading resources for next object: ", next_object_id)
+	Logger.logger.info("AssetHelper: Preloading resources for next object: " + next_object_id)
 	
 	# Try to preload bundle first, fall back to manifest
 	var bundle_id = next_object_id + "_bundle.tres"
 	var manifest_id = next_object_id + "_manifest.tres"
 	
+	Logger.logger.debug("AssetHelper: Preloading bundle: " + bundle_id)
 	loader.preload_resource(bundle_id)
+	Logger.logger.debug("AssetHelper: Preloading manifest: " + manifest_id)
 	loader.preload_resource(manifest_id)
 
 # Cleanup connections when destroying this instance
@@ -254,31 +277,49 @@ func load_all_resources() -> void:
 		return
 	
 	is_loading_resources = true
-	print("Starting to load all resources for: ", current_object_id)
+	Logger.logger.info("AssetHelper: Starting to load all resources for: " + current_object_id)
+	
+	var total_resources = 0
 	
 	# Load redshift data
 	if "redshift_path" in manifest:
 		var resource_id = _extract_resource_id(manifest.redshift_path)
+		Logger.logger.debug("AssetHelper: Loading redshift resource: " + resource_id)
 		loader.load_resource(resource_id)
+		total_resources += 1
 	
 	# Load 1D spectra
 	if "spectrum_1d_paths" in manifest:
+		Logger.logger.debug("AssetHelper: Loading " + str(manifest.spectrum_1d_paths.size()) + " 1D spectra")
 		for filt in manifest.spectrum_1d_paths:
 			var resource_id = _extract_resource_id(manifest.spectrum_1d_paths[filt])
+			Logger.logger.debug("AssetHelper: Loading 1D spectrum for filter " + filt + ": " + resource_id)
 			loader.load_resource(resource_id)
+			total_resources += 1
 	
 	# Load direct images
 	if "direct_image_paths" in manifest:
+		Logger.logger.debug("AssetHelper: Loading " + str(manifest.direct_image_paths.size()) + " direct images")
 		for filt in manifest.direct_image_paths:
 			var resource_id = _extract_resource_id(manifest.direct_image_paths[filt])
+			Logger.logger.debug("AssetHelper: Loading direct image for filter " + filt + ": " + resource_id)
 			loader.load_resource(resource_id)
+			total_resources += 1
 	
 	# Load 2D spectra
 	if "spectrum_2d_paths_by_pa" in manifest:
+		var spectra_2d_count = 0
+		for pa in manifest.spectrum_2d_paths_by_pa:
+			spectra_2d_count += manifest.spectrum_2d_paths_by_pa[pa].size()
+		Logger.logger.debug("AssetHelper: Loading " + str(spectra_2d_count) + " 2D spectra across " + str(manifest.spectrum_2d_paths_by_pa.size()) + " position angles")
 		for pa in manifest.spectrum_2d_paths_by_pa:
 			for filt in manifest.spectrum_2d_paths_by_pa[pa]:
 				var resource_id = _extract_resource_id(manifest.spectrum_2d_paths_by_pa[pa][filt])
+				Logger.logger.debug("AssetHelper: Loading 2D spectrum for PA " + pa + ", filter " + filt + ": " + resource_id)
 				loader.load_resource(resource_id)
+				total_resources += 1
+	
+	Logger.logger.info("AssetHelper: Initiated loading of " + str(total_resources) + " total resources for " + current_object_id)
 
 func zip_p32(inputs: Array[PackedFloat32Array]) -> Array[Vector2]:
 	var output = [] as Array[Vector2]
