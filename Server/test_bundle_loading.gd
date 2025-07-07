@@ -9,8 +9,10 @@ const ObjectManifest = preload("res://Server/object_manifest.gd")
 func _init():
 	print("=== Bundle Loading Debug Test ===")
 	
-	# Test with a specific bundle file
-	var test_file = "processed/uma-03_05858_bundle.tres"
+	# Test with a specific bundle file (try .res first, fallback to .tres)
+	var test_file = "processed/uma-03_05858_bundle.res"
+	if not FileAccess.file_exists(test_file):
+		test_file = "processed/uma-03_05858_bundle.tres"
 	print("Testing bundle file: " + test_file)
 	
 	if not FileAccess.file_exists(test_file):
@@ -113,7 +115,7 @@ func test_simple_bundle_creation():
 	bundle.resources = {"test": "test_value"}
 	
 	# Save it
-	var test_path = "user://test_bundle.tres"
+	var test_path = "user://test_bundle.res"
 	var save_result = ResourceSaver.save(bundle, test_path)
 	print("Save result: " + str(save_result))
 	

@@ -63,13 +63,14 @@ output_dir/
 ### After:
 ```
 output_dir/
-└── galaxy001_bundle.tres  # Single file - contains everything
+└── galaxy001_bundle.res  # Single binary file - contains everything
 ```
 
 ## Loading Priority
 
-1. **Primary**: `galaxy001_bundle.tres` (single bundle file)
-2. **Fallback**: `galaxy001_manifest.tres` + individual files (legacy)
+1. **Primary**: `galaxy001_bundle.res` (single binary bundle file)
+2. **Secondary**: `galaxy001_bundle.tres` (single text bundle file)
+3. **Fallback**: `galaxy001_manifest.tres` + individual files (legacy)
 
 ## Testing
 
@@ -114,3 +115,11 @@ ObjectBundle resources were not loading correctly - they couldn't be cast to the
    - Last resort uses get() method to access properties
 
 This ensures bundles can be loaded even if Godot doesn't preserve the exact class type during serialization.
+
+5. **Switched to Binary Format (.res files)**:
+   - Changed from .tres (text) to .res (binary) format for bundle files
+   - Binary format provides 2-5x faster loading performance
+   - Better class type preservation during serialization
+   - Smaller file sizes
+   - Loading priority: .res files first, then .tres fallback, then manifest
+   - All individual resource references in manifests now point to .res files

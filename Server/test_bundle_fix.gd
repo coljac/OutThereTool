@@ -46,7 +46,7 @@ func test_bundle_creation():
 	}
 	
 	# Save the bundle
-	var test_path = "user://test_bundle_fix.tres"
+	var test_path = "user://test_bundle_fix.res"
 	var save_result = ResourceSaver.save(bundle, test_path)
 	print("Save result: " + str(save_result))
 	
@@ -55,7 +55,7 @@ func test_bundle_creation():
 		
 		# Also save a copy to the processed directory if it exists
 		if DirAccess.dir_exists_absolute("processed"):
-			var processed_path = "processed/test_object_001_bundle.tres"
+			var processed_path = "processed/test_object_001_bundle.res"
 			ResourceSaver.save(bundle, processed_path)
 			print("Also saved to: " + processed_path)
 	else:
@@ -64,7 +64,7 @@ func test_bundle_creation():
 func test_bundle_loading():
 	print("\n--- Testing Bundle Loading ---")
 	
-	var test_path = "user://test_bundle_fix.tres"
+	var test_path = "user://test_bundle_fix.res"
 	
 	# Test 1: Direct load
 	print("\nTest 1: Direct ResourceLoader.load()")

@@ -65,7 +65,7 @@ func preprocess_object(object_id: String, input_dir: String, output_dir: String)
 		for filter_name in spec_1d_resources:
 			bundle.resources["1d_" + filter_name] = spec_1d_resources[filter_name]
 			# Update manifest to point to the resource that will be cached
-			manifest.spectrum_1d_paths[filter_name] = object_id + "_1d_" + filter_name + ".tres"
+			manifest.spectrum_1d_paths[filter_name] = object_id + "_1d_" + filter_name + ".res"
 	else:
 		log_message("Warning: 1D spectrum file not found: " + spec_1d_path)
 	
@@ -84,10 +84,10 @@ func preprocess_object(object_id: String, input_dir: String, output_dir: String)
 			if not pa in paths_by_pa:
 				paths_by_pa[pa] = {}
 			# Update manifest to point to the resource that will be cached
-			paths_by_pa[pa][filter_name] = object_id + "_" + key + ".tres"
+			paths_by_pa[pa][filter_name] = object_id + "_" + key + ".res"
 			
 			# Also maintain the old format for backward compatibility
-			manifest.spectrum_2d_paths[filter_name + "_PA" + pa] = object_id + "_" + key + ".tres"
+			manifest.spectrum_2d_paths[filter_name + "_PA" + pa] = object_id + "_" + key + ".res"
 			
 			# Add to bundle
 			bundle.resources[key] = resource
@@ -103,7 +103,7 @@ func preprocess_object(object_id: String, input_dir: String, output_dir: String)
 		for filter_name in direct_resources:
 			bundle.resources["direct_" + filter_name] = direct_resources[filter_name]
 			# Update manifest to point to the resource that will be cached
-			manifest.direct_image_paths[filter_name] = object_id + "_direct_" + filter_name + ".tres"
+			manifest.direct_image_paths[filter_name] = object_id + "_direct_" + filter_name + ".res"
 	else:
 		log_message("Warning: Direct image file not found: " + direct_path)
 	
@@ -114,7 +114,7 @@ func preprocess_object(object_id: String, input_dir: String, output_dir: String)
 		if redshift_resource:
 			bundle.resources["redshift"] = redshift_resource
 			# Update manifest to point to the resource that will be cached
-			manifest.redshift_path = object_id + "_redshift.tres"
+			manifest.redshift_path = object_id + "_redshift.res"
 			manifest.redshift = redshift_resource.best_redshift
 	else:
 		log_message("Warning: Redshift file not found: " + redshift_path)
@@ -135,9 +135,9 @@ func preprocess_object(object_id: String, input_dir: String, output_dir: String)
 	# Update the bundle's manifest
 	bundle.manifest = manifest
 	
-	# Save as single .tres file (reliable class preservation)
-	var bundle_path = output_dir + object_id + "_bundle.tres"
-	# Save without bundling to avoid script embedding issues
+	# Save as single .res file (binary format for better performance and type preservation)
+	var bundle_path = output_dir + object_id + "_bundle.res"
+	# Binary format preserves classes better and loads faster
 	var save_result = ResourceSaver.save(bundle, bundle_path)
 	if save_result != OK:
 		log_message("Error saving bundle: " + str(save_result))
@@ -445,7 +445,7 @@ func preprocess_1d_spectra(object_id: String, fits_path: String, output_dir: Str
 		}
 		
 		# Save resource
-		var resource_path = output_dir + object_id + "_1d_" + filter_name + ".tres"
+		var resource_path = output_dir + object_id + "_1d_" + filter_name + ".res"
 		var save_result = ResourceSaver.save(resource, resource_path)
 		if save_result != OK:
 			log_message("    Error saving 1D spectrum resource: " + str(save_result))
@@ -573,7 +573,7 @@ func preprocess_2d_spectra(object_id: String, fits_path: String, output_dir: Str
 			}
 			
 			# Save resource with PA in the filename
-			var resource_path = output_dir + object_id + "_2d_PA" + pa + "_" + filter_name + ".tres"
+			var resource_path = output_dir + object_id + "_2d_PA" + pa + "_" + filter_name + ".res"
 			var save_result = ResourceSaver.save(resource, resource_path)
 			if save_result != OK:
 				log_message("    Error saving 2D spectrum resource: " + str(save_result))
@@ -752,7 +752,7 @@ func preprocess_direct_images(object_id: String, fits_path: String, output_dir: 
 					log_message("    Saved segmentation map data for " + filter_name)
 		
 		# Save resource
-		var resource_path = output_dir + object_id + "_direct_" + filter_name + ".tres"
+		var resource_path = output_dir + object_id + "_direct_" + filter_name + ".res"
 		var save_result = ResourceSaver.save(resource, resource_path)
 		if save_result != OK:
 			log_message("    Error saving direct image resource: " + str(save_result))
@@ -827,7 +827,7 @@ func preprocess_redshift(object_id: String, fits_path: String, output_dir: Strin
 	}
 	
 	# Save resource
-	var resource_path = output_dir + object_id + "_redshift.tres"
+	var resource_path = output_dir + object_id + "_redshift.res"
 	var save_result = ResourceSaver.save(resource, resource_path)
 	if save_result != OK:
 		log_message("    Error saving redshift resource: " + str(save_result))
