@@ -189,14 +189,20 @@ func download_and_unzip_field(field: String, progress: CacheProgress) -> bool:
 	add_child(http_request)
 	current_download_http_request = http_request
 	
+	# Configure for better performance
+	http_request.use_threads = true
+	http_request.body_size_limit = -1  # No limit
+	http_request.download_chunk_size = 65536  # 64KB chunks
+	
 	# Set up the request
 	http_request.download_file = zip_path
 	
 	# Connect completion signal
 	http_request.request_completed.connect(zip_download_completed)
 	
-	# Make the request
-	var request_error = http_request.request(zip_url)
+	# Make the request with headers to disable compression for accurate progress
+	var headers = ["Accept-Encoding: identity"]
+	var request_error = http_request.request(zip_url, headers)
 	if request_error != OK:
 		Logger.logger.error("Failed to start HTTP request for field " + field + ": " + str(request_error))
 		_cleanup_download_request()
@@ -217,7 +223,7 @@ func _start_download_progress_tracking() -> void:
 	
 	download_progress_timer = Timer.new()
 	add_child(download_progress_timer)
-	download_progress_timer.wait_time = 0.5 # Update every 500ms
+	download_progress_timer.wait_time = 2.0 # Update every 2 seconds to reduce overhead
 	download_progress_timer.timeout.connect(_update_download_progress)
 	download_progress_timer.start()
 
@@ -227,15 +233,17 @@ func _update_download_progress() -> void:
 	if not current_download_progress or current_download_zip_path == "":
 		return
 	
-	if not FileAccess.file_exists(current_download_zip_path):
+	# Use DirAccess to get file size without opening the file
+	var dir = DirAccess.open(current_download_zip_path.get_base_dir())
+	if not dir:
 		return
 	
-	var file = FileAccess.open(current_download_zip_path, FileAccess.READ)
-	if not file:
+	var file_name = current_download_zip_path.get_file()
+	if not dir.file_exists(file_name):
 		return
 	
-	var current_size = file.get_length()
-	file.close()
+	# This is more efficient than opening the file
+	var current_size = FileAccess.get_file_as_bytes(current_download_zip_path).size()
 	
 	if current_size == 0:
 		return
