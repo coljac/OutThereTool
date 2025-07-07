@@ -8,6 +8,9 @@ const MAX_CONCURRENT_REQUESTS = 8
 # Preload the ObjectBundle class to ensure it's available for .res loading
 const ObjectBundle = preload("res://Server/object_bundle.gd")
 
+# Import Logger
+const Logger = preload("res://Scripts/logger.gd")
+
 # Cache directory in user space
 var cache_dir: String = "user://cache/"
 
@@ -166,9 +169,9 @@ func _load_cache_worker(resource_id: String, cache_path: String) -> void:
 					
 				if not resource:
 					# Try loading with explicit type hint for bundle files
-					if resource_id.ends_with("_bundle.tres") or resource_id.ends_with("_bundle.tres"):
+					if resource_id.ends_with("_bundle.tres"):
 						resource = ResourceLoader.load(cache_path, "ObjectBundle")
-					elif resource_id.ends_with("_manifest.tres") or resource_id.ends_with("_manifest.tres"):
+					elif resource_id.ends_with("_manifest.tres"):
 						resource = ResourceLoader.load(cache_path, "ObjectManifest")
 					
 				if not resource:

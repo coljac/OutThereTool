@@ -1,5 +1,5 @@
-extends Resource
 class_name ObjectBundle
+extends Resource
 
 ## A bundled resource containing all data for a single astronomical object
 ##
@@ -8,7 +8,7 @@ class_name ObjectBundle
 ## for improved loading performance and reduced network requests.
 
 ## The object manifest containing metadata and resource organization
-@export var manifest: ObjectManifest
+@export var manifest: Resource
 
 ## Dictionary containing all individual resources, keyed by resource type
 ## Keys follow the pattern:
@@ -72,7 +72,7 @@ func get_bundle_size() -> int:
 		var resource = resources[key]
 		if resource:
 			# Rough estimate - would need actual serialization for exact size
-			total_size += 1024  # Placeholder
+			total_size += 1024 # Placeholder
 	return total_size
 
 ## Get statistics about the bundle

@@ -1,7 +1,8 @@
 extends Node
 
-# Import the ObjectBundle class
+# Import the ObjectBundle class and dependencies
 const ObjectBundle = preload("res://Server/object_bundle.gd")
+const ObjectManifest = preload("res://Server/object_manifest.gd")
 
 ## Pre-processor for FITS data
 ##
@@ -134,9 +135,10 @@ func preprocess_object(object_id: String, input_dir: String, output_dir: String)
 	# Update the bundle's manifest
 	bundle.manifest = manifest
 	
-	# Save as single .res file
+	# Save as single .tres file (reliable class preservation)
 	var bundle_path = output_dir + object_id + "_bundle.tres"
-	var save_result = ResourceSaver.save(bundle, bundle_path, ResourceSaver.FLAG_BUNDLE_RESOURCES)
+	# Save without bundling to avoid script embedding issues
+	var save_result = ResourceSaver.save(bundle, bundle_path)
 	if save_result != OK:
 		log_message("Error saving bundle: " + str(save_result))
 		return ""

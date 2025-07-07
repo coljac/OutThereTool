@@ -26,6 +26,7 @@ func _ready():
 		return
 	
 	print("Bundle created at: " + bundle_path)
+	print("Bundle format: " + (".res (binary)" if bundle_path.ends_with(".res") else ".tres (text)"))
 	
 	# Try to load the bundle
 	var bundle = load(bundle_path) as ObjectBundle

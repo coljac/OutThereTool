@@ -4,6 +4,9 @@ class_name AssetHelper
 # Preload the ObjectBundle class to ensure it's available for casting
 const ObjectBundle = preload("res://Server/object_bundle.gd")
 
+# Import Logger
+const Logger = preload("res://Scripts/logger.gd")
+
 var c_log10 = log(10)
 
 var manifest: Resource
@@ -31,11 +34,11 @@ func set_object(objid: String) -> void:
 	manifest = null
 	is_loading_resources = false # Reset loading state for new object
 	
-	# Try to load bundled resource first (from cache OR network), fall back to manifest
+	# Try to load bundled resource first, fall back to manifest
 	var bundle_id = objid + "_bundle.tres"
 	var manifest_id = objid + "_manifest.tres"
 	
-	# Always try bundle first - either from cache or network
+	# Always try bundle first
 	Logger.logger.info("AssetHelper: Loading object " + objid)
 	Logger.logger.debug("AssetHelper: Attempting to load bundle: " + bundle_id)
 	loader.load_resource(bundle_id)
@@ -49,35 +52,59 @@ func _on_resource_loaded(resource_id: String, resource: Resource) -> void:
 		# Handle bundled resource
 		Logger.logger.info("AssetHelper: Bundle resource received for " + current_object_id + ", type: " + (resource.get_class() if resource else "null"))
 		
-		# Try multiple approaches to handle the bundle
-		var bundle = resource as ObjectBundle
-		if not bundle:
-			# Maybe it's a generic Resource, try to access properties directly
-			if resource and resource.has_method("get"):
-				Logger.logger.debug("AssetHelper: Trying to access bundle as generic resource")
-				if "manifest" in resource and "resources" in resource:
-					Logger.logger.debug("AssetHelper: Found manifest and resources properties in generic bundle")
-					manifest = resource.manifest
-					# Cache all bundled resources in memory
-					for resource_key in resource.resources:
-						var bundled_resource = resource.resources[resource_key]
-						var cache_key = current_object_id + "_" + resource_key + ".tres"
-						loader.memory_cache[cache_key] = bundled_resource
-					Logger.logger.info("AssetHelper: Bundle loaded for " + current_object_id + " with " + str(resource.resources.size()) + " resources")
-					object_loaded.emit(true)
-					return
+		# Debug: Check what properties the resource actually has
+		if resource:
+			Logger.logger.debug("AssetHelper: Resource script: " + str(resource.get_script()))
+			Logger.logger.debug("AssetHelper: Resource has manifest property: " + str("manifest" in resource))
+			Logger.logger.debug("AssetHelper: Resource has resources property: " + str("resources" in resource))
+			if resource.has_method("get"):
+				Logger.logger.debug("AssetHelper: Resource.get('manifest'): " + str(resource.get("manifest") != null))
+				Logger.logger.debug("AssetHelper: Resource.get('resources'): " + str(resource.get("resources") != null))
 		
-		if bundle and bundle.manifest:
-			manifest = bundle.manifest
+		# Handle the bundle - it might come as a generic Resource due to serialization
+		var bundle_loaded = false
+		var bundle_manifest = null
+		var bundle_resources = null
+		
+		# First try direct cast
+		var bundle = resource as ObjectBundle
+		if bundle:
+			Logger.logger.debug("AssetHelper: Successfully cast to ObjectBundle")
+			bundle_manifest = bundle.manifest
+			bundle_resources = bundle.resources
+			bundle_loaded = true
+		# If direct cast fails, try accessing properties on generic Resource
+		elif resource and "manifest" in resource and "resources" in resource:
+			Logger.logger.debug("AssetHelper: Accessing bundle as generic Resource with properties")
+			bundle_manifest = resource.manifest
+			bundle_resources = resource.resources
+			bundle_loaded = true
+		# Last resort: try get() method
+		elif resource and resource.has_method("get"):
+			var test_manifest = resource.get("manifest")
+			var test_resources = resource.get("resources")
+			if test_manifest != null and test_resources != null:
+				Logger.logger.debug("AssetHelper: Accessing bundle via get() method")
+				bundle_manifest = test_manifest
+				bundle_resources = test_resources
+				bundle_loaded = true
+		
+		if bundle_loaded and bundle_manifest:
+			manifest = bundle_manifest
 			# Cache all bundled resources in memory
-			for resource_key in bundle.resources:
-				var bundled_resource = bundle.resources[resource_key]
-				var cache_key = current_object_id + "_" + resource_key + ".tres"
-				loader.memory_cache[cache_key] = bundled_resource
-			Logger.logger.info("AssetHelper: Bundle loaded for " + current_object_id + " with " + str(bundle.resources.size()) + " resources")
+			if bundle_resources:
+				for resource_key in bundle_resources:
+					var bundled_resource = bundle_resources[resource_key]
+					# Extract just the resource type and filter from the key
+					# e.g., "1d_F115W" -> cache as "object_id_1d_F115W.tres"
+					var cache_key = current_object_id + "_" + resource_key + ".tres"
+					loader.memory_cache[cache_key] = bundled_resource
+				Logger.logger.info("AssetHelper: Bundle loaded for " + current_object_id + " with " + str(bundle_resources.size()) + " resources")
+			else:
+				Logger.logger.warning("AssetHelper: Bundle manifest loaded but no resources found")
 			object_loaded.emit(true)
 		else:
-			Logger.logger.warning("AssetHelper: Bundle resource failed to cast to ObjectBundle or has no manifest")
+			Logger.logger.warning("AssetHelper: Bundle resource could not be properly loaded")
 			# Fall back to manifest loading
 			Logger.logger.info("AssetHelper: Bundle failed, falling back to manifest for " + current_object_id)
 			var manifest_id = current_object_id + "_manifest.tres"
