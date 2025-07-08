@@ -1,44 +1,152 @@
 extends Node
-var database: SQLite
+var canonical_database: SQLite
+var user_database: SQLite
 signal updated_data(success: bool)
 
-var current_field: String = "uma-03"
+var current_field: String = ""
 
 
 func _ready() -> void:
 	Logger.logger.info("DataManager initializing")
-	database = SQLite.new()
-	database.path = OS.get_environment("OUTTHERE_DB")
-	if database.path == "":
-		database.path = "user://data.sqlite"
-		Logger.logger.debug("Using default database path: " + database.path)
-		if not FileAccess.file_exists(database.path):
-			Logger.logger.info("Database file not found, copying from resources")
-			_copy_db()
+	
+	# Initialize canonical database (galaxy metadata)
+	canonical_database = SQLite.new()
+	canonical_database.path = OS.get_environment("OUTTHERE_DB")
+	if canonical_database.path == "":
+		canonical_database.path = "user://canonical_data.sqlite"
+		Logger.logger.debug("Using default canonical database path: " + canonical_database.path)
+		if not FileAccess.file_exists(canonical_database.path):
+			Logger.logger.info("Canonical database file not found, copying from resources")
+			_copy_canonical_db()
 	else:
-		Logger.logger.debug("Using environment database path: " + database.path)
-	database.open_db()
+		Logger.logger.debug("Using environment canonical database path: " + canonical_database.path)
+	canonical_database.open_db()
+	
+	# Initialize user database (comments and scores)
+	user_database = SQLite.new()
+	user_database.path = "user://user_data.sqlite"
+	Logger.logger.debug("Using user database path: " + user_database.path)
+	user_database.open_db()
+	_ensure_user_database_schema()
+	
+	# Load last accessed field from user data
+	var last_field = get_user_data("last_field")
+	if last_field != "":
+		current_field = last_field
+		Logger.logger.info("Restored last accessed field: " + current_field)
+	else:
+		# Default to first available field if no previous field saved
+		var fields = get_unique_fields()
+		if fields.size() > 0:
+			current_field = fields[0]
+			Logger.logger.info("Using default field: " + current_field)
+		else:
+			current_field = "uma-03"
+			Logger.logger.info("No fields available, using fallback: " + current_field)
+	
 	Logger.logger.info("DataManager initialized successfully")
 
-func _copy_db():
-	Logger.logger.info("Copying database from resources to user directory")
+func _copy_canonical_db():
+	Logger.logger.info("Copying canonical database from resources to user directory")
 	if FileAccess.file_exists("res://data.sqlite"):
 		Logger.logger.debug("Source database found at res://data.sqlite")
-		if copy_file_from_res_to_user("data.sqlite"):
-			Logger.logger.info("Database copied successfully from resources")
+		if copy_file_from_res_to_user("data.sqlite", "canonical_data.sqlite"):
+			Logger.logger.info("Canonical database copied successfully from resources")
+			# Reload the canonical database if it's already open
+			if canonical_database and canonical_database.path != "":
+				canonical_database.close_db()
+				canonical_database.open_db()
+				Logger.logger.info("Canonical database reloaded")
+				# Notify UI that data has been updated
+				updated_data.emit(true)
 		else:
-			Logger.logger.error("Failed to copy database from resources")
+			Logger.logger.error("Failed to copy canonical database from resources")
 	else:
-		Logger.logger.error("Initial database file not found in resources at res://data.sqlite")
+		Logger.logger.error("Initial canonical database file not found in resources at res://data.sqlite")
 
+func _ensure_user_database_schema():
+	Logger.logger.info("Ensuring user database schema exists")
+	
+	# Create user_comments table for storing user ratings and comments
+	var create_user_comments = """
+	CREATE TABLE IF NOT EXISTS user_comments (
+		object_id TEXT PRIMARY KEY,
+		status INTEGER DEFAULT -1,
+		comments TEXT DEFAULT '',
+		altered INTEGER DEFAULT 0,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
+	"""
+	
+	# Create userdata table for user preferences and credentials
+	var create_userdata = """
+	CREATE TABLE IF NOT EXISTS userdata (
+		item TEXT PRIMARY KEY,
+		item_value TEXT
+	);
+	"""
+	
+	user_database.query(create_user_comments)
+	user_database.query(create_userdata)
+	Logger.logger.info("User database schema created successfully")
+
+func refresh_canonical_db():
+	Logger.logger.info("Refreshing canonical database from server")
+	var base_url = NetworkConfig.get_base_url()
+	var db_url = base_url + "data.sqlite"
+	var db_path = "user://canonical_data.sqlite"
+	
+	Logger.logger.info("Downloading canonical database from: " + db_url)
+	
+	# Create HTTPRequest for downloading
+	var http_request = HTTPRequest.new()
+	add_child(http_request)
+	
+	# Configure for better performance
+	http_request.use_threads = true
+	http_request.body_size_limit = -1 # No limit
+	http_request.download_chunk_size = 65536 # 64KB chunks
+	http_request.download_file = db_path
+	
+	# Connect completion signal
+	http_request.request_completed.connect(_on_canonical_db_download_completed)
+	
+	# Make the request
+	var request_error = http_request.request(db_url)
+	if request_error != OK:
+		Logger.logger.error("Failed to start canonical database download: " + str(request_error))
+		# Fall back to copying from resources
+		_copy_canonical_db()
+		http_request.queue_free()
+
+func _on_canonical_db_download_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray) -> void:
+	Logger.logger.info("Canonical database download completed")
+	Logger.logger.debug("HTTP result: " + str(result) + ", response code: " + str(response_code))
+	
+	if result != HTTPRequest.RESULT_SUCCESS or response_code != 200:
+		Logger.logger.error("Canonical database download failed. Result: " + str(result) + ", Response code: " + str(response_code))
+		# Fall back to copying from resources
+		_copy_canonical_db()
+	else:
+		Logger.logger.info("Canonical database downloaded successfully from server")
+		# Reload the canonical database
+		canonical_database.close_db()
+		canonical_database.open_db()
+		Logger.logger.info("Canonical database reloaded")
+		# Notify UI that data has been updated
+		updated_data.emit(true)
+	
+	# Clean up
+	var http_request = get_children().filter(func(child): return child is HTTPRequest)[0]
+	if http_request:
+		http_request.queue_free()
 	
 func reset_db():
-	# Remove db at user://data.sqlite and copy from res://data.sqlite
-	# if FileAccess.file_exists("user://data.sqlite"):
-		# FileAccess.remove("user://data.sqlite")
-	_copy_db()
+	# Legacy function - now refreshes canonical database
+	refresh_canonical_db()
 
-func copy_file_from_res_to_user(file_path: String) -> bool:
+func copy_file_from_res_to_user(file_path: String, dest_name: String = "") -> bool:
 	var source_file = FileAccess.open("res://" + file_path, FileAccess.READ)
 	if source_file == null:
 		return false
@@ -55,7 +163,8 @@ func copy_file_from_res_to_user(file_path: String) -> bool:
 	if directory_path != "":
 		dir.make_dir_recursive(directory_path)
 	
-	var dest_file = FileAccess.open("user://" + file_path, FileAccess.WRITE)
+	var target_path = dest_name if dest_name != "" else file_path
+	var dest_file = FileAccess.open("user://" + target_path, FileAccess.WRITE)
 	if dest_file == null:
 		return false
 	
@@ -69,14 +178,21 @@ func get_gals(redshift_min: float = 0.0, redshift_max: float = 10.0, bands: int 
 	if field != "" and field != "No fields":
 		field_condition = " and field = '%s'" % field
 	
-	var condition = "status > -1 and redshift >= %.2f and redshift <= %.2f and filters >= %d%s" % [redshift_min, redshift_max, bands, field_condition]
+	var condition = "redshift >= %.2f and redshift <= %.2f and filters >= %d%s" % [redshift_min, redshift_max, bands, field_condition]
 	print(condition)
 	
-	var gals = database.select_rows("galaxy", condition, ["*"])
+	var gals = canonical_database.select_rows("galaxy", condition, ["*"])
+	
+	# Add default user data fields (will be populated when individual galaxy is viewed)
+	for gal in gals:
+		gal["status"] = -1
+		gal["comments"] = ""
+		gal["altered"] = 0
+	
 	return gals
 
 func get_unique_fields() -> Array:
-	var fields = database.select_rows("galaxy", "field IS NOT NULL", ["DISTINCT field"])
+	var fields = canonical_database.select_rows("galaxy", "field IS NOT NULL", ["DISTINCT field"])
 	var field_list = []
 	for field_row in fields:
 		field_list.append(field_row["FIELD"])
@@ -85,6 +201,9 @@ func get_unique_fields() -> Array:
 
 func set_current_field(field: String) -> void:
 	current_field = field
+	# Save the current field to user data for next session
+	set_user_data("last_field", field)
+	Logger.logger.info("Field changed to: " + field)
 
 func get_current_field() -> String:
 	return current_field
@@ -99,7 +218,19 @@ func get_gals_by_ids(object_ids: Array) -> Array:
 		id_conditions.append("id = '" + str(id) + "'")
 	var condition = "(" + " OR ".join(id_conditions) + ")"
 	
-	var gals = database.select_rows("galaxy", condition, ["*"])
+	var gals = canonical_database.select_rows("galaxy", condition, ["*"])
+	
+	# Merge with user comments/status for these specific galaxies
+	for gal in gals:
+		var user_data = _get_user_comment(gal["id"])
+		if user_data:
+			gal["status"] = user_data["status"]
+			gal["comments"] = user_data["comments"]
+			gal["altered"] = user_data["altered"]
+		else:
+			gal["status"] = -1
+			gal["comments"] = ""
+			gal["altered"] = 0
 	
 	# Create a dictionary to preserve order of input IDs
 	var id_to_gal = {}
@@ -115,21 +246,60 @@ func get_gals_by_ids(object_ids: Array) -> Array:
 	return ordered_gals
 
 func update_gal(id: String, status: int, comment: String) -> void:
-	database.update_rows("galaxy", "id = '" + id + "'", {"status": status, "comments": comment, "altered": 1})
+	# Store user comments/status in user database
+	var existing = user_database.select_rows("user_comments", "object_id = '" + id + "'", ["*"])
+	var data = {
+		"object_id": id,
+		"status": status,
+		"comments": comment,
+		"altered": 1,
+		"updated_at": Time.get_datetime_string_from_system()
+	}
+	
+	if existing.size() > 0:
+		user_database.update_rows("user_comments", "object_id = '" + id + "'", data)
+	else:
+		user_database.insert_row("user_comments", data)
+	
 	updated_data.emit(true)
 
 func set_user_data(item: String, value: String) -> void:
-	var existing = database.select_rows("userdata", "item = '" + item + "'", ["*"])
+	var existing = user_database.select_rows("userdata", "item = '" + item + "'", ["*"])
 	if existing.size() > 0:
-		database.update_rows("userdata", "item = '" + item + "'", {"item_value": value})
+		user_database.update_rows("userdata", "item = '" + item + "'", {"item_value": value})
 	else:
-		database.insert_row("userdata", {"item": item, "item_value": value})
+		user_database.insert_row("userdata", {"item": item, "item_value": value})
 
 func get_user_data(item: String) -> String:
-	var result = database.select_rows("userdata", "item = '" + item + "'", ["item_value"])
+	var result = user_database.select_rows("userdata", "item = '" + item + "'", ["item_value"])
 	if result.size() > 0:
-		return result[0]["ITEM_VALUE"]
+		return result[0]["item_value"]
 	return ""
+
+func _get_user_comment(object_id: String) -> Dictionary:
+	var result = user_database.select_rows("user_comments", "object_id = '" + object_id + "'", ["*"])
+	if result.size() > 0:
+		return result[0]
+	return {}
+
+func get_galaxy_with_user_data(galaxy_id: String) -> Dictionary:
+	"""Get a single galaxy with its user data merged in"""
+	var gals = canonical_database.select_rows("galaxy", "id = '" + galaxy_id + "'", ["*"])
+	if gals.size() == 0:
+		return {}
+	
+	var gal = gals[0]
+	var user_data = _get_user_comment(galaxy_id)
+	if user_data:
+		gal["status"] = user_data["status"]
+		gal["comments"] = user_data["comments"]
+		gal["altered"] = user_data["altered"]
+	else:
+		gal["status"] = -1
+		gal["comments"] = ""
+		gal["altered"] = 0
+	
+	return gal
 
 func get_user_credentials() -> Dictionary:
 	var username = get_user_data("user.name")
@@ -191,8 +361,8 @@ func download_and_unzip_field(field: String, progress: CacheProgress) -> bool:
 	
 	# Configure for better performance
 	http_request.use_threads = true
-	http_request.body_size_limit = -1  # No limit
-	http_request.download_chunk_size = 65536  # 64KB chunks
+	http_request.body_size_limit = -1 # No limit
+	http_request.download_chunk_size = 65536 # 64KB chunks
 	
 	# Set up the request
 	http_request.download_file = zip_path

@@ -65,11 +65,12 @@ func _ready():
 	_add_initial_tab()
 	set_process_input(true)
 	if objects.size() > 0:
-		%ObjectViewing.set_galaxy_details(objects[obj_index])
+		var galaxy_with_user_data = DataManager.get_galaxy_with_user_data(objects[obj_index]['id'])
+		%ObjectViewing.set_galaxy_details(galaxy_with_user_data)
 	DataManager.connect("updated_data", %ObjectViewing.tick)
 	DataManager.connect("updated_data", update_cache)
 	set_process(false) # Disable _process by default
-	_goto_object(0)
+	# _goto_object(0)
 	for otimage in get_tree().get_nodes_in_group("images"):
 		if otimage as OTImage:
 			otimage.settings_changed.connect(image_settings_changed)
@@ -150,7 +151,8 @@ func get_object(obj: String) -> void:
 	gal_display.name = obj
 	var index: int = %ObjectsList.selected - 1
 	obj_index = index
-	%ObjectViewing.set_galaxy_details(objects[index])
+	var galaxy_with_user_data = DataManager.get_galaxy_with_user_data(objects[index]['id'])
+	%ObjectViewing.set_galaxy_details(galaxy_with_user_data)
 	%ObjectsList.selected = 0
 
 
@@ -175,7 +177,8 @@ func _goto_object(step: int = 1) -> void:
 	print("DEBUG: About to set object ID to: ", objects[obj_index]['id'])
 	gal_display.set_object_id(objects[obj_index]['id'])
 	print("DEBUG: Called set_object_id, updating details...")
-	%ObjectViewing.set_galaxy_details(objects[obj_index])
+	var galaxy_with_user_data = DataManager.get_galaxy_with_user_data(objects[obj_index]['id'])
+	%ObjectViewing.set_galaxy_details(galaxy_with_user_data)
 	gal_display.name = objects[obj_index]['id']
 	print("DEBUG: Object switch completed")
 
@@ -332,11 +335,18 @@ func _populate_field_list():
 	field_list.clear()
 	
 	if fields.size() > 0:
-		# Set the first field as current and populate the dropdown
-		for field in fields:
+		# Populate the dropdown
+		var current_field = DataManager.get_current_field()
+		var selected_index = 0
+		
+		for i in range(fields.size()):
+			var field = fields[i]
 			field_list.add_item(field)
-		DataManager.set_current_field("uma-03") # fields[0])
-		field_list.selected = 0
+			# If this is the current field from DataManager, select it
+			if field == current_field:
+				selected_index = i
+		
+		field_list.selected = selected_index
 	else:
 		# No fields available
 		field_list.add_item("No fields")

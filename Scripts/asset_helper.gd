@@ -34,8 +34,9 @@ func set_object(objid: String) -> void:
 	manifest = null
 	is_loading_resources = false # Reset loading state for new object
 	
-	# Try to load bundled resource first, fall back to manifest
-	var bundle_id = objid + "_bundle.tres"
+	# Try to load bundled resource first (prefer .res, fallback to .tres), then manifest
+	var bundle_id = objid + "_bundle.res"  # Try binary format first
+	var bundle_id_tres = objid + "_bundle.tres"  # Fallback to text format
 	var manifest_id = objid + "_manifest.tres"
 	
 	# Always try bundle first
@@ -48,7 +49,7 @@ func _on_resource_loaded(resource_id: String, resource: Resource) -> void:
 	if not resource_id.begins_with(current_object_id):
 		return
 		
-	if resource_id.ends_with("_bundle.tres"):
+	if resource_id.ends_with("_bundle.res") or resource_id.ends_with("_bundle.tres"):
 		# Handle bundled resource
 		Logger.logger.info("AssetHelper: Bundle resource received for " + current_object_id + ", type: " + (resource.get_class() if resource else "null"))
 		
@@ -96,8 +97,8 @@ func _on_resource_loaded(resource_id: String, resource: Resource) -> void:
 				for resource_key in bundle_resources:
 					var bundled_resource = bundle_resources[resource_key]
 					# Extract just the resource type and filter from the key
-					# e.g., "1d_F115W" -> cache as "object_id_1d_F115W.tres"
-					var cache_key = current_object_id + "_" + resource_key + ".tres"
+					# e.g., "1d_F115W" -> cache as "object_id_1d_F115W.res"
+					var cache_key = current_object_id + "_" + resource_key + ".res"
 					loader.memory_cache[cache_key] = bundled_resource
 				Logger.logger.info("AssetHelper: Bundle loaded for " + current_object_id + " with " + str(bundle_resources.size()) + " resources")
 			else:
@@ -105,10 +106,16 @@ func _on_resource_loaded(resource_id: String, resource: Resource) -> void:
 			object_loaded.emit(true)
 		else:
 			Logger.logger.warning("AssetHelper: Bundle resource could not be properly loaded")
-			# Fall back to manifest loading
-			Logger.logger.info("AssetHelper: Bundle failed, falling back to manifest for " + current_object_id)
-			var manifest_id = current_object_id + "_manifest.tres"
-			loader.load_resource(manifest_id)
+			# Try .tres bundle format first, then fall back to manifest
+			if resource_id.ends_with("_bundle.res"):
+				Logger.logger.info("AssetHelper: .res bundle failed, trying .tres bundle for " + current_object_id)
+				var bundle_tres_id = current_object_id + "_bundle.tres"
+				loader.load_resource(bundle_tres_id)
+			else:
+				# Fall back to manifest loading
+				Logger.logger.info("AssetHelper: Bundle failed, falling back to manifest for " + current_object_id)
+				var manifest_id = current_object_id + "_manifest.tres"
+				loader.load_resource(manifest_id)
 	elif resource_id.ends_with("_manifest.tres"):
 		manifest = resource
 		Logger.logger.info("AssetHelper: Manifest loaded for " + current_object_id)
@@ -126,9 +133,14 @@ func _on_resource_failed(resource_id: String, error: String) -> void:
 		
 	Logger.logger.warning("AssetHelper: Failed to load resource " + resource_id + " - Error: " + error)
 	
-	if resource_id.ends_with("_bundle.tres"):
-		# Bundle failed, try manifest instead
-		Logger.logger.info("AssetHelper: Bundle failed, falling back to manifest for " + current_object_id)
+	if resource_id.ends_with("_bundle.res"):
+		# .res bundle failed, try .tres bundle
+		Logger.logger.info("AssetHelper: .res bundle failed, trying .tres bundle for " + current_object_id)
+		var bundle_tres_id = current_object_id + "_bundle.tres"
+		loader.load_resource(bundle_tres_id)
+	elif resource_id.ends_with("_bundle.tres"):
+		# Both bundle formats failed, try manifest instead
+		Logger.logger.info("AssetHelper: All bundle formats failed, falling back to manifest for " + current_object_id)
 		var manifest_id = current_object_id + "_manifest.tres"
 		loader.load_resource(manifest_id)
 	elif resource_id.ends_with("_manifest.tres"):
@@ -269,12 +281,15 @@ func preload_next_object(next_object_id: String) -> void:
 	
 	Logger.logger.info("AssetHelper: Preloading resources for next object: " + next_object_id)
 	
-	# Try to preload bundle first, fall back to manifest
-	var bundle_id = next_object_id + "_bundle.tres"
+	# Try to preload bundle first (prefer .res), fall back to manifest
+	var bundle_id = next_object_id + "_bundle.res"
+	var bundle_id_tres = next_object_id + "_bundle.tres"
 	var manifest_id = next_object_id + "_manifest.tres"
 	
-	Logger.logger.debug("AssetHelper: Preloading bundle: " + bundle_id)
+	Logger.logger.debug("AssetHelper: Preloading bundle (.res): " + bundle_id)
 	loader.preload_resource(bundle_id)
+	Logger.logger.debug("AssetHelper: Preloading bundle (.tres): " + bundle_id_tres)
+	loader.preload_resource(bundle_id_tres)
 	Logger.logger.debug("AssetHelper: Preloading manifest: " + manifest_id)
 	loader.preload_resource(manifest_id)
 
