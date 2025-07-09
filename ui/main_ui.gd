@@ -70,7 +70,7 @@ func _ready():
 	DataManager.connect("updated_data", %ObjectViewing.tick)
 	DataManager.connect("updated_data", update_cache)
 	set_process(false) # Disable _process by default
-	# _goto_object(0)
+	_goto_object(0)
 	for otimage in get_tree().get_nodes_in_group("images"):
 		if otimage as OTImage:
 			otimage.settings_changed.connect(image_settings_changed)
