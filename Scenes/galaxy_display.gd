@@ -321,7 +321,10 @@ func _load_1d_spectrum(oned_spec: Dictionary) -> void:
 	if max_flux > 0:
 		# Set min value to 1.05 * min_value to accommodate negative values
 		var y_min = min_flux * 1.05 if min_flux < 0 else min_flux * 0.95
+		# First set original limits to establish baseline
 		%Spec1d.set_limits(%Spec1d.x_min, %Spec1d.x_max, y_min, max_flux, true)
+		# Then set limits again without marking as original to ensure adaptive tick spacing is applied
+		%Spec1d.set_limits(%Spec1d.x_min, %Spec1d.x_max, y_min, max_flux, false)
 
 func _load_2d_spectra(data2d: Dictionary) -> void:
 	# Clear existing spectra

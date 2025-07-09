@@ -60,6 +60,7 @@ var selection_border_color: Color = Color(0.2, 0.5, 0.9, 0.8)
 @export var y_tick_spacing: float = 1.0
 @export var x_tick_decimals: int = 1
 @export var y_tick_decimals: int = 1
+@export var y_tick_count: int = -1
 @export var tick_size: float = 5.0
 @export var grid_color: Color = Color(0.8, 0.8, 0.8, 0.5)
 @export var axis_color: Color = Color(0.2, 0.2, 0.2)
@@ -218,7 +219,8 @@ func _process(_delta):
 func _draw():
 	if not is_inside_tree():
 		return
-	
+
+	calc_yticks()	
 	# Draw background
 	draw_rect(Rect2(0, 0, size.x, size.y), axes_area_color)
 	
@@ -298,6 +300,17 @@ func pixel_to_plot(pixel_point: Vector2) -> Vector2:
 		x_min + x_ratio * (x_max - x_min),
 		y_min + y_ratio * (y_max - y_min)
 	)
+
+
+func calc_yticks():
+	if y_tick_count > 0:
+		# Calculate y_tick_spacing based on the number of ticks
+		var total_range = y_max - y_min
+		y_tick_spacing = total_range / y_tick_count
+	# else:
+		# Use the default spacing if y_tick_count is not set
+		# y_tick_spacing = original_y_tick_spacing
+
 
 # Draw the grid
 func draw_grid(plot_rect: Rect2):
@@ -946,6 +959,17 @@ func set_limits(new_x_min: float, new_x_max: float, new_y_min: float, new_y_max:
 		original_y_min = y_min
 		original_y_max = y_max
 	
+	# Update tick spacing based on new range (except when setting original limits)
+	if not original:
+		var x_range = x_max - x_min
+		var y_range = y_max - y_min
+		
+		# Calculate appropriate tick spacing (approximately 4-5 ticks)
+		var x_magnitude = pow(10, floor(log(x_range / 4) / log(10)))
+		var y_magnitude = pow(10, floor(log(y_range / 4) / log(10)))
+		
+		set_tick_spacing(x_magnitude, y_magnitude)
+	
 	# Emit signal if x limits changed
 	if x_changed:
 		emit_signal("x_limits_changed", x_min, x_max)
@@ -1117,9 +1141,9 @@ func zoom_to_selection():
 	var x_range = new_x_max - new_x_min
 	var y_range = new_y_max - new_y_min
 	
-	# Calculate appropriate tick spacing (approximately 5-10 ticks)
-	var x_magnitude = pow(10, floor(log(x_range / 5) / log(10)))
-	var y_magnitude = pow(10, floor(log(y_range / 5) / log(10)))
+	# Calculate appropriate tick spacing (approximately 4-5 ticks)
+	var x_magnitude = pow(10, floor(log(x_range / 4) / log(10)))
+	var y_magnitude = pow(10, floor(log(y_range / 4) / log(10)))
 	
 	set_tick_spacing(x_magnitude, y_magnitude)
 
@@ -1132,12 +1156,11 @@ func reset_zoom():
 	var x_range = original_x_max - original_x_min
 	var y_range = original_y_max - original_y_min
 	
-	# Calculate appropriate tick spacing (approximately 5-10 ticks)
-	#var x_magnitude = pow(10, floor(log(x_range / 5) / log(10)))
-	#var y_magnitude = pow(10, floor(log(y_range / 5) / log(10)))
+	# Calculate appropriate tick spacing (approximately 4-5 ticks)
+	var x_magnitude = pow(10, floor(log(x_range / 4) / log(10)))
+	var y_magnitude = pow(10, floor(log(y_range / 4) / log(10)))
 	
-	#set_tick_spacing(x_magnitude, y_magnitude)
-	set_tick_spacing(original_x_tick_spacing, original_y_tick_spacing)
+	set_tick_spacing(x_magnitude, y_magnitude)
 
 # Helper function to format numbers with specified decimals
 func format_number(value: float, decimals: int) -> String:
