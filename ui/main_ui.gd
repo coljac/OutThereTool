@@ -28,6 +28,10 @@ var objects = []
 var obj_index = 0
 var dialog_open = false
 
+# Comments storage
+var current_galaxy_comments: Array = []
+var comments_viewer: Control = null
+
 func _ready():
 	# Connect signals from the left panel	
 	# Connect signals from the top bar
@@ -74,6 +78,9 @@ func _ready():
 	for otimage in get_tree().get_nodes_in_group("images"):
 		if otimage as OTImage:
 			otimage.settings_changed.connect(image_settings_changed)
+	
+	# Initialize comments viewer
+	_setup_comments_viewer()
 
 func image_settings_changed(settings: Dictionary):
 	image_settings = settings
@@ -97,6 +104,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	if event.is_action_pressed("prev"):
 		prev_object()
+		get_viewport().set_input_as_handled()
+	if event.is_action_pressed("comments_toggle"):
+		_toggle_comments_viewer()
 		get_viewport().set_input_as_handled()
 	if event.is_action_pressed("help"):
 		if $HelpPanel.visible:
@@ -180,6 +190,10 @@ func _goto_object(step: int = 1) -> void:
 	var galaxy_with_user_data = DataManager.get_galaxy_with_user_data(objects[obj_index]['id'])
 	%ObjectViewing.set_galaxy_details(galaxy_with_user_data)
 	gal_display.name = objects[obj_index]['id']
+	
+	# Fetch comments from server for this galaxy
+	_fetch_galaxy_comments_async(objects[obj_index]['id'])
+	
 	print("DEBUG: Object switch completed")
 
 
@@ -455,3 +469,47 @@ func pre_cache_current_field():
 		DataManager.pre_cache_field(current_field, %CacheProgress)
 	else:
 		print("No field selected for pre-caching")
+
+func _fetch_galaxy_comments_async(galaxy_id: String) -> void:
+	"""Fetch comments for a galaxy from the server asynchronously"""
+	Logger.logger.info("Fetching comments for galaxy: " + galaxy_id)
+	
+	# Clear previous comments
+	current_galaxy_comments.clear()
+	
+	# Fetch comments from server in the background
+	var comments = await DataManager.fetch_galaxy_comments(galaxy_id)
+	
+	# Store the comments
+	current_galaxy_comments = comments
+	
+	Logger.logger.info("Fetched " + str(comments.size()) + " comments for galaxy: " + galaxy_id)
+
+func _setup_comments_viewer() -> void:
+	"""Initialize the comments viewer"""
+	var comments_viewer_scene = preload("res://Scenes/comments_viewer.tscn")
+	comments_viewer = comments_viewer_scene.instantiate()
+	add_child(comments_viewer)
+	
+	# Connect the closed signal
+	comments_viewer.closed.connect(_on_comments_viewer_closed)
+
+func _toggle_comments_viewer() -> void:
+	"""Toggle the comments viewer visibility"""
+	if not comments_viewer:
+		Logger.logger.error("Comments viewer not initialized")
+		return
+	
+	if comments_viewer.visible:
+		comments_viewer.visible = false
+	else:
+		# Show comments for current galaxy
+		if objects.size() > 0:
+			var current_galaxy_id = objects[obj_index]['id']
+			comments_viewer.show_comments(current_galaxy_id, current_galaxy_comments)
+		else:
+			Logger.logger.warning("No galaxy selected to show comments for")
+
+func _on_comments_viewer_closed() -> void:
+	"""Handle comments viewer being closed"""
+	pass # Nothing special needed, just hide

@@ -75,7 +75,9 @@ func _ensure_user_database_schema():
 		comments TEXT DEFAULT '',
 		altered INTEGER DEFAULT 0,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		synced INTEGER DEFAULT 0,
+		sync_timestamp DATETIME NULL
 	);
 	"""
 	
@@ -89,6 +91,11 @@ func _ensure_user_database_schema():
 	
 	user_database.query(create_user_comments)
 	user_database.query(create_userdata)
+	
+	# Add sync tracking columns if they don't exist (for existing databases)
+	user_database.query("ALTER TABLE user_comments ADD COLUMN synced INTEGER DEFAULT 0")
+	user_database.query("ALTER TABLE user_comments ADD COLUMN sync_timestamp DATETIME NULL")
+	
 	Logger.logger.info("User database schema created successfully")
 
 func refresh_canonical_db():
@@ -305,6 +312,165 @@ func get_user_credentials() -> Dictionary:
 	var username = get_user_data("user.name")
 	var password = get_user_data("user.password")
 	return {"username": username, "password": password}
+
+func get_api_base_url() -> String:
+	"""Get the API base URL for comment synchronization"""
+	var api_url = OS.get_environment("OUTTHERE_API_URL")
+	if api_url != "":
+		return api_url
+	else:
+		return "http://localhost:8000"
+
+func get_auth_token() -> String:
+	"""Get the authentication token from user data"""
+	return get_user_data("auth_token")
+
+func sync_comments_to_server(since_timestamp: String = "") -> void:
+	"""Upload all comments newer than the last sync time to the server"""
+	Logger.logger.info("Starting comment sync to server")
+	
+	var auth_token = get_auth_token()
+	if auth_token == "":
+		Logger.logger.error("No authentication token found, cannot sync comments")
+		return
+	
+	# Get comments that need syncing (either unsynced or updated since last sync)
+	var condition = "synced = 0 OR altered = 1"
+	if since_timestamp != "":
+		condition += " OR updated_at > '" + since_timestamp + "'"
+	
+	var comments_to_sync = user_database.select_rows("user_comments", condition, ["*"])
+	Logger.logger.info("Found " + str(comments_to_sync.size()) + " comments to sync")
+	
+	if comments_to_sync.size() == 0:
+		Logger.logger.info("No comments to sync")
+		return
+	
+	# Upload each comment
+	for comment_data in comments_to_sync:
+		await _upload_comment_to_server(comment_data, auth_token)
+
+func _upload_comment_to_server(comment_data: Dictionary, auth_token: String) -> void:
+	"""Upload a single comment to the server"""
+	var api_url = get_api_base_url()
+	var galaxy_id = comment_data["object_id"]
+	var upload_url = api_url + "/galaxies/" + galaxy_id + "/comments"
+	
+	Logger.logger.debug("Uploading comment for galaxy: " + galaxy_id)
+	
+	# Create HTTPRequest
+	var http_request = HTTPRequest.new()
+	add_child(http_request)
+	
+	# Prepare the comment data for the API
+	var comment_payload = {
+		"status": comment_data["status"],
+		"redshift": comment_data.get("redshift", null),
+		"comment": comment_data.get("comments", "")
+	}
+	
+	var json_payload = JSON.stringify(comment_payload)
+	var headers = [
+		"Content-Type: application/json",
+		"Authorization: Bearer " + auth_token
+	]
+	
+	# Connect completion signal
+	http_request.request_completed.connect(_on_comment_upload_completed.bind(comment_data["object_id"], http_request))
+	
+	# Make the request
+	var request_error = http_request.request(upload_url, headers, HTTPClient.METHOD_POST, json_payload)
+	if request_error != OK:
+		Logger.logger.error("Failed to start comment upload for galaxy " + galaxy_id + ": " + str(request_error))
+		http_request.queue_free()
+
+func _on_comment_upload_completed(galaxy_id: String, http_request: HTTPRequest, result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray) -> void:
+	"""Handle completion of comment upload"""
+	Logger.logger.debug("Comment upload completed for galaxy: " + galaxy_id)
+	Logger.logger.debug("HTTP result: " + str(result) + ", response code: " + str(response_code))
+	
+	if result == HTTPRequest.RESULT_SUCCESS and response_code == 200:
+		# Mark comment as synced
+		var sync_time = Time.get_datetime_string_from_system()
+		user_database.update_rows("user_comments", "object_id = '" + galaxy_id + "'", {
+			"synced": 1,
+			"sync_timestamp": sync_time,
+			"altered": 0
+		})
+		Logger.logger.info("Successfully uploaded comment for galaxy: " + galaxy_id)
+	else:
+		Logger.logger.error("Failed to upload comment for galaxy " + galaxy_id + ". Result: " + str(result) + ", Response code: " + str(response_code))
+		if body.size() > 0:
+			Logger.logger.error("Response body: " + body.get_string_from_utf8())
+	
+	# Clean up
+	http_request.queue_free()
+
+func fetch_galaxy_comments(galaxy_id: String) -> Array:
+	"""Fetch all comments for a galaxy from the server"""
+	Logger.logger.debug("Fetching comments for galaxy: " + galaxy_id)
+	
+	var auth_token = get_auth_token()
+	if auth_token == "":
+		Logger.logger.error("No authentication token found, cannot fetch comments")
+		return []
+	
+	var api_url = get_api_base_url()
+	var comments_url = api_url + "/galaxies/" + galaxy_id + "/comments"
+	
+	# Create HTTPRequest
+	var http_request = HTTPRequest.new()
+	add_child(http_request)
+	
+	var headers = [
+		"Authorization: Bearer " + auth_token
+	]
+	
+	# We need to use a signal for async operation
+	var comments_result = []
+	
+	# Connect completion signal
+	http_request.request_completed.connect(_on_comments_fetch_completed.bind(http_request, comments_result))
+	
+	# Make the request
+	var request_error = http_request.request(comments_url, headers, HTTPClient.METHOD_GET)
+	if request_error != OK:
+		Logger.logger.error("Failed to start comments fetch for galaxy " + galaxy_id + ": " + str(request_error))
+		http_request.queue_free()
+		return []
+	
+	# Wait for completion (this is a simplified approach - in practice you'd want to use signals)
+	while http_request.get_http_client_status() != HTTPClient.STATUS_DISCONNECTED:
+		await get_tree().process_frame
+	
+	return comments_result
+
+func _on_comments_fetch_completed(http_request: HTTPRequest, comments_result: Array, result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray) -> void:
+	"""Handle completion of comments fetch"""
+	Logger.logger.debug("Comments fetch completed")
+	Logger.logger.debug("HTTP result: " + str(result) + ", response code: " + str(response_code))
+	
+	if result == HTTPRequest.RESULT_SUCCESS and response_code == 200:
+		var response_text = body.get_string_from_utf8()
+		var json = JSON.new()
+		var parse_result = json.parse(response_text)
+		
+		if parse_result == OK:
+			var comments_data = json.data
+			if typeof(comments_data) == TYPE_ARRAY:
+				comments_result.assign(comments_data)
+				Logger.logger.info("Successfully fetched " + str(comments_data.size()) + " comments")
+			else:
+				Logger.logger.error("Unexpected response format for comments")
+		else:
+			Logger.logger.error("Failed to parse comments JSON response")
+	else:
+		Logger.logger.error("Failed to fetch comments. Result: " + str(result) + ", Response code: " + str(response_code))
+		if body.size() > 0:
+			Logger.logger.error("Response body: " + body.get_string_from_utf8())
+	
+	# Clean up
+	http_request.queue_free()
 
 func pre_cache_field(field: String, progress: CacheProgress) -> void:
 	Logger.logger.info("Starting pre-cache operation for field: " + field)
