@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://do020kmwtxud8"
+
+[deps]
+
+files=["res://backend/gal_data.object.translation", "res://backend/gal_data.redshift.translation", "res://backend/gal_data.num.translation"]
+
+source_file="res://backend/gal_data.csv"
+dest_files=["res://backend/gal_data.object.translation", "res://backend/gal_data.redshift.translation", "res://backend/gal_data.num.translation"]
+
+[params]
+
+compress=true
+delimiter=0

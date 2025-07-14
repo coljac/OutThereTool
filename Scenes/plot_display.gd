@@ -304,9 +304,29 @@ func pixel_to_plot(pixel_point: Vector2) -> Vector2:
 
 func calc_yticks():
 	if y_tick_count > 0:
-		# Calculate y_tick_spacing based on the number of ticks
+		# Calculate y_tick_spacing based on the number of ticks, using round numbers
 		var total_range = y_max - y_min
-		y_tick_spacing = total_range / y_tick_count
+		var raw_spacing = total_range / y_tick_count
+		
+		# Find the first naive tick position
+		var first_tick = y_min + raw_spacing
+		
+		# Round the first tick to the nearest whole number
+		var rounded_first_tick = round(first_tick)
+		
+		# Calculate spacing that would give us round numbers within the range
+		# Find the best whole number spacing that fits nicely in our range
+		var test_spacings = [0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0]
+		var best_spacing = raw_spacing
+		
+		for spacing in test_spacings:
+			var tick_count_with_spacing = floor(total_range / spacing)
+			# Choose spacing that gives us close to our target tick count
+			if tick_count_with_spacing >= y_tick_count * 0.5 and tick_count_with_spacing <= y_tick_count * 2.0:
+				best_spacing = spacing
+				break
+		
+		y_tick_spacing = best_spacing
 	# else:
 		# Use the default spacing if y_tick_count is not set
 		# y_tick_spacing = original_y_tick_spacing

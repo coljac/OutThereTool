@@ -26,3 +26,5 @@ CLAUDE.md
 lib
 screenshot.png.import
 releases/
+*.pyc
+__pycache__
