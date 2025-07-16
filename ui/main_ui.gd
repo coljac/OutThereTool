@@ -17,6 +17,7 @@ extends Control
 var all_lock = false
 var locked = false
 var image_settings = {}
+var obj_index = 0
 
 # Path to the GalaxyDisplay scene
 const GALAXY_DISPLAY_SCENE = "res://Scenes/galaxy_display.tscn"
@@ -25,7 +26,7 @@ const GALAXY_DISPLAY_SCENE = "res://Scenes/galaxy_display.tscn"
 var zoom_level = 100
 
 var objects = []
-var obj_index = 0
+# var obj_index = 0
 var dialog_open = false
 
 # Comments storage

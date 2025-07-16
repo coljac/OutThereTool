@@ -17,6 +17,10 @@ func zip_arr(inputs: Array[Array]) -> Array[Vector2]:
 
 
 func get_pz(object: String) -> Array[PackedFloat32Array]:
+	if not ClassDB.class_exists("FITSReader"):
+		print_debug("FITSReader not available - likely in exported build")
+		return [PackedFloat32Array(), PackedFloat32Array()]
+	
 	var fits_table = FITSReader.new()
 	print_debug("Loading ", object)
 	fits_table.load_fits(object)
@@ -27,6 +31,10 @@ func get_pz(object: String) -> Array[PackedFloat32Array]:
 
 
 func _2d_to_1d(object: String, microns: bool = false) -> Dictionary: # Array[Vector2]: )
+	if not ClassDB.class_exists("FITSReader"):
+		print_debug("FITSReader not available - likely in exported build")
+		return {}
+	
 	var fits_data = FITSReader.new()
 	fits_data.load_fits(object)
 	var data = fits_data.get_image_data(0)
@@ -42,6 +50,10 @@ func get_segmap(object: String, filter: String):
 
 
 func get_1d_spectrum(object: String, microns: bool = false) -> Dictionary: # Array[Vector2]:
+	if not ClassDB.class_exists("FITSReader"):
+		print_debug("FITSReader not available - likely in exported build")
+		return {}
+	
 	var fits_table = FITSReader.new()
 	fits_table.load_fits(object)
 	var res = {}
