@@ -406,17 +406,24 @@ func _on_comment_upload_completed(galaxy_id: String, http_request: HTTPRequest, 
 	# Clean up
 	http_request.queue_free()
 
-func fetch_galaxy_comments(galaxy_id: String) -> Array:
-	"""Fetch all comments for a galaxy from the server"""
+signal galaxy_comments_fetched(galaxy_id: String, comments: Array)
+
+func fetch_galaxy_comments_async(galaxy_id: String) -> void:
+	"""Fetch all comments for a galaxy from the server asynchronously"""
 	Logger.logger.debug("Fetching comments for galaxy: " + galaxy_id)
 	
 	var auth_token = get_auth_token()
+	print("DEBUG: Auth token: ", auth_token)
 	if auth_token == "":
+		print("DEBUG: No auth token found, emitting empty comments")
 		Logger.logger.error("No authentication token found, cannot fetch comments")
-		return []
+		galaxy_comments_fetched.emit(galaxy_id, [])
+		return
 	
 	var api_url = get_api_base_url()
 	var comments_url = api_url + "/galaxies/" + galaxy_id + "/comments"
+	
+	Logger.logger.debug("Comments fetch URL: " + comments_url)
 	
 	# Create HTTPRequest
 	var http_request = HTTPRequest.new()
@@ -426,48 +433,46 @@ func fetch_galaxy_comments(galaxy_id: String) -> Array:
 		"Authorization: Bearer " + auth_token
 	]
 	
-	# We need to use a signal for async operation
-	var comments_result = []
-	
-	# Connect completion signal
-	http_request.request_completed.connect(_on_comments_fetch_completed.bind(http_request, comments_result))
+	# Connect completion signal with galaxy_id bound
+	http_request.request_completed.connect(_on_comments_fetch_completed.bind(galaxy_id, http_request))
 	
 	# Make the request
 	var request_error = http_request.request(comments_url, headers, HTTPClient.METHOD_GET)
 	if request_error != OK:
 		Logger.logger.error("Failed to start comments fetch for galaxy " + galaxy_id + ": " + str(request_error))
 		http_request.queue_free()
-		return []
-	
-	# Wait for completion (this is a simplified approach - in practice you'd want to use signals)
-	while http_request.get_http_client_status() != HTTPClient.STATUS_DISCONNECTED:
-		await get_tree().process_frame
-	
-	return comments_result
+		galaxy_comments_fetched.emit(galaxy_id, [])
 
-func _on_comments_fetch_completed(http_request: HTTPRequest, comments_result: Array, result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray) -> void:
+func _on_comments_fetch_completed(galaxy_id: String, http_request: HTTPRequest, result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray) -> void:
 	"""Handle completion of comments fetch"""
-	Logger.logger.debug("Comments fetch completed")
+	Logger.logger.debug("Comments fetch completed for galaxy: " + galaxy_id)
 	Logger.logger.debug("HTTP result: " + str(result) + ", response code: " + str(response_code))
+	
+	var comments_data = []
 	
 	if result == HTTPRequest.RESULT_SUCCESS and response_code == 200:
 		var response_text = body.get_string_from_utf8()
+		Logger.logger.debug("Comments response: " + response_text)
+		
 		var json = JSON.new()
 		var parse_result = json.parse(response_text)
 		
 		if parse_result == OK:
-			var comments_data = json.data
-			if typeof(comments_data) == TYPE_ARRAY:
-				comments_result.assign(comments_data)
-				Logger.logger.info("Successfully fetched " + str(comments_data.size()) + " comments")
+			var parsed_data = json.data
+			if typeof(parsed_data) == TYPE_ARRAY:
+				comments_data = parsed_data
+				Logger.logger.info("Successfully fetched " + str(comments_data.size()) + " comments for galaxy: " + galaxy_id)
 			else:
-				Logger.logger.error("Unexpected response format for comments")
+				Logger.logger.error("Unexpected response format for comments: " + str(typeof(parsed_data)))
 		else:
-			Logger.logger.error("Failed to parse comments JSON response")
+			Logger.logger.error("Failed to parse comments JSON response: " + str(parse_result))
 	else:
-		Logger.logger.error("Failed to fetch comments. Result: " + str(result) + ", Response code: " + str(response_code))
+		Logger.logger.error("Failed to fetch comments for galaxy " + galaxy_id + ". Result: " + str(result) + ", Response code: " + str(response_code))
 		if body.size() > 0:
 			Logger.logger.error("Response body: " + body.get_string_from_utf8())
+	
+	# Emit the signal with the fetched comments (empty array if failed)
+	galaxy_comments_fetched.emit(galaxy_id, comments_data)
 	
 	# Clean up
 	http_request.queue_free()

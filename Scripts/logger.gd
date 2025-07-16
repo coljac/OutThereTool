@@ -73,5 +73,5 @@ func critical(message: String) -> void:
 
 func _exit_tree() -> void:
     if log_to_file and file:
-        file.store_line("Chamdo Logger Shutdown")
+        file.store_line("OutThere Logger Shutdown")
         file.close()

@@ -11,11 +11,12 @@ var comments_data: Array = []
 signal closed
 
 func _ready():
-	close_button.pressed.connect(_on_close_pressed)
+	if close_button and is_instance_valid(close_button):
+		close_button.pressed.connect(_on_close_pressed)
 	set_process_input(true)
 
 func _input(event: InputEvent):
-	if event.is_action_pressed("ui_cancel") or event.is_action_pressed("comments_toggle"):
+	if event.is_action_pressed("ui_cancel") or event.is_action_pressed("comments_view_toggle"):
 		_on_close_pressed()
 		get_viewport().set_input_as_handled()
 
@@ -24,24 +25,28 @@ func show_comments(galaxy_id: String, comments: Array):
 	self.galaxy_id = galaxy_id
 	self.comments_data = comments
 	
-	galaxy_label.text = "Comments for " + galaxy_id
+	# Safely set galaxy label text if it exists
+	if galaxy_label and is_instance_valid(galaxy_label):
+		galaxy_label.text = "Comments for " + galaxy_id
 	
-	# Clear existing comments
-	for child in comments_list.get_children():
-		child.queue_free()
+	# Clear existing comments - use remove_child and queue_free to avoid issues
+	if comments_list and is_instance_valid(comments_list):
+		for child in comments_list.get_children():
+			comments_list.remove_child(child)
+			child.queue_free()
 	
-	if comments.size() == 0:
-		var no_comments_label = Label.new()
-		no_comments_label.text = "No comments from other users for this galaxy."
-		no_comments_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		no_comments_label.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
-		comments_list.add_child(no_comments_label)
-	else:
-		# Sort comments by updated time (newest first)
-		comments.sort_custom(func(a, b): return a.get("updated", "") > b.get("updated", ""))
-		
-		for comment in comments:
-			_create_comment_item(comment)
+		if comments.size() == 0:
+			var no_comments_label = Label.new()
+			no_comments_label.text = "No comments from other users for this galaxy."
+			no_comments_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			no_comments_label.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+			comments_list.add_child(no_comments_label)
+		else:
+			# Sort comments by updated time (newest first)
+			comments.sort_custom(func(a, b): return a.get("updated", "") > b.get("updated", ""))
+			
+			for comment in comments:
+				_create_comment_item(comment)
 	
 	# Show the popup
 	visible = true
@@ -120,7 +125,9 @@ func _create_comment_item(comment: Dictionary):
 	margin_container.add_theme_constant_override("margin_bottom", 8)
 	margin_container.add_child(comment_container)
 	
-	comments_list.add_child(margin_container)
+	# Safely add to comments list if it exists
+	if comments_list and is_instance_valid(comments_list):
+		comments_list.add_child(margin_container)
 
 func _format_status(status: int) -> String:
 	"""Convert status integer to readable string"""

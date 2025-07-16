@@ -38,6 +38,8 @@ func _ready():
 	top_bar.more_options_pressed.connect(_on_more_options_pressed)
 	top_bar.settings_pressed.connect(_on_settings_pressed)
 	top_bar.preferences_selected.connect(show_settings)
+	top_bar.set_auth_token.connect(_on_set_auth_token_pressed)
+	top_bar.sync_comments.connect(_on_sync_comments_pressed)
 	
 	# Initialize field selection
 	_populate_field_list()
@@ -73,6 +75,7 @@ func _ready():
 		%ObjectViewing.set_galaxy_details(galaxy_with_user_data)
 	DataManager.connect("updated_data", %ObjectViewing.tick)
 	DataManager.connect("updated_data", update_cache)
+	DataManager.connect("galaxy_comments_fetched", _on_galaxy_comments_fetched)
 	set_process(false) # Disable _process by default
 	_goto_object(0)
 	for otimage in get_tree().get_nodes_in_group("images"):
@@ -97,16 +100,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	# Block all input when dialog is open
 	if dialog_open:
 		return
-		
+	if event.is_action_released("comments_view_toggle"):
+		_toggle_comments_viewer()
+		get_viewport().set_input_as_handled()
 	if event.is_action_released("next"):
-		print("NEXT")
 		next_object()
 		get_viewport().set_input_as_handled()
 	if event.is_action_pressed("prev"):
 		prev_object()
-		get_viewport().set_input_as_handled()
-	if event.is_action_pressed("comments_toggle"):
-		_toggle_comments_viewer()
 		get_viewport().set_input_as_handled()
 	if event.is_action_pressed("help"):
 		if $HelpPanel.visible:
@@ -191,8 +192,10 @@ func _goto_object(step: int = 1) -> void:
 	%ObjectViewing.set_galaxy_details(galaxy_with_user_data)
 	gal_display.name = objects[obj_index]['id']
 	
-	# Fetch comments from server for this galaxy
-	_fetch_galaxy_comments_async(objects[obj_index]['id'])
+	# Fetch comments from server for this galaxy asynchronously
+	print("DEBUG: About to fetch comments for galaxy: ", objects[obj_index]['id'])
+	DataManager.fetch_galaxy_comments_async(objects[obj_index]['id'])
+	print("DEBUG: Comment fetch call completed")
 	
 	print("DEBUG: Object switch completed")
 
@@ -470,20 +473,16 @@ func pre_cache_current_field():
 	else:
 		print("No field selected for pre-caching")
 
-func _fetch_galaxy_comments_async(galaxy_id: String) -> void:
-	"""Fetch comments for a galaxy from the server asynchronously"""
-	Logger.logger.info("Fetching comments for galaxy: " + galaxy_id)
+func _on_galaxy_comments_fetched(galaxy_id: String, comments: Array) -> void:
+	"""Handle galaxy comments being fetched from the server"""
+	Logger.logger.info("Received " + str(comments.size()) + " comments for galaxy: " + galaxy_id)
 	
-	# Clear previous comments
-	current_galaxy_comments.clear()
-	
-	# Fetch comments from server in the background
-	var comments = await DataManager.fetch_galaxy_comments(galaxy_id)
-	
-	# Store the comments
-	current_galaxy_comments = comments
-	
-	Logger.logger.info("Fetched " + str(comments.size()) + " comments for galaxy: " + galaxy_id)
+	# Only update if this is for the currently displayed galaxy
+	if objects.size() > 0 and objects[obj_index]['id'] == galaxy_id:
+		current_galaxy_comments = comments
+		Logger.logger.debug("Updated current galaxy comments for: " + galaxy_id)
+	else:
+		Logger.logger.debug("Ignoring comments for galaxy " + galaxy_id + " (not currently displayed)")
 
 func _setup_comments_viewer() -> void:
 	"""Initialize the comments viewer"""
@@ -513,3 +512,59 @@ func _toggle_comments_viewer() -> void:
 func _on_comments_viewer_closed() -> void:
 	"""Handle comments viewer being closed"""
 	pass # Nothing special needed, just hide
+
+func _on_set_auth_token_pressed() -> void:
+	"""Handle set auth token button press from top bar"""
+	Logger.logger.info("Set auth token requested from top bar")
+	
+	# Create a simple input dialog
+	var dialog = AcceptDialog.new()
+	dialog.title = "Set Authentication Token"
+	dialog.dialog_text = "Enter your authentication token:"
+	
+	# Create a LineEdit for token input
+	var line_edit = LineEdit.new()
+	line_edit.placeholder_text = "Enter token here..."
+	line_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	
+	# Get current token if it exists
+	var current_token = DataManager.get_auth_token()
+	if current_token != "":
+		line_edit.text = current_token
+	
+	# Add the LineEdit to the dialog
+	dialog.add_child(line_edit)
+	
+	# Add dialog to scene and show it
+	add_child(dialog)
+	dialog.popup_centered()
+	
+	# Wait for user to confirm
+	await dialog.confirmed
+	
+	# Save the token
+	var new_token = line_edit.text.strip_edges()
+	if new_token != "":
+		DataManager.set_user_data("auth_token", new_token)
+		print("Auth token saved successfully")
+		Logger.logger.info("Authentication token updated")
+	else:
+		print("No token entered")
+	
+	# Clean up
+	dialog.queue_free()
+
+func _on_sync_comments_pressed() -> void:
+	"""Handle sync comments button press from top bar"""
+	Logger.logger.info("Sync comments requested from top bar")
+	
+	# Check if user has authentication set up
+	var auth_token = DataManager.get_auth_token()
+	if auth_token == "":
+		Logger.logger.warning("No authentication token found for comment sync")
+		print("Please set up authentication token first using 'Set Auth Token' in the menu")
+		return
+	
+	# Start the sync process
+	await DataManager.sync_comments_to_server()
+	print("Comment sync completed")

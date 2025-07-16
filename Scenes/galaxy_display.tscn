@@ -178,7 +178,6 @@ plot_area_color = Color(0.0977035, 0.0977035, 0.148989, 1)
 axes_area_color = Color(0.0977035, 0.0977035, 0.148989, 1)
 x_tick_spacing = 0.25
 x_tick_decimals = 2
-y_tick_count = null
 axis_color = Color(0.2, 0.882353, 0.2, 1)
 title = "p(z)"
 x_label = "Redshift"
