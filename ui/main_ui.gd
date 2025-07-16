@@ -36,9 +36,8 @@ func _ready():
 	# Connect signals from the left panel	
 	# Connect signals from the top bar
 	top_bar.more_options_pressed.connect(_on_more_options_pressed)
-	top_bar.settings_pressed.connect(_on_settings_pressed)
-	top_bar.preferences_selected.connect(show_settings)
-	top_bar.set_auth_token.connect(_on_set_auth_token_pressed)
+	top_bar.settings_pressed.connect(_on_settings_button_pressed)
+	top_bar.set_auth_token.connect(_on_settings_pressed)
 	top_bar.sync_comments.connect(_on_sync_comments_pressed)
 	
 	# Initialize field selection
@@ -221,9 +220,9 @@ func _on_more_options_pressed():
 	# Handle the more options button press
 	print("Moreoptionspressed")
 
-func _on_settings_pressed():
-	# This just opens the dropdown menu - actual preferences dialog 
-	# is triggered by the preferences_selected signal
+func _on_settings_button_pressed():
+	# This just opens the dropdown menu - actual settings dialog 
+	# is triggered by the set_auth_token signal when "Settings" is selected
 	pass
 
 func _on_tab_added(tab_index):
@@ -442,22 +441,85 @@ func _on_contam_toggled(pressed: bool) -> void:
 	if galaxy_display and galaxy_display.has_method("toggle_contam_visibility"):
 		galaxy_display.toggle_contam_visibility(pressed)
 
-func show_settings():
-	# Show the settings dialog
-	dialog_open = true
-	%UserEntry.show()
+func _on_settings_pressed() -> void:
+	"""Show the settings dialog with username and auth token fields"""
+	Logger.logger.info("Settings dialog requested")
 	
-	# Load existing user data if available
-	var credentials = DataManager.get_user_credentials()
-	%UserEntry.get_node("%Username").text = credentials.username
-	%UserEntry.get_node("%Password").text = credentials.password
-
-func set_user_details(user: String, password: String) -> void:
-	%UserEntry.hide()
-	dialog_open = false
-	print("User details set: ", user)
-	DataManager.set_user_data("user.name", user)
-	DataManager.set_user_data("user.password", password)
+	# Create a settings dialog
+	var dialog = AcceptDialog.new()
+	dialog.title = "Settings"
+	dialog.min_size = Vector2(400, 200)
+	
+	# Create a VBoxContainer for the form
+	var vbox = VBoxContainer.new()
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	
+	# Username field
+	var username_label = Label.new()
+	username_label.text = "Username:"
+	vbox.add_child(username_label)
+	
+	var username_edit = LineEdit.new()
+	username_edit.name = "UsernameEdit"
+	username_edit.placeholder_text = "Enter username..."
+	username_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	
+	# Load existing username
+	var current_username = DataManager.get_user_data("user.name")
+	if current_username != "":
+		username_edit.text = current_username
+	
+	vbox.add_child(username_edit)
+	
+	# Add some spacing
+	var spacer1 = Control.new()
+	spacer1.custom_minimum_size = Vector2(0, 10)
+	vbox.add_child(spacer1)
+	
+	# Auth token field
+	var token_label = Label.new()
+	token_label.text = "Authentication Token:"
+	vbox.add_child(token_label)
+	
+	var token_edit = LineEdit.new()
+	token_edit.name = "TokenEdit"
+	token_edit.placeholder_text = "Enter authentication token..."
+	token_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	
+	# Load existing token
+	var current_token = DataManager.get_auth_token()
+	if current_token != "":
+		token_edit.text = current_token
+	
+	vbox.add_child(token_edit)
+	
+	# Add the form to the dialog
+	dialog.add_child(vbox)
+	
+	# Add dialog to scene and show it
+	add_child(dialog)
+	dialog.popup_centered()
+	
+	# Wait for user to confirm
+	await dialog.confirmed
+	
+	# Save the settings
+	var new_username = username_edit.text.strip_edges()
+	var new_token = token_edit.text.strip_edges()
+	
+	if new_username != "":
+		DataManager.set_user_data("user.name", new_username)
+		print("Username saved: ", new_username)
+		Logger.logger.info("Username updated: " + new_username)
+	
+	if new_token != "":
+		DataManager.set_user_data("auth_token", new_token)
+		print("Auth token saved successfully")
+		Logger.logger.info("Authentication token updated")
+	
+	# Clean up
+	dialog.queue_free()
 
 func on_cb_lock_toggled(on: bool) -> void:
 	locked = on
@@ -520,46 +582,6 @@ func _on_comments_viewer_closed() -> void:
 	"""Handle comments viewer being closed"""
 	pass # Nothing special needed, just hide
 
-func _on_set_auth_token_pressed() -> void:
-	"""Handle set auth token button press from top bar"""
-	Logger.logger.info("Set auth token requested from top bar")
-	
-	# Create a simple input dialog
-	var dialog = AcceptDialog.new()
-	dialog.title = "Set Authentication Token"
-	dialog.dialog_text = "Enter your authentication token:"
-	
-	# Create a LineEdit for token input
-	var line_edit = LineEdit.new()
-	line_edit.placeholder_text = "Enter token here..."
-	line_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	
-	# Get current token if it exists
-	var current_token = DataManager.get_auth_token()
-	if current_token != "":
-		line_edit.text = current_token
-	
-	# Add the LineEdit to the dialog
-	dialog.add_child(line_edit)
-	
-	# Add dialog to scene and show it
-	add_child(dialog)
-	dialog.popup_centered()
-	
-	# Wait for user to confirm
-	await dialog.confirmed
-	
-	# Save the token
-	var new_token = line_edit.text.strip_edges()
-	if new_token != "":
-		DataManager.set_user_data("auth_token", new_token)
-		print("Auth token saved successfully")
-		Logger.logger.info("Authentication token updated")
-	else:
-		print("No token entered")
-	
-	# Clean up
-	dialog.queue_free()
 
 func _on_sync_comments_pressed() -> void:
 	"""Handle sync comments button press from top bar"""

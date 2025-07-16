@@ -47,13 +47,11 @@ func _on_settings_pressed():
 	# popup.add_item("Display Settings", 0)
 	# popup.add_item("Theme Settings", 1)
 	# popup.add_separator()
-	popup.add_item("Preferences", 0)
+	popup.add_item("Settings", 0)
+	popup.add_item("Sync Comments", 1)
 	popup.add_separator()
-	popup.add_item("Set Auth Token", 1)
-	popup.add_item("Sync Comments", 2)
-	popup.add_separator()
-	popup.add_item("Refresh DB from Server", 3)
-	popup.add_item("Reset DB", 4)
+	popup.add_item("Refresh DB from Server", 2)
+	popup.add_item("Reset DB", 3)
 	
 	# Connect the popup's id_pressed signal
 	popup.id_pressed.connect(_on_settings_popup_id_pressed)
@@ -82,18 +80,15 @@ func _on_popup_id_pressed(id):
 
 func _on_settings_popup_id_pressed(id):
 	match id:
-		0: # Preferences
-			print("Preferences selected")
-			emit_signal("preferences_selected")
-		1: # Set Auth Token
-			print("Setting auth token...")
+		0: # Settings
+			print("Settings selected")
 			emit_signal("set_auth_token")
-		2: # Sync Comments
+		1: # Sync Comments
 			print("Syncing comments to server...")
 			emit_signal("sync_comments")
-		3: # Refresh DB from Server
+		2: # Refresh DB from Server
 			print("Refreshing database from server...")
 			DataManager.refresh_canonical_db()
-		4: # Reset DB
+		3: # Reset DB
 			print("Resetting database...")
 			DataManager.reset_db()

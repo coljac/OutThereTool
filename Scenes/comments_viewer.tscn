@@ -1,6 +1,6 @@
-[gd_scene load_steps=3 format=3 uid="uid://c8v7jxw2jhm8j"]
+[gd_scene load_steps=3 format=3 uid="uid://dmw7skv3fqdhh"]
 
-[ext_resource type="Script" uid="uid://bgk1vh42gimlk" path="res://Scenes/comments_viewer.gd" id="1_3xkqc"]
+[ext_resource type="Script" path="res://Scenes/comments_viewer.gd" id="1_3xkqc"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1"]
 bg_color = Color(0.1, 0.1, 0.1, 0.9)

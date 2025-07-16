@@ -101,6 +101,15 @@ func _ensure_user_database_schema():
 	user_database.query("ALTER TABLE user_comments ADD COLUMN sync_timestamp DATETIME NULL")
 	
 	Logger.logger.info("User database schema created successfully")
+	
+	# Set default username to host computer username if not already set
+	if get_user_data("user.name") == "":
+		var host_username = OS.get_environment("USER")
+		if host_username == "":
+			host_username = OS.get_environment("USERNAME")  # Windows fallback
+		if host_username != "":
+			set_user_data("user.name", host_username)
+			Logger.logger.info("Set default username to host computer username: " + host_username)
 
 func refresh_canonical_db():
 	Logger.logger.info("Refreshing canonical database from server")
@@ -206,7 +215,7 @@ func get_unique_fields() -> Array:
 	var fields = canonical_database.select_rows("galaxy", "field IS NOT NULL", ["DISTINCT field"])
 	var field_list = []
 	for field_row in fields:
-		field_list.append(field_row["FIELD"])
+		field_list.append(field_row["field"])
 	field_list.sort()
 	return field_list
 
