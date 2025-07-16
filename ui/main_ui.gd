@@ -75,7 +75,9 @@ func _ready():
 		%ObjectViewing.set_galaxy_details(galaxy_with_user_data)
 	DataManager.connect("updated_data", %ObjectViewing.tick)
 	DataManager.connect("updated_data", update_cache)
+	print("DEBUG: Connecting galaxy_comments_fetched signal")
 	DataManager.connect("galaxy_comments_fetched", _on_galaxy_comments_fetched)
+	print("DEBUG: Signal connected successfully")
 	set_process(false) # Disable _process by default
 	_goto_object(0)
 	for otimage in get_tree().get_nodes_in_group("images"):
@@ -475,13 +477,16 @@ func pre_cache_current_field():
 
 func _on_galaxy_comments_fetched(galaxy_id: String, comments: Array) -> void:
 	"""Handle galaxy comments being fetched from the server"""
+	print("DEBUG: _on_galaxy_comments_fetched called for galaxy: ", galaxy_id, " with ", comments.size(), " comments")
 	Logger.logger.info("Received " + str(comments.size()) + " comments for galaxy: " + galaxy_id)
 	
 	# Only update if this is for the currently displayed galaxy
 	if objects.size() > 0 and objects[obj_index]['id'] == galaxy_id:
 		current_galaxy_comments = comments
+		print("DEBUG: Updated current_galaxy_comments array, size: ", current_galaxy_comments.size())
 		Logger.logger.debug("Updated current galaxy comments for: " + galaxy_id)
 	else:
+		print("DEBUG: Ignoring comments for galaxy ", galaxy_id, " (not currently displayed)")
 		Logger.logger.debug("Ignoring comments for galaxy " + galaxy_id + " (not currently displayed)")
 
 func _setup_comments_viewer() -> void:
@@ -505,8 +510,10 @@ func _toggle_comments_viewer() -> void:
 		# Show comments for current galaxy
 		if objects.size() > 0:
 			var current_galaxy_id = objects[obj_index]['id']
+			print("DEBUG: Showing comments viewer for galaxy: ", current_galaxy_id, " with ", current_galaxy_comments.size(), " comments")
 			comments_viewer.show_comments(current_galaxy_id, current_galaxy_comments)
 		else:
+			print("DEBUG: No galaxy selected to show comments for")
 			Logger.logger.warning("No galaxy selected to show comments for")
 
 func _on_comments_viewer_closed() -> void:

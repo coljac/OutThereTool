@@ -5,6 +5,10 @@ signal updated_data(success: bool)
 
 var current_field: String = ""
 
+# Track current comment fetch request
+var current_comments_request: HTTPRequest = null
+var current_comments_galaxy_id: String = ""
+
 
 func _ready() -> void:
 	Logger.logger.info("DataManager initializing")
@@ -425,26 +429,40 @@ func fetch_galaxy_comments_async(galaxy_id: String) -> void:
 	
 	Logger.logger.debug("Comments fetch URL: " + comments_url)
 	
+	# Clean up any existing request
+	if current_comments_request:
+		current_comments_request.queue_free()
+	
 	# Create HTTPRequest
-	var http_request = HTTPRequest.new()
-	add_child(http_request)
+	current_comments_request = HTTPRequest.new()
+	current_comments_galaxy_id = galaxy_id
+	add_child(current_comments_request)
 	
 	var headers = [
 		"Authorization: Bearer " + auth_token
 	]
 	
-	# Connect completion signal with galaxy_id bound
-	http_request.request_completed.connect(_on_comments_fetch_completed.bind(galaxy_id, http_request))
+	# Connect completion signal
+	current_comments_request.request_completed.connect(_on_comments_fetch_completed)
 	
 	# Make the request
-	var request_error = http_request.request(comments_url, headers, HTTPClient.METHOD_GET)
+	print("DEBUG: Making HTTP request to: ", comments_url)
+	var request_error = current_comments_request.request(comments_url, headers, HTTPClient.METHOD_GET)
 	if request_error != OK:
+		print("DEBUG: HTTP request failed with error: ", request_error)
 		Logger.logger.error("Failed to start comments fetch for galaxy " + galaxy_id + ": " + str(request_error))
-		http_request.queue_free()
+		current_comments_request.queue_free()
+		current_comments_request = null
 		galaxy_comments_fetched.emit(galaxy_id, [])
+	else:
+		print("DEBUG: HTTP request started successfully")
 
-func _on_comments_fetch_completed(galaxy_id: String, http_request: HTTPRequest, result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray) -> void:
+func _on_comments_fetch_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray) -> void:
 	"""Handle completion of comments fetch"""
+	var galaxy_id = current_comments_galaxy_id
+	
+	print("DEBUG: _on_comments_fetch_completed called for galaxy: ", galaxy_id)
+	print("DEBUG: HTTP result: ", result, ", response code: ", response_code)
 	Logger.logger.debug("Comments fetch completed for galaxy: " + galaxy_id)
 	Logger.logger.debug("HTTP result: " + str(result) + ", response code: " + str(response_code))
 	
@@ -472,10 +490,15 @@ func _on_comments_fetch_completed(galaxy_id: String, http_request: HTTPRequest, 
 			Logger.logger.error("Response body: " + body.get_string_from_utf8())
 	
 	# Emit the signal with the fetched comments (empty array if failed)
+	print("DEBUG: About to emit galaxy_comments_fetched signal for galaxy: ", galaxy_id, " with ", comments_data.size(), " comments")
 	galaxy_comments_fetched.emit(galaxy_id, comments_data)
+	print("DEBUG: Signal emitted")
 	
 	# Clean up
-	http_request.queue_free()
+	if current_comments_request:
+		current_comments_request.queue_free()
+		current_comments_request = null
+	current_comments_galaxy_id = ""
 
 func pre_cache_field(field: String, progress: CacheProgress) -> void:
 	Logger.logger.info("Starting pre-cache operation for field: " + field)

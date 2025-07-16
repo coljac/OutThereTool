@@ -22,6 +22,7 @@ func _input(event: InputEvent):
 
 func show_comments(galaxy_id: String, comments: Array):
 	"""Display comments for a specific galaxy"""
+	print("DEBUG: comments_viewer.show_comments called for galaxy: ", galaxy_id, " with ", comments.size(), " comments")
 	self.galaxy_id = galaxy_id
 	self.comments_data = comments
 	
