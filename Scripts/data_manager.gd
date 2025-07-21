@@ -106,7 +106,7 @@ func _ensure_user_database_schema():
 	if get_user_data("user.name") == "":
 		var host_username = OS.get_environment("USER")
 		if host_username == "":
-			host_username = OS.get_environment("USERNAME")  # Windows fallback
+			host_username = OS.get_environment("USERNAME") # Windows fallback
 		if host_username != "":
 			set_user_data("user.name", host_username)
 			Logger.logger.info("Set default username to host computer username: " + host_username)
@@ -332,7 +332,7 @@ func get_api_base_url() -> String:
 	if api_url != "":
 		return api_url
 	else:
-		return "http://localhost:8000"
+		return "https://tool.outthere-survey.org"
 
 func get_auth_token() -> String:
 	"""Get the authentication token from user data"""

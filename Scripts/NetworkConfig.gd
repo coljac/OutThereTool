@@ -6,11 +6,11 @@ extends Node
 ## This allows easy switching between production, testing, and development environments.
 
 ## Base URL for processed astronomical data resources
-const BASE_URL = "https://outthere.s3.us-east-1.amazonaws.com/processed/"
+const BASE_URL = "https://tool.outthere-survey.org/"
 
 ## Alternative URLs for testing/development  
 const TEST_URL = "http://localhost:8123/"
-const DEV_URL = "https://dev.outthere.example.com/processed/"
+const DEV_URL = "https://dev.outthere.com/processed/"
 
 ## Current environment setting
 enum AppEnvironemnt {
@@ -20,7 +20,7 @@ enum AppEnvironemnt {
 }
 
 ## Change this to switch environments
-const CURRENT_ENVIRONMENT = AppEnvironemnt.TESTING
+const CURRENT_ENVIRONMENT = AppEnvironemnt.PRODUCTION
 
 ## Get the current base URL based on environment
 static func get_base_url() -> String:

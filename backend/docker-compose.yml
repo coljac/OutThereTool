@@ -1,0 +1,53 @@
+services:
+  nginx:
+    image: nginx:alpine                    # tiny, up-to-date build
+    container_name: outthere-static
+    restart: unless-stopped
+    ports:
+      - "80:80"                            # HTTP  (needed for certbot http-01 renewals)
+      - "443:443"                          # HTTPS
+    volumes:
+      # 1. Your static site
+      - /mnt/llm/godot/copied/processed:/usr/share/nginx/html:ro
+
+      # 2. Your custom vhost (see example below)
+      - ./default.conf:/etc/nginx/conf.d/default.conf:ro
+
+      # 3. The certbot-generated key pair (read-only)
+      - ./certs:/etc/letsencrypt/live/tool.outthere-survey.org:ro
+
+  postgres:
+    image: postgres:16-alpine        # pick a major version; change if you need another
+    container_name: postgres_backend
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_USER: ${POSTGRES_USER:-doadmin}
+      POSTGRES_DB: ${POSTGRES_DB:-doadmin}
+      # Optional tuning knobs:
+      # PGDATA: /var/lib/postgresql/data/pgdata   # moves cluster one level down
+    ports:
+      - "25060:5432"                  # host_port:container_port (matches your docker run)
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # - ./initdb:/docker-entrypoint-initdb.d:ro  # put .sql/.sh for first-time init
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB -h 127.0.0.1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # networks: [webnet]   # optional named net
+
+  fastapi:
+    build: .
+    container_name: outthere-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-doadmin}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-doadmin}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Internal port 8000, accessed via nginx proxy
+
+volumes:
+  pgdata:
