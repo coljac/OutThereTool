@@ -332,7 +332,7 @@ func get_api_base_url() -> String:
 	if api_url != "":
 		return api_url
 	else:
-		return "https://tool.outthere-survey.org"
+		return "https://tool.outthere-survey.org/api"
 
 func get_auth_token() -> String:
 	"""Get the authentication token from user data"""

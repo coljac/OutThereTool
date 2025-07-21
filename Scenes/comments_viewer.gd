@@ -15,10 +15,6 @@ func _ready():
 		close_button.pressed.connect(_on_close_pressed)
 	set_process_input(true)
 
-func _input(event: InputEvent):
-	if event.is_action_pressed("ui_cancel") or event.is_action_pressed("comments_view_toggle"):
-		_on_close_pressed()
-		get_viewport().set_input_as_handled()
 
 func show_comments(galaxy_id: String, comments: Array):
 	"""Display comments for a specific galaxy"""
