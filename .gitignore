@@ -28,3 +28,4 @@ screenshot.png.import
 releases/
 *.pyc
 __pycache__
+backend/certs/
