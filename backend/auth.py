@@ -12,7 +12,6 @@ security = HTTPBearer()
 
 def verify_token(token: str) -> str:
     """Verify JWT token and return user_id"""
-    return "coljac"
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")
@@ -35,7 +34,6 @@ def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> str:
     """Dependency to get current user from JWT token"""
-    return "coljac"
     return verify_token(credentials.credentials)
 
 
