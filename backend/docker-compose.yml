@@ -43,7 +43,7 @@ services:
     container_name: outthere-backend
     restart: unless-stopped
     environment:
-      JWT_SECREY_KEY: ${JWT_SECRET_KEY}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       DATABASE_URL: postgresql://${POSTGRES_USER:-doadmin}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-doadmin}
     depends_on:
       postgres:
