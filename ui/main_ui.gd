@@ -75,9 +75,7 @@ func _ready():
 		%ObjectViewing.set_galaxy_details(galaxy_with_user_data)
 	DataManager.connect("updated_data", %ObjectViewing.tick)
 	DataManager.connect("updated_data", update_cache)
-	print("DEBUG: Connecting galaxy_comments_fetched signal")
 	DataManager.connect("galaxy_comments_fetched", _on_galaxy_comments_fetched)
-	print("DEBUG: Signal connected successfully")
 	set_process(false) # Disable _process by default
 	_goto_object(0)
 	for otimage in get_tree().get_nodes_in_group("images"):
@@ -177,41 +175,45 @@ func prev_object():
 	_goto_object(-1)
 
 
+func _display_object(obj_id: String) -> void:
+	var gal_display = %SimpleTab.get_tab_control(0)
+	gal_display.set_object_id(obj_id)
+	var galaxy_with_user_data = DataManager.get_galaxy_with_user_data(obj_id)
+	%ObjectViewing.set_galaxy_details(galaxy_with_user_data)
+	gal_display.name = obj_id
+	
+	# Fetch comments from server for this galaxy asynchronously
+	DataManager.fetch_galaxy_comments_async(obj_id)
+	
+
+	# Preload next object in background
+	_preload_next_object()
+
+
+
 func _goto_object(step: int = 1) -> void:
 	# for ch in $VBoxContainer/MarginContainer.get_children():
 		# ch.queue_free()
-	var gal_display = %SimpleTab.get_tab_control(0)
 	# var newbox = gal_display.instantiate()
 	obj_index += step
 	if obj_index >= objects.size():
 		obj_index = 0
 	if obj_index < 0:
 		obj_index = objects.size() - 1
-	print("DEBUG: About to set object ID to: ", objects[obj_index]['id'])
-	gal_display.set_object_id(objects[obj_index]['id'])
-	print("DEBUG: Called set_object_id, updating details...")
-	var galaxy_with_user_data = DataManager.get_galaxy_with_user_data(objects[obj_index]['id'])
-	%ObjectViewing.set_galaxy_details(galaxy_with_user_data)
-	gal_display.name = objects[obj_index]['id']
-	
-	# Fetch comments from server for this galaxy asynchronously
-	print("DEBUG: About to fetch comments for galaxy: ", objects[obj_index]['id'])
-	DataManager.fetch_galaxy_comments_async(objects[obj_index]['id'])
-	print("DEBUG: Comment fetch call completed")
-	
-	print("DEBUG: Object switch completed")
+	var obj_id: String = objects[obj_index]['id']
+	_display_object(obj_id)
+	# return
+	# var gal_display = %SimpleTab.get_tab_control(0)
+	# gal_display.set_object_id(obj_id)
+	# var galaxy_with_user_data = DataManager.get_galaxy_with_user_data(obj_id)
+	# %ObjectViewing.set_galaxy_details(galaxy_with_user_data)
+	# gal_display.name = obj_id
+	# # Fetch comments from server for this galaxy asynchronously
+	# DataManager.fetch_galaxy_comments_async(obj_id)
+	# # Preload next object in background
+	# _preload_next_object()
 
 
-	# Preload next object in background
-	_preload_next_object()
-
-	# newbox.path = objects[obj_index][0]
-	# newbox.object_id = objects[obj_index][1]
-	# newbox.object_id = "uma-03_02122"
-	# newbox.name = "GalaxyDisplay"
-	# $VBoxContainer/MarginContainer.add_child(newbox)
-	# newbox.load_object()
-# 
 func _add_initial_tab():
 	# Use the existing GalaxyDisplay in SimpleTab instead of creating a new one
 	# The SimpleTab already has a pre-instantiated GalaxyDisplay
@@ -319,9 +321,12 @@ func _on_search_button_pressed():
 	if object_id.length() == 0:
 		return
 	print("Searching for object: ", object_id)
-	for obj in objects:
+	for i in range(objects.size()):
+		var obj = objects[i]
 		if obj['id'].contains(object_id):
-			get_object(obj['id'])
+			obj_index = i
+			_display_object(obj['id'])
+			# get_object(obj['id'])
 			object_id_edit.text = ""
 			break
 	# # Get the current tab's GalaxyDisplay
@@ -540,16 +545,13 @@ func pre_cache_current_field():
 
 func _on_galaxy_comments_fetched(galaxy_id: String, comments: Array) -> void:
 	"""Handle galaxy comments being fetched from the server"""
-	print("DEBUG: _on_galaxy_comments_fetched called for galaxy: ", galaxy_id, " with ", comments.size(), " comments")
 	Logger.logger.info("Received " + str(comments.size()) + " comments for galaxy: " + galaxy_id)
 	
 	# Only update if this is for the currently displayed galaxy
 	if objects.size() > 0 and objects[obj_index]['id'] == galaxy_id:
 		current_galaxy_comments = comments
-		print("DEBUG: Updated current_galaxy_comments array, size: ", current_galaxy_comments.size())
 		Logger.logger.debug("Updated current galaxy comments for: " + galaxy_id)
 	else:
-		print("DEBUG: Ignoring comments for galaxy ", galaxy_id, " (not currently displayed)")
 		Logger.logger.debug("Ignoring comments for galaxy " + galaxy_id + " (not currently displayed)")
 
 func _setup_comments_viewer() -> void:
@@ -573,10 +575,8 @@ func _toggle_comments_viewer() -> void:
 		# Show comments for current galaxy
 		if objects.size() > 0:
 			var current_galaxy_id = objects[obj_index]['id']
-			print("DEBUG: Showing comments viewer for galaxy: ", current_galaxy_id, " with ", current_galaxy_comments.size(), " comments")
 			comments_viewer.show_comments(current_galaxy_id, current_galaxy_comments)
 		else:
-			print("DEBUG: No galaxy selected to show comments for")
 			Logger.logger.warning("No galaxy selected to show comments for")
 
 func _on_comments_viewer_closed() -> void:
