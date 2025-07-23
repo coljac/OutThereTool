@@ -7,13 +7,10 @@ services:
       - "80:80"                            # HTTP  (needed for certbot http-01 renewals)
       - "443:443"                          # HTTPS
     volumes:
-      # 1. Your static site
-      - /mnt/llm/godot/copied/processed:/usr/share/nginx/html:ro
-
-      # 2. Your custom vhost (see example below)
+      - "${PREPROCESSED_DATA_DIR:-/mnt/llm/godot/copied/processed}:/usr/share/nginx/html:ro"
+     
       - ./default.conf:/etc/nginx/conf.d/default.conf:ro
 
-      # 3. The certbot-generated key pair (read-only)
       - "${NGINX_CERT_DIR:-./certs}:/etc/letsencrypt/live/tool.outthere-survey.org:ro"
 
   postgres:
