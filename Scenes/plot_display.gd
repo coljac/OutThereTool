@@ -220,7 +220,7 @@ func _draw():
 	if not is_inside_tree():
 		return
 
-	calc_yticks()	
+	calc_yticks()
 	# Draw background
 	draw_rect(Rect2(0, 0, size.x, size.y), axes_area_color)
 	
@@ -498,7 +498,7 @@ func add_series(points: Array, color: Color = Color(0, 0, 1), line_width: float 
 				draw_points: bool = false, point_size: float = 4.0,
 				x_errors: Array = [], y_errors: Array = [],
 				error_color: Color = Color.TRANSPARENT, error_line_width: float = 1.0,
-				error_cap_size: float = 5.0, draw_as_steps: bool = false) -> int:
+				error_cap_size: float = 5.0, draw_as_steps: bool = true) -> int:
 	var series = {
 		"points": points,
 		"color": color,

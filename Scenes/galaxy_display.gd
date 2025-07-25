@@ -300,20 +300,20 @@ func _load_1d_spectrum(oned_spec: Dictionary) -> void:
 				min_flux = min(min_flux, data["min"])
 		
 		# Add flux series (without errors) and track index
-		var flux_index = spec_1d.add_series(data["fluxes"], Color(0.4 + xx, xx, 0.8), 2.0, false, 3.0, [], [], Color.TRANSPARENT, 1.0, 5.0, false)
+		var flux_index = spec_1d.add_series(data["fluxes"], Color(0.4 + xx, xx, 0.8), 2.0, false, 3.0, [], [], Color.TRANSPARENT, 1.0, 5.0, true)
 		flux_series.append(flux_index)
 		
 		# Add error bars as separate series and track index
 		if data.has("err") and data["err"].size() > 0:
-			var error_index = spec_1d.add_series(data["fluxes"], Color.TRANSPARENT, 0.0, false, 3.0, [], data["err"], Color(1.0, 0.0, 0.0), 1.0, 5.0, false)
+			var error_index = spec_1d.add_series(data["fluxes"], Color.TRANSPARENT, 0.0, false, 3.0, [], data["err"], Color(1.0, 0.0, 0.0), 1.0, 5.0, true)
 			error_series.append(error_index)
 		
 		# Add bestfit series and track index
-		var bestfit_index = spec_1d.add_series(data["bestfit"], Color(0.0, 1.0, 0.0, 0.5), 2.0, false, 3.0, [])
+		var bestfit_index = spec_1d.add_series(data["bestfit"], Color(0.0, 1.0, 0.0, 0.5), 2.0, false, 3.0, [], [], Color.TRANSPARENT, 1.0, 5.0, true)
 		bestfit_series.append(bestfit_index)
 		
 		# Add contam series and track index
-		var contam_index = spec_1d.add_series(data["contam"], Color(0.3, 1.0, 1.0, 0.5), 2.0, false, 3.0, [])
+		var contam_index = spec_1d.add_series(data["contam"], Color(0.3, 1.0, 1.0, 0.5), 2.0, false, 3.0, [], [], Color.TRANSPARENT, 1.0, 5.0, true)
 		contam_series.append(contam_index)
 		
 		xx += 0.2
