@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://kiiwnpbw1pv"]
+[gd_scene load_steps=3 format=3 uid="uid://kiiwnpbw1pv"]
 
 [ext_resource type="Script" uid="uid://ciq7gr5y34ur7" path="res://Scenes/aligned_displayer.gd" id="1_tdqap"]
+[ext_resource type="Script" uid="uid://d2tf4ynjpdx7" path="res://Scenes/ovleray.gd" id="2_0gdpk"]
 
 [node name="AlignedDisplayer" type="Control"]
 custom_minimum_size = Vector2(0, 200)
@@ -15,3 +16,13 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_tdqap")
 cursor_line_color = Color(0.0745098, 0.811765, 0.941176, 0.7)
+
+[node name="Overlay" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_0gdpk")

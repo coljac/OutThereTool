@@ -333,9 +333,8 @@ func _load_2d_spectra(data2d: Dictionary) -> void:
 	# Clear existing rows in the aligned displayer BEFORE freeing children
 	aligned.rows.clear()
 	aligned.row_heights.clear()
-	
-	for child in aligned.get_children():
-		child.queue_free()
+
+	aligned.free_children()	
 	
 	# Clear our image arrays
 	science_images.clear()

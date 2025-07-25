@@ -17,12 +17,14 @@ var cursor_height: int = 0 # Height for cursor line, calculated based on display
 var row_heights: Array[float] = [] # Heights for each row
 var rows: Array[Array] = [] # Array of arrays containing children organized by row
 var row_labels: Array[Label] = [] # Label nodes for each row
+@onready var overlay: Control = %Overlay
 
 func _ready():
 	# Get reference to the PlotDisplay
 	clip_contents = true
 	# Allow mouse events to pass through to children
 	mouse_filter = Control.MOUSE_FILTER_PASS
+	# Set high z-index to ensure cursor line draws on top of 2D spectra
 
 	if plot_display_path:
 		plot_display = get_node(plot_display_path)
@@ -44,6 +46,9 @@ func _ready():
 	
 	# Organize children into rows and calculate row heights
 	organize_rows()
+	# overlay.connect("resized", _on_overlay_resized)
+	move_child(overlay, get_child_count() - 1)
+
 
 func add_spectrum(spectrum: OTImage, row: int = -1) -> void:
 	# Add a spectrum to the display
@@ -70,6 +75,7 @@ func add_spectrum(spectrum: OTImage, row: int = -1) -> void:
 		
 		# Don't position immediately - will be done in position_textures()
 		queue_redraw() # Request redraw to update the display
+	move_child(overlay, get_child_count() - 1)
 
 
 # Organize children into rows
@@ -136,15 +142,22 @@ func _on_plot_display_crosshair_moved(position: Vector2):
 func _draw():
 	if show_cursor_line and cursor_wavelength >= left_boundary and cursor_wavelength <= right_boundary:
 		# Convert wavelength to pixel position
-		var x_pixel = _microns_to_pixels(cursor_wavelength)
-		
+		# var x_pixel = _microns_to_pixels(cursor_wavelength)
+		overlay.queue_redraw()
 		# Draw vertical line
-		draw_line(
-			Vector2(x_pixel, 0),
-			Vector2(x_pixel, size.y),
-			cursor_line_color,
-			cursor_line_width
-		)
+		# draw_line(
+		# 	Vector2(x_pixel, 0),
+		# 	Vector2(x_pixel, size.y),
+		# 	cursor_line_color,
+		# 	cursor_line_width
+		# )
+
+func free_children():
+	for child in get_children():
+		if child == overlay:
+			continue
+		child.queue_free()
+
 
 # Called when the plot display's x-axis limits change
 func _on_plot_display_x_limits_changed(new_x_min: float, new_x_max: float):
