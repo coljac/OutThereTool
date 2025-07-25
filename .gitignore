@@ -29,3 +29,4 @@ releases/
 *.pyc
 __pycache__
 backend/certs/
+outthere-build

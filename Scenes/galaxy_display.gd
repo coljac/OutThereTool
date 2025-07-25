@@ -43,10 +43,10 @@ var error_series: Array = []
 var contam_series: Array = []
 
 # Store different sets of 2D spectrum images
-var science_images: Array = []  # Regular image_data OTImages
-var contam_images: Array = []   # contam_data OTImages
-var model_images: Array = []    # model_data OTImages
-var is_showing_science: bool = true  # Toggle state
+var science_images: Array = [] # Regular image_data OTImages
+var contam_images: Array = [] # contam_data OTImages
+var model_images: Array = [] # model_data OTImages
+var is_showing_science: bool = true # Toggle state
 
 func set_object_id(new_id: String) -> void:
 	object_id = new_id
@@ -591,98 +591,99 @@ func _finalize_loading() -> void:
 func toggle_lines(on: bool = true):
 	if on:
 		var lines = {
-			"LyA": 1215.6709,
-			"LyB": 1025.7222,
-			"LyG": 972.5367,
-			"LyD": 949.7430,
-			"LyE": 937.8034,
-			"Lyman Break": 911.753,
-			
-			"Ha": 6564.633,
-			"Hb": 4862.688,
-			"Hg": 4341.682,
-			"Hd": 4102.897,
-			"H7": 3971.195,
-			"H8": 3890.151,
-			"H9": 3836.470,
-			"H10": 3798.980,
-			"H11": 3771.700,
-			
-			"PaA": 18756.1,
-			"PaB": 12821.6,
-			"PaG": 10941.1,
-			"PaD": 10052.1,
-			"PaE": 9548.6,
-			"Pa10": 9231.5,
-			"Pa11": 9017.4,
-			"Pa12": 8865.2,
-			
-			"BrA": 40522.6,
-			"BrB": 26258.7,
-			"BrG": 21661.2,
-			"BrD": 19450.9,
-			"BrE": 18179.1,
-			"Br10": 17366.9,
-			"Br11": 16811.1,
-			"Br12": 16411.7,
-			
-			"PfB": 46537.8,
-			"PfG": 37405.6,
-			"PfD": 32969.9,
-			"PfE": 30392.0,
-			"Pf11": 28730.0,
-			"Pf12": 27582.7,
-			"Pf13": 26751.3,
-			"Pf14": 26126.5,
-			
-			"HeI-3890": 3889.751,
-			"HeI-5877": 5877.243,
-			"HeI-6680": 6679.996,
-			"HeI-7067": 7067.125,
-			"HeI-10831": 10832.057,
-			"HeI-10832": 10833.306,
-			
-			"HeII-1640": 1640.4,
-			"HeII-4687": 4687.3,
-			
-			"OII 1": 3727.092,
-			"OII 2": 3729.875,
-			"OIII 1": 4960.30,
-			"OIII 2": 5008.24,
-			"OIII-4363": 4363.44,
-			
-			"SII 1": 6718.294,
-			"SII 2": 6732.673,
-			"SIII 1": 9071.1,
-			"SIII 2": 9533.2,
-			
-			"NII 1": 6549.86,
-			"NII 2": 6585.27,
-			"NV 1": 1238.81,
-			"NV 2": 1242.80,
-			
-			"CIII 1": 1906.683,
-			"CIII 2": 1908.734,
-			"CIV 1": 1548.187,
-			"CIV 2": 1550.770,
-			
-			"CO(2-0)": 22935.00,
-			"CO(3-1)": 23227.00,
-			"CO(4-2)": 23525.00,
-			"CO(5-3)": 23829.00,
-			"CO(6-4)": 24127.00,
-			"CO(7-5)": 24425.00,
-			
-			"MgII 1": 2796.35,
-			"MgII 2": 2803.53,
-			
-			"NeIII": 3870.16,
-			
-			"FeII-12570": 12570.0,
-			"FeII-16440": 16440.0,
-			
-			"PAH 3.3mum": 32900.00
-		}
+	"Lyα": 1215.6709,
+	"Lyβ": 1025.7222,
+	"Lyγ": 972.5367,
+	"Lyδ": 949.7430,
+	"Lyε": 937.8034,
+	"Lyman Break": 911.753,
+
+	"Hα": 6564.633,
+	"Hβ": 4862.688,
+	"Hγ": 4341.682,
+	"Hδ": 4102.897,
+	"H7": 3971.195,
+	"H8": 3890.151,
+	"H9": 3836.470,
+	"H10": 3798.980,
+	"H11": 3771.700,
+
+	"Paα": 18756.1,
+	"Paβ": 12821.6,
+	"Paγ": 10941.1,
+	"Paδ": 10052.1,
+	"Paε": 9548.6,
+	"Pa10": 9231.5,
+	"Pa11": 9017.4,
+	"Pa12": 8865.2,
+
+	"Brα": 40522.6,
+	"Brβ": 26258.7,
+	"Brγ": 21661.2,
+	"Brδ": 19450.9,
+	"Brε": 18179.1,
+	"Br10": 17366.9,
+	"Br11": 16811.1,
+	"Br12": 16411.7,
+
+	"Pfβ": 46537.8,
+	"Pfγ": 37405.6,
+	"Pfδ": 32969.9,
+	"Pfε": 30392.0,
+	"Pf11": 28730.0,
+	"Pf12": 27582.7,
+	"Pf13": 26751.3,
+	"Pf14": 26126.5,
+
+	"He I 3889": 3889.751,
+	"He I 5877": 5877.243,
+	"He I 6680": 6679.996,
+	"He I 7067": 7067.125,
+	"He I 10831": 10832.057,
+	"He I 10832": 10833.306,
+
+	"He II 1640": 1640.4,
+	"He II 4687": 4687.3,
+
+	"[O II] 3727": 3727.092,
+	"[O II] 3729": 3729.875,
+	"[O III] 4960": 4960.30,
+	"[O III] 5008": 5008.24,
+	"[O III] 4363": 4363.44,
+
+	"[S II] 6718": 6718.294,
+	"[S II] 6732": 6732.673,
+	"[S III] 9071": 9071.1,
+	"[S III] 9533": 9533.2,
+
+	"[N II] 6549": 6549.86,
+	"[N II] 6585": 6585.27,
+	"N V 1239": 1238.81,
+	"N V 1243": 1242.80,
+
+	"C III] 1907": 1906.683,
+	"C III] 1909": 1908.734,
+	"C IV 1548": 1548.187,
+	"C IV 1551": 1550.770,
+
+	"CO(2–0)": 22935.00,
+	"CO(3–1)": 23227.00,
+	"CO(4–2)": 23525.00,
+	"CO(5–3)": 23829.00,
+	"CO(6–4)": 24127.00,
+	"CO(7–5)": 24425.00,
+
+	"Mg II 2796": 2796.35,
+	"Mg II 2804": 2803.53,
+
+	"[Ne III] 3870": 3870.16,
+
+	"[Fe II] 12570": 12570.0,
+	"[Fe II] 16440": 16440.0,
+
+	"PAH 3.3μm": 32900.00
+	}
+		
 		var y_off = 0
 		for ln in lines:
 			var lambda = lines[ln] / 10000
@@ -772,7 +773,7 @@ func _rebuild_2d_display() -> void:
 		for pa in images_by_pa.keys():
 			for img in images_by_pa[pa]:
 				img.visible = true
-				aligned.add_spectrum(img, pa_index)  # add_spectrum handles add_child
+				aligned.add_spectrum(img, pa_index) # add_spectrum handles add_child
 			
 			# Set label for this PA
 			if pa != "":
@@ -787,7 +788,7 @@ func _rebuild_2d_display() -> void:
 			if is_instance_valid(img):
 				print("Adding contam image for filter: ", img.res.filter_name if "filter_name" in img.res else "unknown")
 				img.visible = true
-				aligned.add_spectrum(img, 0)  # add_spectrum handles add_child
+				aligned.add_spectrum(img, 0) # add_spectrum handles add_child
 		if contam_images.size() > 0:
 			aligned.set_label(0, "Contamination")
 		
@@ -797,7 +798,7 @@ func _rebuild_2d_display() -> void:
 			if is_instance_valid(img):
 				print("Adding model image for filter: ", img.res.filter_name if "filter_name" in img.res else "unknown")
 				img.visible = true
-				aligned.add_spectrum(img, 1)  # add_spectrum handles add_child
+				aligned.add_spectrum(img, 1) # add_spectrum handles add_child
 		if model_images.size() > 0:
 			aligned.set_label(1, "Model")
 	
