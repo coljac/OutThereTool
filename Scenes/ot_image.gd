@@ -41,6 +41,9 @@ var current_scale_index: int = 0 # Index to track position in show_scales array
 # Context menu
 var context_menu: PopupMenu
 var colormap_submenu: PopupMenu
+var zscale_dialog: AcceptDialog
+var z_min_input: SpinBox
+var z_max_input: SpinBox
 
 var RA: float = 0.0
 var dec: float = 0.0
@@ -186,6 +189,9 @@ func _load_object() -> void:
 			var t = Array(image_data)
 			var m = t.max()
 			image_data = t.map(func(x): return x / m)
+			# Initialize zscale parameters to data range
+			z_min = 0.0
+			z_max = 1.0
 
 		white_level = get_percentile(95.5)
 		var wcs: Dictionary
@@ -219,7 +225,9 @@ func _settings_changed():
 	settings_changed.emit({
 		"scale": scale_percent,
 		"colormap": color_map,
-		"invert_color": invert_color
+		"invert_color": invert_color,
+		"z_min": z_min,
+		"z_max": z_max
 	})
 
 func set_label(t: String):
@@ -256,6 +264,14 @@ func use_settings(settings: Dictionary):
 		_set_colormap(settings['colormap'])
 	if "invert_color" in settings:
 		_set_invert(settings['invert_color'])
+	if "z_min" in settings:
+		z_min = settings['z_min']
+		if shader_material:
+			shader_material.set_shader_parameter("z_min", z_min)
+	if "z_max" in settings:
+		z_max = settings['z_max']
+		if shader_material:
+			shader_material.set_shader_parameter("z_max", z_max)
 	
 func _set_black(b: float):
 	black_level = b
@@ -433,8 +449,12 @@ func _create_context_menu() -> void:
 	context_menu.add_item("Scale 99.5%", 3)
 	context_menu.add_separator()
 	
+	# Add zscale option
+	context_menu.add_item("Set Z-Scale...", 4)
+	context_menu.add_separator()
+	
 	# Add invert option
-	context_menu.add_item("Invert Colors", 4)
+	context_menu.add_item("Invert Colors", 5)
 	context_menu.add_separator()
 	
 	# Create colormap submenu
@@ -456,6 +476,9 @@ func _create_context_menu() -> void:
 	# Add colormap submenu to main menu - submenu must be added as child first
 	context_menu.add_child(colormap_submenu)
 	context_menu.add_submenu_node_item("Color Map", colormap_submenu)
+	
+	# Create zscale dialog
+	_create_zscale_dialog()
 
 func _show_context_menu(global_pos: Vector2) -> void:
 	# Update checkmarks for current settings
@@ -481,7 +504,7 @@ func _update_context_menu_checkmarks() -> void:
 		context_menu.set_item_checked(3, true)
 	
 	# Check invert option
-	context_menu.set_item_checked(4, invert_color)
+	context_menu.set_item_checked(5, invert_color)
 	
 	# Update colormap submenu checkmarks
 	for i in range(colormap_submenu.get_item_count()):
@@ -502,12 +525,80 @@ func _on_context_menu_item_selected(id: int) -> void:
 		3: # Scale 99.5%
 			_set_scale_pc(99.5)
 			current_scale_index = show_scales.find(99.5)
-		4: # Invert
+		4: # Set Z-Scale
+			_show_zscale_dialog()
+		5: # Invert
 			invert_color = not invert_color
 	_settings_changed()
 
 func _on_colormap_selected(colormap_id: int) -> void:
 	color_map = colormap_id
+	_settings_changed()
+
+func _create_zscale_dialog() -> void:
+	zscale_dialog = AcceptDialog.new()
+	zscale_dialog.title = "Set Z-Scale Parameters"
+	zscale_dialog.size = Vector2i(300, 150)
+	add_child(zscale_dialog)
+	
+	# Create dialog content
+	var vbox = VBoxContainer.new()
+	zscale_dialog.add_child(vbox)
+	
+	# Z Min input
+	var z_min_label = Label.new()
+	z_min_label.text = "Z Min:"
+	vbox.add_child(z_min_label)
+	
+	z_min_input = SpinBox.new()
+	z_min_input.min_value = 0.0
+	z_min_input.max_value = 1.0
+	z_min_input.step = 0.001
+	z_min_input.value = z_min
+	vbox.add_child(z_min_input)
+	
+	# Z Max input
+	var z_max_label = Label.new()
+	z_max_label.text = "Z Max:"
+	vbox.add_child(z_max_label)
+	
+	z_max_input = SpinBox.new()
+	z_max_input.min_value = 0.0
+	z_max_input.max_value = 1.0
+	z_max_input.step = 0.001
+	z_max_input.value = z_max
+	vbox.add_child(z_max_input)
+	
+	# Connect dialog signals
+	zscale_dialog.connect("confirmed", _on_zscale_dialog_confirmed)
+
+func _show_zscale_dialog() -> void:
+	# Update dialog inputs with current values
+	z_min_input.value = z_min
+	z_max_input.value = z_max
+	
+	# Show the dialog
+	zscale_dialog.popup_centered()
+
+func _on_zscale_dialog_confirmed() -> void:
+	# Get values from inputs
+	var new_z_min = z_min_input.value
+	var new_z_max = z_max_input.value
+	
+	# Validate values (ensure min < max)
+	if new_z_min >= new_z_max:
+		print("Z Min must be less than Z Max")
+		return
+	
+	# Update shader parameters
+	z_min = new_z_min
+	z_max = new_z_max
+	
+	if shader_material:
+		shader_material.set_shader_parameter("z_min", z_min)
+		shader_material.set_shader_parameter("z_max", z_max)
+	
+	# Propagate settings to other images
 	_settings_changed()
 	
 
