@@ -29,7 +29,11 @@ var redshift = 1.0
 
 var asset_helper: AssetHelper
 # = AssetHelper.new()
-'a'
+
+# Leader key functionality
+var leader_mode_active: bool = false
+var leader_timer: Timer
+var leader_timeout: float = 2.0
 # Visibility flags for 1D plot series
 var show_flux: bool = true
 var show_bestfit: bool = true
@@ -97,6 +101,13 @@ func _ready():
 	set_process_input(true)
 	$CanvasLayer/RedshiftLabel.text = ""
 	
+	# Initialize leader key timer
+	leader_timer = Timer.new()
+	leader_timer.wait_time = leader_timeout
+	leader_timer.one_shot = true
+	leader_timer.timeout.connect(_on_leader_timeout)
+	add_child(leader_timer)
+	
 	# Connect the aligned_displayer to the plot_display
 	var aligned_container = %Spec2DContainer
 	for child in aligned_container.get_children():
@@ -130,6 +141,11 @@ func _exit_tree() -> void:
 	print_debug("Exiting tree")
 	$CanvasLayer/RedshiftLabel.text = ""
 	
+	# Clean up leader timer
+	if leader_timer:
+		leader_timer.queue_free()
+		leader_timer = null
+	
 	# Clean up asset helper
 	if asset_helper:
 		asset_helper.cleanup_connections()
@@ -138,6 +154,19 @@ func _exit_tree() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Handle leader key input first
+	if _handle_leader_key_input(event):
+		get_viewport().set_input_as_handled()
+		return
+	
+	# Handle leader key activation
+	if event.is_action_pressed("leader_pressed"):
+		Logger.logger.debug("Leader key pressed - activating leader mode")
+		leader_mode_active = true
+		leader_timer.start()
+		get_viewport().set_input_as_handled()
+		return
+	
 	if event.is_action_pressed("flag_bad"):
 		get_viewport().set_input_as_handled()
 	if event.is_action_pressed("flag_good"):
@@ -898,3 +927,58 @@ func _rebuild_2d_display() -> void:
 
 func _on_tab_toolbar_reference_pressed():
 	toggle_2d_data()
+
+# Leader key functionality
+func _on_leader_timeout():
+	"""Called when the leader key timer expires"""
+	leader_mode_active = false
+	Logger.logger.debug("Leader mode timeout - deactivated")
+
+func _handle_leader_key_input(event: InputEvent) -> bool:
+	"""Handle input during leader mode. Returns true if event was consumed."""
+	if not leader_mode_active:
+		return false
+	
+	if event is InputEventKey and event.pressed:
+		var key_char = char(event.unicode).to_lower()
+		Logger.logger.debug("Leader mode: received key '" + key_char + "'")
+		
+		# Look for spectral line with matching shortcut
+		for line_name in spectral_line_data:
+			var line_info = spectral_line_data[line_name]
+			if line_info.has("shortcut") and line_info["shortcut"] == key_char:
+				Logger.logger.info("Leader mode: Found matching line '" + line_name + "' for shortcut '" + key_char + "'")
+				_set_redshift_for_line(line_name, line_info)
+				leader_mode_active = false
+				leader_timer.stop()
+				return true
+		
+		Logger.logger.debug("Leader mode: No matching spectral line found for shortcut '" + key_char + "'")
+		leader_mode_active = false
+		leader_timer.stop()
+		return true
+	
+	return false
+
+func _set_redshift_for_line(line_name: String, line_info: Dictionary):
+	"""Set redshift so that the specified spectral line appears at the cursor position"""
+	if not spec_1d or not spec_1d.show_crosshair:
+		Logger.logger.warning("Cannot set redshift for line - no 1D spectrum or crosshair not active")
+		return
+	
+	var rest_wavelength = line_info["wl"] / 10000.0  # Convert from Angstroms to microns
+	var observed_wavelength = spec_1d.crosshair_position.x  # Current cursor x position (wavelength)
+	
+	# Calculate redshift: z = (observed_wavelength / rest_wavelength) - 1
+	var new_redshift = (observed_wavelength / rest_wavelength) - 1.0
+	
+	# Ensure redshift is reasonable (positive and not too extreme)
+	if new_redshift < 0:
+		Logger.logger.warning("Calculated negative redshift (" + str(new_redshift) + ") for line " + line_name + " - setting to 0")
+		new_redshift = 0.0
+	elif new_redshift > 20:
+		Logger.logger.warning("Calculated very high redshift (" + str(new_redshift) + ") for line " + line_name + " - capping at 20")
+		new_redshift = 20.0
+	
+	Logger.logger.info("Setting redshift to " + str(new_redshift) + " to place " + line_name + " at cursor position " + str(observed_wavelength) + " μm")
+	set_redshift(new_redshift)

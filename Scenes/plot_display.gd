@@ -1066,8 +1066,8 @@ func draw_crosshair(plot_rect: Rect2):
 	)
 	
 	# Format the coordinate values
-	var x_value_text = format_number(crosshair_position.x, x_tick_decimals)
-	var y_value_text = format_number(crosshair_position.y, y_tick_decimals)
+	var x_value_text = format_number(crosshair_position.x, x_tick_decimals + 1)
+	var y_value_text = format_number(crosshair_position.y, y_tick_decimals + 1)
 	
 	# Draw x-value label above x-axis
 	var font = get_theme_default_font()
