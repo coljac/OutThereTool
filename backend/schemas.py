@@ -7,6 +7,8 @@ class GalaxyCommentCreate(BaseModel):
     status: int
     redshift: Optional[Decimal] = None
     comment: Optional[str] = None
+    galaxy_class: Optional[int] = 0
+    checkboxes: Optional[int] = 0
 
 class GalaxyCommentResponse(BaseModel):
     galaxy_id: str
@@ -14,6 +16,8 @@ class GalaxyCommentResponse(BaseModel):
     status: int
     redshift: Optional[Decimal] = None
     comment: Optional[str] = None
+    galaxy_class: Optional[int] = 0
+    checkboxes: Optional[int] = 0
     updated: datetime
     
     class Config:

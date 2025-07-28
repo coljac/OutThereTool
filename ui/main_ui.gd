@@ -157,7 +157,7 @@ func update_status(status: int):
 
 func save_galaxy(vals: Dictionary):
 	var gal_id = objects[obj_index]['id']
-	DataManager.update_gal(gal_id, vals['status'], vals['comments'])
+	DataManager.update_gal(gal_id, vals['status'], vals['comments'], vals.get('galaxy_class', 0), vals.get('checkboxes', 0), vals.get('redshift', 0.0))
 
 
 func get_object(obj: String) -> void:

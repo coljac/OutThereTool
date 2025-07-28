@@ -1,25 +1,12 @@
--- PostgreSQL Database Schema for OutThereTool Backend
+-- Migration script to add new columns to existing galaxy_comment table
+-- Run this on existing databases to add the new fields
 
-CREATE TABLE IF NOT EXISTS galaxy (
-    id TEXT PRIMARY KEY,
-    status INTEGER NOT NULL,
-    redshift NUMERIC,
-    filters INTEGER DEFAULT 1,
-    field VARCHAR(255) NULL
-);
+-- Add galaxy_class column if it doesn't exist
+ALTER TABLE galaxy_comment ADD COLUMN galaxy_class INTEGER DEFAULT 0;
 
-CREATE TABLE IF NOT EXISTS galaxy_comment (
-    galaxy_id TEXT NOT NULL,
-    user_id TEXT NOT NULL,
-    status INTEGER NOT NULL,
-    redshift NUMERIC NULL,
-    comment TEXT NULL,
-    updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (galaxy_id, user_id),
-    FOREIGN KEY (galaxy_id) REFERENCES galaxy(id) ON DELETE CASCADE
-);
+-- Add checkboxes column if it doesn't exist  
+ALTER TABLE galaxy_comment ADD COLUMN checkboxes INTEGER DEFAULT 0;
 
--- Create indexes for better query performance
-CREATE INDEX IF NOT EXISTS idx_galaxy_comment_galaxy_id ON galaxy_comment(galaxy_id);
-CREATE INDEX IF NOT EXISTS idx_galaxy_comment_user_id ON galaxy_comment(user_id);
-CREATE INDEX IF NOT EXISTS idx_galaxy_comment_updated ON galaxy_comment(updated);
+-- Update any existing NULL values to defaults
+UPDATE galaxy_comment SET galaxy_class = 0 WHERE galaxy_class IS NULL;
+UPDATE galaxy_comment SET checkboxes = 0 WHERE checkboxes IS NULL;

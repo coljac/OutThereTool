@@ -24,6 +24,8 @@ class GalaxyComment(Base):
     status = Column(Integer, nullable=False)
     redshift = Column(Numeric)
     comment = Column(String)
+    galaxy_class = Column(Integer, default=0)
+    checkboxes = Column(Integer, default=0)
     updated = Column(DateTime, nullable=False, default=datetime.utcnow)
     
     galaxy = relationship("Galaxy", back_populates="comments")

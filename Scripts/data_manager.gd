@@ -77,6 +77,9 @@ func _ensure_user_database_schema():
 		object_id TEXT PRIMARY KEY,
 		status INTEGER DEFAULT -1,
 		comments TEXT DEFAULT '',
+		galaxy_class INTEGER DEFAULT 0,
+		checkboxes INTEGER DEFAULT 0,
+		redshift REAL DEFAULT 0.0,
 		altered INTEGER DEFAULT 0,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -99,6 +102,11 @@ func _ensure_user_database_schema():
 	# Add sync tracking columns if they don't exist (for existing databases)
 	user_database.query("ALTER TABLE user_comments ADD COLUMN synced INTEGER DEFAULT 0")
 	user_database.query("ALTER TABLE user_comments ADD COLUMN sync_timestamp DATETIME NULL")
+	
+	# Add new columns for extended galaxy data if they don't exist (for existing databases)
+	user_database.query("ALTER TABLE user_comments ADD COLUMN galaxy_class INTEGER DEFAULT 0")
+	user_database.query("ALTER TABLE user_comments ADD COLUMN checkboxes INTEGER DEFAULT 0")
+	user_database.query("ALTER TABLE user_comments ADD COLUMN redshift REAL DEFAULT 0.0")
 	
 	Logger.logger.info("User database schema created successfully")
 	
@@ -207,6 +215,9 @@ func get_gals(redshift_min: float = 0.0, redshift_max: float = 10.0, bands: int 
 	for gal in gals:
 		gal["status"] = -1
 		gal["comments"] = ""
+		gal["galaxy_class"] = 0
+		gal["checkboxes"] = 0
+		gal["redshift"] = 0.0
 		gal["altered"] = 0
 	
 	return gals
@@ -246,10 +257,16 @@ func get_gals_by_ids(object_ids: Array) -> Array:
 		if user_data:
 			gal["status"] = user_data["status"]
 			gal["comments"] = user_data["comments"]
+			gal["galaxy_class"] = user_data.get("galaxy_class", 0)
+			gal["checkboxes"] = user_data.get("checkboxes", 0)
+			gal["redshift"] = user_data.get("redshift", 0.0)
 			gal["altered"] = user_data["altered"]
 		else:
 			gal["status"] = -1
 			gal["comments"] = ""
+			gal["galaxy_class"] = 0
+			gal["checkboxes"] = 0
+			gal["redshift"] = 0.0
 			gal["altered"] = 0
 	
 	# Create a dictionary to preserve order of input IDs
@@ -265,13 +282,16 @@ func get_gals_by_ids(object_ids: Array) -> Array:
 	
 	return ordered_gals
 
-func update_gal(id: String, status: int, comment: String) -> void:
+func update_gal(id: String, status: int, comment: String, galaxy_class: int = 0, checkboxes: int = 0, redshift: float = 0.0) -> void:
 	# Store user comments/status in user database
 	var existing = user_database.select_rows("user_comments", "object_id = '" + id + "'", ["*"])
 	var data = {
 		"object_id": id,
 		"status": status,
 		"comments": comment,
+		"galaxy_class": galaxy_class,
+		"checkboxes": checkboxes,
+		"redshift": redshift,
 		"altered": 1,
 		"updated_at": Time.get_datetime_string_from_system()
 	}
@@ -313,10 +333,16 @@ func get_galaxy_with_user_data(galaxy_id: String) -> Dictionary:
 	if user_data:
 		gal["status"] = user_data["status"]
 		gal["comments"] = user_data["comments"]
+		gal["galaxy_class"] = user_data.get("galaxy_class", 0)
+		gal["checkboxes"] = user_data.get("checkboxes", 0)
+		gal["redshift"] = user_data.get("redshift", 0.0)
 		gal["altered"] = user_data["altered"]
 	else:
 		gal["status"] = -1
 		gal["comments"] = ""
+		gal["galaxy_class"] = 0
+		gal["checkboxes"] = 0
+		gal["redshift"] = 0.0
 		gal["altered"] = 0
 	
 	return gal
@@ -379,7 +405,9 @@ func _upload_comment_to_server(comment_data: Dictionary, auth_token: String) -> 
 	var comment_payload = {
 		"status": comment_data["status"],
 		"redshift": comment_data.get("redshift", null),
-		"comment": comment_data.get("comments", "")
+		"comment": comment_data.get("comments", ""),
+		"galaxy_class": comment_data.get("galaxy_class", 0),
+		"checkboxes": comment_data.get("checkboxes", 0)
 	}
 	
 	var json_payload = JSON.stringify(comment_payload)

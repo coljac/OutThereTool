@@ -46,6 +46,8 @@ def create_galaxy_comment(
         existing_comment.status = comment_data.status
         existing_comment.redshift = comment_data.redshift
         existing_comment.comment = comment_data.comment
+        existing_comment.galaxy_class = comment_data.galaxy_class
+        existing_comment.checkboxes = comment_data.checkboxes
         existing_comment.updated = datetime.utcnow()
         db.commit()
         db.refresh(existing_comment)
@@ -58,6 +60,8 @@ def create_galaxy_comment(
             status=comment_data.status,
             redshift=comment_data.redshift,
             comment=comment_data.comment,
+            galaxy_class=comment_data.galaxy_class,
+            checkboxes=comment_data.checkboxes,
             updated=datetime.utcnow()
         )
         db.add(new_comment)
