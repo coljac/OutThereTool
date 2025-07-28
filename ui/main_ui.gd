@@ -101,6 +101,24 @@ func _unhandled_input(event: InputEvent) -> void:
 	var gal_display = %SimpleTab.get_tab_control(0)
 	if dialog_open:
 		return
+	
+	# Block keyboard shortcuts when ObjectIDEdit has focus
+	# Only allow ESC and Enter through, similar to comments.gd
+	if object_id_edit.has_focus():
+		if event is InputEventKey and event.pressed:
+			if event.keycode == KEY_ESCAPE:
+				object_id_edit.release_focus()
+				get_viewport().set_input_as_handled()
+				return
+			elif event.keycode == KEY_ENTER:
+				_on_search_button_pressed()
+				get_viewport().set_input_as_handled()
+				return
+			else:
+				# Swallow all other key events when ObjectIDEdit has focus
+				get_viewport().set_input_as_handled()
+				return
+	
 	if event.is_action_released("comments_view_toggle"):
 		_toggle_comments_viewer()
 		get_viewport().set_input_as_handled()
