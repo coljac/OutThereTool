@@ -14,8 +14,8 @@ extends Control
 @onready var cb_bestfit = %CBBestfit
 @onready var cb_errors = %CBErrors
 @onready var cb_contam = %CBContam
-var all_lock = false
-var locked = false
+var all_lock = true
+var locked = true
 var image_settings = {}
 var obj_index = 0
 

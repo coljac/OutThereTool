@@ -221,11 +221,15 @@ layout_mode = 2
 [node name="CBImgLock" type="CheckBox" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/GridContainer/GridContainer2"]
 unique_name_in_owner = true
 layout_mode = 2
+tooltip_text = "Keep these image settings between sources"
+button_pressed = true
 text = "Lock"
 
 [node name="CBAll" type="CheckBox" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/GridContainer/GridContainer2" groups=["images"]]
 unique_name_in_owner = true
 layout_mode = 2
+tooltip_text = "Lock all images to these settings"
+button_pressed = true
 text = "All"
 
 [node name="ImgResetButton" type="Button" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/GridContainer/GridContainer2"]
