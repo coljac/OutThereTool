@@ -17,6 +17,7 @@ var cursor_height: int = 0 # Height for cursor line, calculated based on display
 var row_heights: Array[float] = [] # Heights for each row
 var rows: Array[Array] = [] # Array of arrays containing children organized by row
 var row_labels: Array[Label] = [] # Label nodes for each row
+
 @onready var overlay: Control = %Overlay
 
 func _ready():
@@ -75,6 +76,7 @@ func add_spectrum(spectrum: OTImage, row: int = -1) -> void:
 		
 		# Don't position immediately - will be done in position_textures()
 		queue_redraw() # Request redraw to update the display
+	# custom_minimum_size.y = how_big + (rows.size() - 1) * row_spacing
 	move_child(overlay, get_child_count() - 1)
 
 
@@ -103,7 +105,7 @@ func organize_rows() -> void:
 	# Initialize rows arrays
 	for i in range(num_rows):
 		rows.append([])
-		row_heights.append(0.0)
+		row_heights.append(64.0)
 	
 	# Distribute children to rows
 	# Try to keep children with similar wavelength ranges in the same row
@@ -133,7 +135,7 @@ func _on_resized() -> void:
 	_position_labels()
 	queue_redraw()
 
-# Called when the plot display's crosshair position changes
+
 func _on_plot_display_crosshair_moved(position: Vector2):
 	if show_cursor_line:
 		cursor_wavelength = position.x
@@ -191,7 +193,7 @@ func position_textures():
 			return
 	
 	# Calculate available height per row
-	var available_height = size.y
+	var available_height = size.y - 20
 	var total_spacing = (rows.size() - 1) * row_spacing
 	var height_per_row = (available_height - total_spacing) / rows.size()
 	
