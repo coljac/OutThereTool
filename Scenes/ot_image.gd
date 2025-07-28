@@ -213,8 +213,11 @@ func _load_object() -> void:
 			# Apply filter-based trimming for 2D spectra
 			_apply_filter_trimming()
 			
-		if res and "position_angle" in res:
-			set_label(res.position_angle)
+		if res and "position_angle" in res and res.position_angle != "":
+			set_label("PA " + str(res.position_angle))
+		else:
+			set_label("STACK")
+			
 	_make_texture()
 
 

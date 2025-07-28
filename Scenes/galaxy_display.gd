@@ -414,17 +414,29 @@ func _load_2d_spectra(data2d: Dictionary) -> void:
 	
 	# Create all image types but only add science images to aligned displayer initially
 	var pa_index = 0
+	var spectrum_images = {}
+	var spectrum_image_pas = []
+
 	for pa in data2d.keys():
 		for f in ['F115W', 'F150W', 'F200W']:
 			if f not in data2d[pa]:
 				continue
 			
+
 			# Create science image (regular image_data)
 			var spec_display: OTImage = _create_spectrum_image(data2d[pa][f], "image_data")
 			if spec_display:
+				var pp = float(pa)
+				if str(pa) == "":
+					pp = 999.0
 				science_images.append(spec_display)
-				%Spec2Ds1.add_spectrum(spec_display, pa_index)
-				%Spec2Ds1.set_label(0, "PA 318°")
+				if pp not in spectrum_images:
+					spectrum_images[pp] = []
+				spectrum_images[pp].append(spec_display)
+				if pp not in spectrum_image_pas:
+					spectrum_image_pas.append(pp)
+			# %Spec2Ds1.add_spectrum(spec_display, pa_index)
+			# %Spec2Ds1.set_label(0, "PA 318°")
 				
 			# For blank PA (""), also create contamination and model images (but don't add to displayer yet)
 			if pa == "":
@@ -446,6 +458,16 @@ func _load_2d_spectra(data2d: Dictionary) -> void:
 
 		pa_index += 1
 	
+	spectrum_image_pas.sort()
+	
+	for p in range(spectrum_image_pas.size()):
+		pa_index = p
+		var spec_displays = spectrum_images[spectrum_image_pas[p]]
+		for spec_display in spec_displays:
+		# %Spec2Ds1.add_spectrum(spectrum_images[spectrum_image_pas[p]], p)
+		# %Spec2Ds1.set_label(0, "PA 318°")
+			%Spec2Ds1.add_spectrum(spec_display, pa_index)
+		# %Spec2Ds1.set_label(0, "PA 318°")
 	# Reset to science mode
 	is_showing_science = true
 	
@@ -966,8 +988,8 @@ func _set_redshift_for_line(line_name: String, line_info: Dictionary):
 		Logger.logger.warning("Cannot set redshift for line - no 1D spectrum or crosshair not active")
 		return
 	
-	var rest_wavelength = line_info["wl"] / 10000.0  # Convert from Angstroms to microns
-	var observed_wavelength = spec_1d.crosshair_position.x  # Current cursor x position (wavelength)
+	var rest_wavelength = line_info["wl"] / 10000.0 # Convert from Angstroms to microns
+	var observed_wavelength = spec_1d.crosshair_position.x # Current cursor x position (wavelength)
 	
 	# Calculate redshift: z = (observed_wavelength / rest_wavelength) - 1
 	var new_redshift = (observed_wavelength / rest_wavelength) - 1.0
