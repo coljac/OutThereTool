@@ -427,7 +427,7 @@ func _create_spectrum_image(resource: Resource, data_type: String) -> OTImage:
 	
 	var spec_display: OTImage = otimg.instantiate()
 	if spec_display:
-		spec_display.color_map = OTImage.ColorMap.JET
+		spec_display.color_map = OTImage.ColorMap.GRAYSCALE
 		spec_display.is_2d_spectrum = true
 		spec_display.res = modified_resource
 		spec_display._load_object()

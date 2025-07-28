@@ -30,3 +30,6 @@ releases/
 __pycache__
 backend/certs/
 outthere-build
+.env
+.envfile
+INSTRUCTIONS.md
