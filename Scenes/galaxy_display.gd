@@ -48,6 +48,29 @@ var contam_images: Array = [] # contam_data OTImages
 var model_images: Array = [] # model_data OTImages
 var is_showing_science: bool = true # Toggle state
 
+# Wavelength ranges for each filter in microns
+const FILTER_WAVELENGTH_RANGES = {
+	"F115W": {"x_min": 0.9, "x_max": 1.3},
+	"F150W": {"x_min": 1.3, "x_max": 1.7},
+	"F200W": {"x_min": 1.7, "x_max": 2.3}
+}
+
+# Function to determine optimal wavelength range based on available filters
+func _get_wavelength_range_for_filters(available_filters: Array) -> Dictionary:
+	if available_filters.is_empty():
+		return {"x_min": 0.9, "x_max": 2.3} # Default full range
+	
+	var min_wavelength = INF
+	var max_wavelength = - INF
+	
+	for filter_name in available_filters:
+		if FILTER_WAVELENGTH_RANGES.has(filter_name):
+			var range = FILTER_WAVELENGTH_RANGES[filter_name]
+			min_wavelength = min(min_wavelength, range.x_min)
+			max_wavelength = max(max_wavelength, range.x_max)
+	
+	return {"x_min": min_wavelength, "x_max": max_wavelength}
+
 func set_object_id(new_id: String) -> void:
 	object_id = new_id
 	# Reload the object with the new ID
@@ -288,6 +311,18 @@ func _load_1d_spectrum(oned_spec: Dictionary) -> void:
 	var min_flux = 0.0
 	var first_data = true
 	
+	# Collect available filters to determine wavelength range
+	var available_filters = []
+	for f in oned_spec:
+		available_filters.append(f)
+	
+	# Determine wavelength range based on available filters
+	var wavelength_range = _get_wavelength_range_for_filters(available_filters)
+	if Logger and Logger.logger:
+		Logger.logger.info("GalaxyDisplay: Setting wavelength range based on filters " + str(available_filters) + ": " + str(wavelength_range.x_min) + "-" + str(wavelength_range.x_max) + " μm")
+	else:
+		print("GalaxyDisplay: Setting wavelength range based on filters " + str(available_filters) + ": " + str(wavelength_range.x_min) + "-" + str(wavelength_range.x_max) + " μm")
+	
 	for f in oned_spec:
 		var data = oned_spec[f]
 		if "max" in data:
@@ -321,10 +356,10 @@ func _load_1d_spectrum(oned_spec: Dictionary) -> void:
 	if max_flux > 0:
 		# Set min value to 1.05 * min_value to accommodate negative values
 		var y_min = min_flux * 1.05 if min_flux < 0 else min_flux * 0.95
-		# First set original limits to establish baseline
-		%Spec1d.set_limits(%Spec1d.x_min, %Spec1d.x_max, y_min, max_flux, true)
+		# First set original limits to establish baseline using filter-based wavelength range
+		%Spec1d.set_limits(wavelength_range.x_min, wavelength_range.x_max, y_min, max_flux, true)
 		# Then set limits again without marking as original to ensure adaptive tick spacing is applied
-		%Spec1d.set_limits(%Spec1d.x_min, %Spec1d.x_max, y_min, max_flux, false)
+		%Spec1d.set_limits(wavelength_range.x_min, wavelength_range.x_max, y_min, max_flux, false)
 
 func _load_2d_spectra(data2d: Dictionary) -> void:
 	# Clear existing spectra
@@ -588,45 +623,40 @@ func _finalize_loading() -> void:
 	
 		
 func toggle_lines(on: bool = true):
-	color_groups = 
+	var line_colors = {1: Color.RED, 2: Color.GREEN, 6: Color.BLUE, 7: Color.YELLOW}
 	if on:
 		var lines = {
-	
-	"Lyα": {"wl": 1215.6709, "color": 1, "shortcut": ""},
-	"Lyβ": {"wl": 1025.7222, "color": 1, "shortcut": ""},
+	"Lyα": {"wl": 1215.6709, "color": 7, "shortcut": ""},
+	"Lyβ": {"wl": 1025.7222, "color": 2, "shortcut": ""},
 	"Lyγ": {"wl": 972.5367, "color": 1, "shortcut": ""},
-	"Lyδ": {"wl": 949.7430, "color": 1, "shortcut": ""},
+	"Lyδ": {"wl": 949.743, "color": 1, "shortcut": ""},
 	"Lyε": {"wl": 937.8034, "color": 1, "shortcut": ""},
-	"Lyman Break": {"wl": 911.753, "color": 1, "shortcut": ""},
-
-	"Hα": {"wl": 6564.633, "color": 1, "shortcut": ""},
-	"Hβ": {"wl": 4862.688, "color": 1, "shortcut": ""},
-	"Hγ": {"wl": 4341.682, "color": 1, "shortcut": ""},
+	"Lyman Break": {"wl": 911.753, "color": 7, "shortcut": ""},
+	"Hα": {"wl": 6564.633, "color": 7, "shortcut": ""},
+	"Hβ": {"wl": 4862.688, "color": 7, "shortcut": ""},
+	"Hγ": {"wl": 4341.682, "color": 2, "shortcut": ""},
 	"Hδ": {"wl": 4102.897, "color": 1, "shortcut": ""},
 	"H7": {"wl": 3971.195, "color": 1, "shortcut": ""},
-	"H8": {"wl": 3890.151, "color": 1, "shortcut": ""},
-	"H9": {"wl": 3836.470, "color": 1, "shortcut": ""},
-	"H10": {"wl": 3798.980, "color": 1, "shortcut": ""},
-	"H11": {"wl": 3771.700, "color": 1, "shortcut": ""},
-
-	"Paα": {"wl": 18756.1, "color": 1, "shortcut": ""},
-	"Paβ": {"wl": 12821.6, "color": 1, "shortcut": ""},
+	"H8": {"wl": 3890.151, "color": 2, "shortcut": ""},
+	"H9": {"wl": 3836.47, "color": 2, "shortcut": ""},
+	"H10": {"wl": 3798.98, "color": 2, "shortcut": ""},
+	"H11": {"wl": 3771.7, "color": 1, "shortcut": ""},
+	"Paα": {"wl": 18756.1, "color": 7, "shortcut": ""},
+	"Paβ": {"wl": 12821.6, "color": 7, "shortcut": ""},
 	"Paγ": {"wl": 10941.1, "color": 1, "shortcut": ""},
 	"Paδ": {"wl": 10052.1, "color": 1, "shortcut": ""},
 	"Paε": {"wl": 9548.6, "color": 1, "shortcut": ""},
 	"Pa10": {"wl": 9231.5, "color": 1, "shortcut": ""},
 	"Pa11": {"wl": 9017.4, "color": 1, "shortcut": ""},
 	"Pa12": {"wl": 8865.2, "color": 1, "shortcut": ""},
-
 	"Brα": {"wl": 40522.6, "color": 1, "shortcut": ""},
 	"Brβ": {"wl": 26258.7, "color": 1, "shortcut": ""},
-	"Brγ": {"wl": 21661.2, "color": 1, "shortcut": ""},
+	"Brγ": {"wl": 21661.2, "color": 7, "shortcut": ""},
 	"Brδ": {"wl": 19450.9, "color": 1, "shortcut": ""},
 	"Brε": {"wl": 18179.1, "color": 1, "shortcut": ""},
 	"Br10": {"wl": 17366.9, "color": 1, "shortcut": ""},
 	"Br11": {"wl": 16811.1, "color": 1, "shortcut": ""},
 	"Br12": {"wl": 16411.7, "color": 1, "shortcut": ""},
-
 	"Pfβ": {"wl": 46537.8, "color": 1, "shortcut": ""},
 	"Pfγ": {"wl": 37405.6, "color": 1, "shortcut": ""},
 	"Pfδ": {"wl": 32969.9, "color": 1, "shortcut": ""},
@@ -635,55 +665,44 @@ func toggle_lines(on: bool = true):
 	"Pf12": {"wl": 27582.7, "color": 1, "shortcut": ""},
 	"Pf13": {"wl": 26751.3, "color": 1, "shortcut": ""},
 	"Pf14": {"wl": 26126.5, "color": 1, "shortcut": ""},
-
-	"He I 3889": {"wl": 3889.751, "color": 1, "shortcut": ""},
+	"He I 3889": {"wl": 3889.751, "color": 2, "shortcut": ""},
 	"He I 5877": {"wl": 5877.243, "color": 1, "shortcut": ""},
 	"He I 6680": {"wl": 6679.996, "color": 1, "shortcut": ""},
 	"He I 7067": {"wl": 7067.125, "color": 1, "shortcut": ""},
 	"He I 10831": {"wl": 10832.057, "color": 1, "shortcut": ""},
 	"He I 10832": {"wl": 10833.306, "color": 1, "shortcut": ""},
-
-	"He II 1640": {"wl": 1640.4, "color": 1, "shortcut": ""},
+	"He II 1640": {"wl": 1640.4, "color": 2, "shortcut": ""},
 	"He II 4687": {"wl": 4687.3, "color": 1, "shortcut": ""},
-
-	"[O II] 3727": {"wl": 3727.092, "color": 1, "shortcut": ""},
-	"[O II] 3729": {"wl": 3729.875, "color": 1, "shortcut": ""},
-	"[O III] 4960": {"wl": 4960.30, "color": 1, "shortcut": ""},
-	"[O III] 5008": {"wl": 5008.24, "color": 1, "shortcut": ""},
+	"[O II] 3727": {"wl": 3727.092, "color": 7, "shortcut": ""},
+	"[O II] 3729": {"wl": 3729.875, "color": 7, "shortcut": ""},
+	"[O III] 4960": {"wl": 4960.30, "color": 7, "shortcut": ""},
+	"[O III] 5008": {"wl": 5008.24, "color": 7, "shortcut": ""},
 	"[O III] 4363": {"wl": 4363.44, "color": 1, "shortcut": ""},
-
 	"[S II] 6718": {"wl": 6718.294, "color": 1, "shortcut": ""},
 	"[S II] 6732": {"wl": 6732.673, "color": 1, "shortcut": ""},
 	"[S III] 9071": {"wl": 9071.1, "color": 1, "shortcut": ""},
 	"[S III] 9533": {"wl": 9533.2, "color": 1, "shortcut": ""},
-
 	"[N II] 6549": {"wl": 6549.86, "color": 1, "shortcut": ""},
 	"[N II] 6585": {"wl": 6585.27, "color": 1, "shortcut": ""},
 	"N V 1239": {"wl": 1238.81, "color": 1, "shortcut": ""},
 	"N V 1243": {"wl": 1242.80, "color": 1, "shortcut": ""},
-
 	"C III] 1907": {"wl": 1906.683, "color": 1, "shortcut": ""},
-	"C III] 1909": {"wl": 1908.734, "color": 1, "shortcut": ""},
-	"C IV 1548": {"wl": 1548.187, "color": 1, "shortcut": ""},
-	"C IV 1551": {"wl": 1550.770, "color": 1, "shortcut": ""},
-
+	"C III] 1909": {"wl": 1908.734, "color": 7, "shortcut": ""},
+	"C IV 1548": {"wl": 1548.187, "color": 7, "shortcut": ""},
+	"C IV 1551": {"wl": 1550.770, "color": 7, "shortcut": ""},
 	"CO(2–0)": {"wl": 22935.00, "color": 1, "shortcut": ""},
 	"CO(3–1)": {"wl": 23227.00, "color": 1, "shortcut": ""},
 	"CO(4–2)": {"wl": 23525.00, "color": 1, "shortcut": ""},
 	"CO(5–3)": {"wl": 23829.00, "color": 1, "shortcut": ""},
 	"CO(6–4)": {"wl": 24127.00, "color": 1, "shortcut": ""},
 	"CO(7–5)": {"wl": 24425.00, "color": 1, "shortcut": ""},
-
-	"Mg II 2796": {"wl": 2796.35, "color": 1, "shortcut": ""},
-	"Mg II 2804": {"wl": 2803.53, "color": 1, "shortcut": ""},
-
+	"Mg II 2796": {"wl": 2796.35, "color": 6, "shortcut": ""},
+	"Mg II 2804": {"wl": 2803.53, "color": 6, "shortcut": ""},
 	"[Ne III] 3870": {"wl": 3870.16, "color": 1, "shortcut": ""},
-
 	"[Fe II] 12570": {"wl": 12570.0, "color": 1, "shortcut": ""},
-	"[Fe II] 16440": {"wl": 16440.0, "color": 1, "shortcut": ""},
-
+	"[Fe II] 16440": {"wl": 16440.0, "color": 7, "shortcut": ""},
 	"PAH 3.3μm": {"wl": 32900.00, "color": 1, "shortcut": ""}
-	}
+}
 		
 		var y_off = 0
 		for ln in lines:
@@ -691,7 +710,7 @@ func toggle_lines(on: bool = true):
 			var color_group = lines[ln]['color']
 			var lambda = wl / 10000
 			lambda = lambda * (1 + redshift)
-			spec_1d.add_constant_line(lambda, true, Color.RED, 2.0, false)
+			spec_1d.add_constant_line(lambda, true, line_colors[color_group], 2.0, false)
 			# spec_1d.add_annotation(Vector2(lambda, (y_off * 0.075) + spec_1d.original_x_max * 0.7),
 			var yval = (spec_1d.y_max * 0.9) + (y_off * spec_1d.y_max * 0.05)
 			spec_1d.add_annotation(Vector2(lambda, yval), ln, Color.WHEAT, 12)
