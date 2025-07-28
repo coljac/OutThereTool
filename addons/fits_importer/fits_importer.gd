@@ -26,7 +26,6 @@ func import(
 	# (Pseudo-code) Load the FITS data from your extension
 	#var fits_data = load_fits_data_from_cpp_extension(source_file)
 
-	print("GOOO")
 	#var resource = FitsResource.new()
 	#resource.data = fits_data
 	var resource = FITSReader.new()

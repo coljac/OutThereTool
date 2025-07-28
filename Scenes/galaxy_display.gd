@@ -737,10 +737,6 @@ func toggle_contam_visibility(visible: bool) -> void:
 # Toggle between showing science data and contamination/model data in 2D spectra
 func toggle_2d_data() -> void:
 	is_showing_science = !is_showing_science
-	print("Toggling to: ", "science" if is_showing_science else "contam/model")
-	print("Science images count: ", science_images.size())
-	print("Contam images count: ", contam_images.size())
-	print("Model images count: ", model_images.size())
 	_rebuild_2d_display()
 
 # Rebuild the 2D display based on current mode
