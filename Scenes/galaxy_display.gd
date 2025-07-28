@@ -334,7 +334,7 @@ func _load_2d_spectra(data2d: Dictionary) -> void:
 	aligned.rows.clear()
 	aligned.row_heights.clear()
 
-	aligned.free_children()	
+	aligned.free_children()
 	
 	# Clear our image arrays
 	science_images.clear()
@@ -588,104 +588,108 @@ func _finalize_loading() -> void:
 	
 		
 func toggle_lines(on: bool = true):
+	color_groups = 
 	if on:
 		var lines = {
-	"Lyα": 1215.6709,
-	"Lyβ": 1025.7222,
-	"Lyγ": 972.5367,
-	"Lyδ": 949.7430,
-	"Lyε": 937.8034,
-	"Lyman Break": 911.753,
+	
+	"Lyα": {"wl": 1215.6709, "color": 1, "shortcut": ""},
+	"Lyβ": {"wl": 1025.7222, "color": 1, "shortcut": ""},
+	"Lyγ": {"wl": 972.5367, "color": 1, "shortcut": ""},
+	"Lyδ": {"wl": 949.7430, "color": 1, "shortcut": ""},
+	"Lyε": {"wl": 937.8034, "color": 1, "shortcut": ""},
+	"Lyman Break": {"wl": 911.753, "color": 1, "shortcut": ""},
 
-	"Hα": 6564.633,
-	"Hβ": 4862.688,
-	"Hγ": 4341.682,
-	"Hδ": 4102.897,
-	"H7": 3971.195,
-	"H8": 3890.151,
-	"H9": 3836.470,
-	"H10": 3798.980,
-	"H11": 3771.700,
+	"Hα": {"wl": 6564.633, "color": 1, "shortcut": ""},
+	"Hβ": {"wl": 4862.688, "color": 1, "shortcut": ""},
+	"Hγ": {"wl": 4341.682, "color": 1, "shortcut": ""},
+	"Hδ": {"wl": 4102.897, "color": 1, "shortcut": ""},
+	"H7": {"wl": 3971.195, "color": 1, "shortcut": ""},
+	"H8": {"wl": 3890.151, "color": 1, "shortcut": ""},
+	"H9": {"wl": 3836.470, "color": 1, "shortcut": ""},
+	"H10": {"wl": 3798.980, "color": 1, "shortcut": ""},
+	"H11": {"wl": 3771.700, "color": 1, "shortcut": ""},
 
-	"Paα": 18756.1,
-	"Paβ": 12821.6,
-	"Paγ": 10941.1,
-	"Paδ": 10052.1,
-	"Paε": 9548.6,
-	"Pa10": 9231.5,
-	"Pa11": 9017.4,
-	"Pa12": 8865.2,
+	"Paα": {"wl": 18756.1, "color": 1, "shortcut": ""},
+	"Paβ": {"wl": 12821.6, "color": 1, "shortcut": ""},
+	"Paγ": {"wl": 10941.1, "color": 1, "shortcut": ""},
+	"Paδ": {"wl": 10052.1, "color": 1, "shortcut": ""},
+	"Paε": {"wl": 9548.6, "color": 1, "shortcut": ""},
+	"Pa10": {"wl": 9231.5, "color": 1, "shortcut": ""},
+	"Pa11": {"wl": 9017.4, "color": 1, "shortcut": ""},
+	"Pa12": {"wl": 8865.2, "color": 1, "shortcut": ""},
 
-	"Brα": 40522.6,
-	"Brβ": 26258.7,
-	"Brγ": 21661.2,
-	"Brδ": 19450.9,
-	"Brε": 18179.1,
-	"Br10": 17366.9,
-	"Br11": 16811.1,
-	"Br12": 16411.7,
+	"Brα": {"wl": 40522.6, "color": 1, "shortcut": ""},
+	"Brβ": {"wl": 26258.7, "color": 1, "shortcut": ""},
+	"Brγ": {"wl": 21661.2, "color": 1, "shortcut": ""},
+	"Brδ": {"wl": 19450.9, "color": 1, "shortcut": ""},
+	"Brε": {"wl": 18179.1, "color": 1, "shortcut": ""},
+	"Br10": {"wl": 17366.9, "color": 1, "shortcut": ""},
+	"Br11": {"wl": 16811.1, "color": 1, "shortcut": ""},
+	"Br12": {"wl": 16411.7, "color": 1, "shortcut": ""},
 
-	"Pfβ": 46537.8,
-	"Pfγ": 37405.6,
-	"Pfδ": 32969.9,
-	"Pfε": 30392.0,
-	"Pf11": 28730.0,
-	"Pf12": 27582.7,
-	"Pf13": 26751.3,
-	"Pf14": 26126.5,
+	"Pfβ": {"wl": 46537.8, "color": 1, "shortcut": ""},
+	"Pfγ": {"wl": 37405.6, "color": 1, "shortcut": ""},
+	"Pfδ": {"wl": 32969.9, "color": 1, "shortcut": ""},
+	"Pfε": {"wl": 30392.0, "color": 1, "shortcut": ""},
+	"Pf11": {"wl": 28730.0, "color": 1, "shortcut": ""},
+	"Pf12": {"wl": 27582.7, "color": 1, "shortcut": ""},
+	"Pf13": {"wl": 26751.3, "color": 1, "shortcut": ""},
+	"Pf14": {"wl": 26126.5, "color": 1, "shortcut": ""},
 
-	"He I 3889": 3889.751,
-	"He I 5877": 5877.243,
-	"He I 6680": 6679.996,
-	"He I 7067": 7067.125,
-	"He I 10831": 10832.057,
-	"He I 10832": 10833.306,
+	"He I 3889": {"wl": 3889.751, "color": 1, "shortcut": ""},
+	"He I 5877": {"wl": 5877.243, "color": 1, "shortcut": ""},
+	"He I 6680": {"wl": 6679.996, "color": 1, "shortcut": ""},
+	"He I 7067": {"wl": 7067.125, "color": 1, "shortcut": ""},
+	"He I 10831": {"wl": 10832.057, "color": 1, "shortcut": ""},
+	"He I 10832": {"wl": 10833.306, "color": 1, "shortcut": ""},
 
-	"He II 1640": 1640.4,
-	"He II 4687": 4687.3,
+	"He II 1640": {"wl": 1640.4, "color": 1, "shortcut": ""},
+	"He II 4687": {"wl": 4687.3, "color": 1, "shortcut": ""},
 
-	"[O II] 3727": 3727.092,
-	"[O II] 3729": 3729.875,
-	"[O III] 4960": 4960.30,
-	"[O III] 5008": 5008.24,
-	"[O III] 4363": 4363.44,
+	"[O II] 3727": {"wl": 3727.092, "color": 1, "shortcut": ""},
+	"[O II] 3729": {"wl": 3729.875, "color": 1, "shortcut": ""},
+	"[O III] 4960": {"wl": 4960.30, "color": 1, "shortcut": ""},
+	"[O III] 5008": {"wl": 5008.24, "color": 1, "shortcut": ""},
+	"[O III] 4363": {"wl": 4363.44, "color": 1, "shortcut": ""},
 
-	"[S II] 6718": 6718.294,
-	"[S II] 6732": 6732.673,
-	"[S III] 9071": 9071.1,
-	"[S III] 9533": 9533.2,
+	"[S II] 6718": {"wl": 6718.294, "color": 1, "shortcut": ""},
+	"[S II] 6732": {"wl": 6732.673, "color": 1, "shortcut": ""},
+	"[S III] 9071": {"wl": 9071.1, "color": 1, "shortcut": ""},
+	"[S III] 9533": {"wl": 9533.2, "color": 1, "shortcut": ""},
 
-	"[N II] 6549": 6549.86,
-	"[N II] 6585": 6585.27,
-	"N V 1239": 1238.81,
-	"N V 1243": 1242.80,
+	"[N II] 6549": {"wl": 6549.86, "color": 1, "shortcut": ""},
+	"[N II] 6585": {"wl": 6585.27, "color": 1, "shortcut": ""},
+	"N V 1239": {"wl": 1238.81, "color": 1, "shortcut": ""},
+	"N V 1243": {"wl": 1242.80, "color": 1, "shortcut": ""},
 
-	"C III] 1907": 1906.683,
-	"C III] 1909": 1908.734,
-	"C IV 1548": 1548.187,
-	"C IV 1551": 1550.770,
+	"C III] 1907": {"wl": 1906.683, "color": 1, "shortcut": ""},
+	"C III] 1909": {"wl": 1908.734, "color": 1, "shortcut": ""},
+	"C IV 1548": {"wl": 1548.187, "color": 1, "shortcut": ""},
+	"C IV 1551": {"wl": 1550.770, "color": 1, "shortcut": ""},
 
-	"CO(2–0)": 22935.00,
-	"CO(3–1)": 23227.00,
-	"CO(4–2)": 23525.00,
-	"CO(5–3)": 23829.00,
-	"CO(6–4)": 24127.00,
-	"CO(7–5)": 24425.00,
+	"CO(2–0)": {"wl": 22935.00, "color": 1, "shortcut": ""},
+	"CO(3–1)": {"wl": 23227.00, "color": 1, "shortcut": ""},
+	"CO(4–2)": {"wl": 23525.00, "color": 1, "shortcut": ""},
+	"CO(5–3)": {"wl": 23829.00, "color": 1, "shortcut": ""},
+	"CO(6–4)": {"wl": 24127.00, "color": 1, "shortcut": ""},
+	"CO(7–5)": {"wl": 24425.00, "color": 1, "shortcut": ""},
 
-	"Mg II 2796": 2796.35,
-	"Mg II 2804": 2803.53,
+	"Mg II 2796": {"wl": 2796.35, "color": 1, "shortcut": ""},
+	"Mg II 2804": {"wl": 2803.53, "color": 1, "shortcut": ""},
 
-	"[Ne III] 3870": 3870.16,
+	"[Ne III] 3870": {"wl": 3870.16, "color": 1, "shortcut": ""},
 
-	"[Fe II] 12570": 12570.0,
-	"[Fe II] 16440": 16440.0,
+	"[Fe II] 12570": {"wl": 12570.0, "color": 1, "shortcut": ""},
+	"[Fe II] 16440": {"wl": 16440.0, "color": 1, "shortcut": ""},
 
-	"PAH 3.3μm": 32900.00
+	"PAH 3.3μm": {"wl": 32900.00, "color": 1, "shortcut": ""}
 	}
 		
 		var y_off = 0
 		for ln in lines:
-			var lambda = lines[ln] / 10000
+			var wl = lines[ln]["wl"]
+			var color_group = lines[ln]['color']
+			var lambda = wl / 10000
 			lambda = lambda * (1 + redshift)
 			spec_1d.add_constant_line(lambda, true, Color.RED, 2.0, false)
 			# spec_1d.add_annotation(Vector2(lambda, (y_off * 0.075) + spec_1d.original_x_max * 0.7),

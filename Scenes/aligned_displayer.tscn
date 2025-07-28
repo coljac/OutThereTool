@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://kiiwnpbw1pv"]
 
 [ext_resource type="Script" uid="uid://ciq7gr5y34ur7" path="res://Scenes/aligned_displayer.gd" id="1_tdqap"]
-[ext_resource type="Script" uid="uid://d2tf4ynjpdx7" path="res://Scenes/ovleray.gd" id="2_0gdpk"]
+[ext_resource type="Script" path="res://Scenes/ovleray.gd" id="2_0gdpk"]
 
 [node name="AlignedDisplayer" type="Control"]
 custom_minimum_size = Vector2(0, 200)

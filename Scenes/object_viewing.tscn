@@ -54,7 +54,7 @@ layout_mode = 2
 
 [node name="Label3" type="Label" parent="MarginContainer/VBoxContainer/GridContainer"]
 layout_mode = 2
-text = "Status"
+text = "Quality"
 
 [node name="Status" type="OptionButton" parent="MarginContainer/VBoxContainer/GridContainer"]
 layout_mode = 2
