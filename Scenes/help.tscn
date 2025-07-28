@@ -24,8 +24,8 @@ anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -377.0
 offset_top = -295.0
-offset_right = 402.0
-offset_bottom = 330.0
+offset_right = 470.0
+offset_bottom = 444.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_5dy1v")
@@ -55,6 +55,7 @@ text = "Keyboard shortcuts:
 [b]z[/b]: Focus redshift
 [b]?[/b]: toggle this help
 [b]c[/b]: Show galaxy comments
+[b]Space[/b]: Show contam
 
 [b]→[/b] [b]←[/b]: z up/down
 

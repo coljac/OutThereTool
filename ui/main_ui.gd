@@ -98,11 +98,16 @@ func update_cache(success: bool):
 
 func _unhandled_input(event: InputEvent) -> void:
 	# Block all input when dialog is open
+	var gal_display = %SimpleTab.get_tab_control(0)
 	if dialog_open:
 		return
 	if event.is_action_released("comments_view_toggle"):
 		_toggle_comments_viewer()
 		get_viewport().set_input_as_handled()
+	if event.is_action_pressed("contam"):
+		gal_display.toggle_2d_data()
+	if event.is_action_released("contam"):
+		gal_display.toggle_2d_data()
 	if event.is_action_released("next"):
 		next_object()
 		get_viewport().set_input_as_handled()
@@ -188,7 +193,6 @@ func _display_object(obj_id: String) -> void:
 
 	# Preload next object in background
 	_preload_next_object()
-
 
 
 func _goto_object(step: int = 1) -> void:
