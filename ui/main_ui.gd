@@ -138,6 +138,18 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			$HelpPanel.show()
 		get_viewport().set_input_as_handled()
+	if event.is_action_released("zoom_wl_in"):
+		var spec1d = gal_display.get_node("%Spec1d")
+		spec1d.zoom_in_x(1.5)
+	if event.is_action_released("zoom_wl_out"):
+		var spec1d = gal_display.get_node("%Spec1d")
+		spec1d.zoom_out_x(1.5)
+	if event.is_action_released("zoom_flux_in"):
+		var spec1d = gal_display.get_node("%Spec1d")
+		spec1d.zoom_in_y(1.5)
+	if event.is_action_released("zoom_flux_out"):
+		var spec1d = gal_display.get_node("%Spec1d")
+		spec1d.zoom_out_y(1.5)
 	if event.is_action("qop_1"):
 		update_status(0)
 		get_viewport().set_input_as_handled()

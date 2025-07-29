@@ -1189,3 +1189,36 @@ func format_number(value: float, decimals: int) -> String:
 # Update the display
 func update_display():
 	queue_redraw()
+
+func zoom_in_y(amount: float = 2.0):
+	var y_range = y_max - y_min
+	var new_range = y_range / amount
+	_update_range_y(new_range)
+
+func zoom_out_y(amount: float = 2.0):
+	var y_range = y_max - y_min
+	var new_range = y_range * amount
+	_update_range_y(new_range)
+
+func _update_range_y(new_range: float):
+	var xhair = crosshair_position.y
+	y_min = xhair - new_range / 2.0
+	y_max = xhair + new_range / 2.0
+	update_display()
+
+
+func zoom_in_x(amount: float = 2.0):
+	var x_range = x_max - x_min
+	var new_range = x_range / amount
+	_update_range_x(new_range)
+
+func zoom_out_x(amount: float = 2.0):
+	var x_range = x_max - x_min
+	var new_range = x_range * amount
+	_update_range_x(new_range)
+
+func _update_range_x(new_range: float):
+	var xhair = crosshair_position.x
+	x_min = xhair - new_range / 2.0
+	x_max = xhair + new_range / 2.0
+	update_display()
