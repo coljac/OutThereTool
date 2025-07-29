@@ -44,6 +44,17 @@ var colormap_submenu: PopupMenu
 var zscale_dialog: AcceptDialog
 var z_min_input: SpinBox
 var z_max_input: SpinBox
+var zscale_params_dialog: AcceptDialog
+var contrast_slider: HSlider
+var samples_slider: HSlider
+var samples_per_line_slider: HSlider
+
+# ZScale parameters with DS9 defaults
+var zscale_contrast: float = 0.25
+var zscale_samples: int = 600
+var zscale_samples_per_line: int = 120
+var is_zscale_active: bool = false
+var applying_settings: bool = false
 
 var RA: float = 0.0
 var dec: float = 0.0
@@ -124,6 +135,7 @@ func _on_gui_input(event):
 				if event.is_double_click():
 					_set_scale_pc(99.5)
 					_reset_shader()
+					is_zscale_active = false
 					current_scale_index = show_scales.size() - 1 # Reset index to last element (99.5)
 				else:
 					# Start potential drag
@@ -230,7 +242,11 @@ func _settings_changed():
 		"colormap": color_map,
 		"invert_color": invert_color,
 		"z_min": z_min,
-		"z_max": z_max
+		"z_max": z_max,
+		"is_zscale_active": is_zscale_active,
+		"zscale_contrast": zscale_contrast,
+		"zscale_samples": zscale_samples,
+		"zscale_samples_per_line": zscale_samples_per_line
 	})
 
 func set_label(t: String):
@@ -261,20 +277,48 @@ func _set_scale_pc(p: float):
 			# settings_changed.emit({"scale": p})
 
 func use_settings(settings: Dictionary):
-	if "scale" in settings:
-		_set_scale_pc(settings['scale'])
+	if applying_settings:
+		return  # Prevent recursive calls
+	
+	applying_settings = true
+	
+	if "is_zscale_active" in settings:
+		is_zscale_active = settings['is_zscale_active']
+	if "zscale_contrast" in settings:
+		zscale_contrast = settings['zscale_contrast']
+	if "zscale_samples" in settings:
+		zscale_samples = settings['zscale_samples']
+	if "zscale_samples_per_line" in settings:
+		zscale_samples_per_line = settings['zscale_samples_per_line']
+	
+	if is_zscale_active:
+		# If zscale is active, apply it without triggering settings change
+		var limits = _calculate_zscale_limits(image_data, width, height, zscale_contrast, zscale_samples, zscale_samples_per_line)
+		z_min = limits[0]
+		z_max = limits[1]
+		if shader_material:
+			shader_material.set_shader_parameter("z_min", z_min)
+			shader_material.set_shader_parameter("z_max", z_max)
+	else:
+		# Use regular scaling
+		if "scale" in settings:
+			_set_scale_pc(settings['scale'])
+		_reset_shader()
+	
 	if 'colormap' in settings:
 		_set_colormap(settings['colormap'])
 	if "invert_color" in settings:
 		_set_invert(settings['invert_color'])
-	if "z_min" in settings:
+	if "z_min" in settings and not is_zscale_active:
 		z_min = settings['z_min']
 		if shader_material:
 			shader_material.set_shader_parameter("z_min", z_min)
-	if "z_max" in settings:
+	if "z_max" in settings and not is_zscale_active:
 		z_max = settings['z_max']
 		if shader_material:
 			shader_material.set_shader_parameter("z_max", z_max)
+	
+	applying_settings = false
 	
 func _set_black(b: float):
 	black_level = b
@@ -435,8 +479,10 @@ func _handle_quick_click(position: Vector2) -> void:
 	current_scale_index = (current_scale_index + 1) % show_scales.size()
 	var new_scale = show_scales[current_scale_index]
 	
-	# Set the new scale
+	# Set the new scale and reset shader
 	_set_scale_pc(new_scale)
+	_reset_shader()
+	is_zscale_active = false
 	_settings_changed()
 
 func _create_context_menu() -> void:
@@ -450,14 +496,15 @@ func _create_context_menu() -> void:
 	context_menu.add_item("Scale 95%", 1)
 	context_menu.add_item("Scale 99%", 2)
 	context_menu.add_item("Scale 99.5%", 3)
+	context_menu.add_item("ZScale", 4)
 	context_menu.add_separator()
 	
 	# Add zscale option
-	context_menu.add_item("Set Z-Scale...", 4)
+	context_menu.add_item("Set Z-Scale...", 5)
 	context_menu.add_separator()
 	
 	# Add invert option
-	context_menu.add_item("Invert Colors", 5)
+	context_menu.add_item("Invert Colors", 6)
 	context_menu.add_separator()
 	
 	# Create colormap submenu
@@ -482,6 +529,7 @@ func _create_context_menu() -> void:
 	
 	# Create zscale dialog
 	_create_zscale_dialog()
+	_create_zscale_params_dialog()
 
 func _show_context_menu(global_pos: Vector2) -> void:
 	# Update checkmarks for current settings
@@ -495,19 +543,22 @@ func _update_context_menu_checkmarks() -> void:
 	for i in range(context_menu.get_item_count()):
 		context_menu.set_item_checked(i, false)
 	
-	# Check the current scale option
-	var current_scale = scale_percent
-	if abs(current_scale - 90.0) < 0.1:
-		context_menu.set_item_checked(0, true)
-	elif abs(current_scale - 95.0) < 0.1:
-		context_menu.set_item_checked(1, true)
-	elif abs(current_scale - 99.0) < 0.1:
-		context_menu.set_item_checked(2, true)
-	elif abs(current_scale - 99.5) < 0.1:
-		context_menu.set_item_checked(3, true)
+	# Check the current scale option or zscale
+	if is_zscale_active:
+		context_menu.set_item_checked(4, true)  # ZScale
+	else:
+		var current_scale = scale_percent
+		if abs(current_scale - 90.0) < 0.1:
+			context_menu.set_item_checked(0, true)
+		elif abs(current_scale - 95.0) < 0.1:
+			context_menu.set_item_checked(1, true)
+		elif abs(current_scale - 99.0) < 0.1:
+			context_menu.set_item_checked(2, true)
+		elif abs(current_scale - 99.5) < 0.1:
+			context_menu.set_item_checked(3, true)
 	
 	# Check invert option
-	context_menu.set_item_checked(5, invert_color)
+	context_menu.set_item_checked(6, invert_color)
 	
 	# Update colormap submenu checkmarks
 	for i in range(colormap_submenu.get_item_count()):
@@ -519,18 +570,29 @@ func _on_context_menu_item_selected(id: int) -> void:
 		0: # Scale 90%
 			_set_scale_pc(90.0)
 			current_scale_index = show_scales.find(90.0)
+			_reset_shader()
+			is_zscale_active = false
 		1: # Scale 95%
 			_set_scale_pc(95.0)
 			current_scale_index = show_scales.find(95.0)
+			_reset_shader()
+			is_zscale_active = false
 		2: # Scale 99%
 			_set_scale_pc(99.0)
 			current_scale_index = show_scales.find(99.0)
+			_reset_shader()
+			is_zscale_active = false
 		3: # Scale 99.5%
 			_set_scale_pc(99.5)
 			current_scale_index = show_scales.find(99.5)
-		4: # Set Z-Scale
-			_show_zscale_dialog()
-		5: # Invert
+			_reset_shader()
+			is_zscale_active = false
+		4: # ZScale
+			_apply_zscale()
+			is_zscale_active = true
+		5: # Set Z-Scale
+			_show_zscale_params_dialog()
+		6: # Invert
 			invert_color = not invert_color
 	_settings_changed()
 
@@ -603,7 +665,249 @@ func _on_zscale_dialog_confirmed() -> void:
 	
 	# Propagate settings to other images
 	_settings_changed()
+
+func _apply_zscale() -> void:
+	# Apply zscale algorithm with current parameters
+	_apply_zscale_with_params(zscale_contrast, zscale_samples, zscale_samples_per_line)
+
+func _apply_zscale_with_params(contrast: float, n_samples: int, samples_per_line: int) -> void:
+	if not image_data or image_data.size() == 0:
+		print("Error: No image data available for zscale")
+		return
 	
+	print("Applying zscale with contrast=", contrast, " samples=", n_samples, " data_size=", image_data.size())
+	
+	# Calculate zscale limits using the proper algorithm
+	var limits = _calculate_zscale_limits(image_data, width, height, contrast, n_samples, samples_per_line)
+	
+	# Validate limits
+	if limits[0] == limits[1]:
+		print("Warning: zscale limits are identical, using small range")
+		limits[1] = limits[0] + 0.001
+	
+	# Update shader parameters
+	z_min = limits[0]
+	z_max = limits[1]
+	
+	print("ZScale limits: z_min=", z_min, " z_max=", z_max)
+	
+	if shader_material:
+		shader_material.set_shader_parameter("z_min", z_min)
+		shader_material.set_shader_parameter("z_max", z_max)
+	
+	# Propagate settings to other images
+	_settings_changed()
+
+func _calculate_zscale_limits(data: PackedFloat32Array, img_width: int, img_height: int, contrast: float, n_samples: int, samples_per_line: int) -> Array:
+	# Implementation of the zscale algorithm as described
+	if not data or data.size() == 0:
+		print("Error: No image data available for zscale calculation")
+		return [0.0, 1.0]
+	
+	var total_pixels = data.size()
+	
+	# Sample approximately n_samples pixels evenly distributed
+	var samples = PackedFloat32Array()
+	var step = max(1, total_pixels / n_samples)
+	
+	for i in range(0, total_pixels, step):
+		if i < data.size():
+			var value = data[i]
+			if is_finite(value):
+				samples.append(value)
+	
+	if samples.size() < 5:
+		# Not enough samples, find min/max from original data
+		var min_val = data[0]
+		var max_val = data[0]
+		for value in data:
+			if is_finite(value):
+				min_val = min(min_val, value)
+				max_val = max(max_val, value)
+		print("Warning: Not enough valid samples for zscale, using data range: ", min_val, " to ", max_val)
+		return [min_val, max_val]
+	
+	# Sort samples to form I(i) function
+	samples.sort()
+	var npoints = samples.size()
+	var midpoint = npoints / 2
+	
+	# Create index array for fitting
+	var indices = PackedFloat32Array()
+	for i in range(npoints):
+		indices.append(float(i))
+	
+	# Iterative fitting with rejection
+	var max_reject = 0.5
+	var krej = 2.5
+	var max_iterations = 5
+	var min_npixels = max(5, int(npoints * (1.0 - max_reject)))
+	
+	var good_indices = range(npoints)
+	var ngoodpix = npoints
+	var last_ngoodpix = npoints + 1
+	var iteration = 0
+	var slope = 0.0
+	var intercept = 0.0
+	
+	while ngoodpix > min_npixels and ngoodpix != last_ngoodpix and iteration < max_iterations:
+		# Fit linear function I(i) = intercept + slope * (i - midpoint)
+		var sum_x = 0.0
+		var sum_y = 0.0
+		var sum_xy = 0.0
+		var sum_xx = 0.0
+		var n = good_indices.size()
+		
+		for idx in good_indices:
+			var x = float(idx - midpoint)
+			var y = samples[idx]
+			sum_x += x
+			sum_y += y
+			sum_xy += x * y
+			sum_xx += x * x
+		
+		if n > 1 and sum_xx != 0:
+			slope = (n * sum_xy - sum_x * sum_y) / (n * sum_xx - sum_x * sum_x)
+			intercept = (sum_y - slope * sum_x) / n
+		else:
+			slope = 0.0
+			intercept = samples[midpoint]
+		
+		# Calculate residuals and reject outliers
+		var residuals = []
+		for idx in good_indices:
+			var expected = intercept + slope * (idx - midpoint)
+			var resid = samples[idx] - expected
+			residuals.append(resid)
+		
+		# Calculate standard deviation of residuals
+		var mean_resid = 0.0
+		for resid in residuals:
+			mean_resid += resid
+		mean_resid /= residuals.size()
+		
+		var std_resid = 0.0
+		for resid in residuals:
+			std_resid += (resid - mean_resid) * (resid - mean_resid)
+		std_resid = sqrt(std_resid / residuals.size())
+		
+		# Reject outliers
+		last_ngoodpix = ngoodpix
+		var threshold = krej * std_resid
+		var new_good_indices = []
+		
+		for i in range(good_indices.size()):
+			if abs(residuals[i]) <= threshold:
+				new_good_indices.append(good_indices[i])
+		
+		good_indices = new_good_indices
+		ngoodpix = good_indices.size()
+		iteration += 1
+	
+	# Calculate final z1 and z2
+	var z1: float
+	var z2: float
+	
+	if ngoodpix >= min_npixels and slope != 0.0:
+		# Use the fitted line with contrast adjustment
+		var median_value = samples[midpoint]
+		var adjusted_slope = slope / contrast if contrast > 0 else 0.0
+		
+		z1 = median_value + adjusted_slope * (1 - midpoint)
+		z2 = median_value + adjusted_slope * (npoints - midpoint)
+		
+		# Ensure limits are within the original sample range
+		z1 = max(z1, samples[0])
+		z2 = min(z2, samples[npoints - 1])
+	else:
+		# No well-defined slope, use full range
+		z1 = samples[0]
+		z2 = samples[npoints - 1]
+	
+	return [z1, z2]
+
+func _create_zscale_params_dialog() -> void:
+	zscale_params_dialog = AcceptDialog.new()
+	zscale_params_dialog.title = "ZScale Parameters"
+	zscale_params_dialog.size = Vector2i(400, 300)
+	add_child(zscale_params_dialog)
+	
+	# Create dialog content
+	var vbox = VBoxContainer.new()
+	zscale_params_dialog.add_child(vbox)
+	
+	# Contrast slider
+	var contrast_label = Label.new()
+	contrast_label.text = "Contrast: 0.25"
+	vbox.add_child(contrast_label)
+	
+	contrast_slider = HSlider.new()
+	contrast_slider.min_value = 0.1
+	contrast_slider.max_value = 1.0
+	contrast_slider.step = 0.01
+	contrast_slider.value = 0.25
+	contrast_slider.value_changed.connect(func(value): contrast_label.text = "Contrast: %.2f" % value)
+	vbox.add_child(contrast_slider)
+	
+	# Samples slider
+	var samples_label = Label.new()
+	samples_label.text = "Number of Samples: 600"
+	vbox.add_child(samples_label)
+	
+	samples_slider = HSlider.new()
+	samples_slider.min_value = 100
+	samples_slider.max_value = 2000
+	samples_slider.step = 50
+	samples_slider.value = 600
+	samples_slider.value_changed.connect(func(value): samples_label.text = "Number of Samples: %d" % value)
+	vbox.add_child(samples_slider)
+	
+	# Samples per line slider
+	var samples_per_line_label = Label.new()
+	samples_per_line_label.text = "Samples per Line: 120"
+	vbox.add_child(samples_per_line_label)
+	
+	samples_per_line_slider = HSlider.new()
+	samples_per_line_slider.min_value = 50
+	samples_per_line_slider.max_value = 500
+	samples_per_line_slider.step = 10
+	samples_per_line_slider.value = 120
+	samples_per_line_slider.value_changed.connect(func(value): samples_per_line_label.text = "Samples per Line: %d" % value)
+	vbox.add_child(samples_per_line_slider)
+	
+	# Connect dialog signals
+	zscale_params_dialog.connect("confirmed", _on_zscale_params_dialog_confirmed)
+
+func _show_zscale_params_dialog() -> void:
+	if not zscale_params_dialog:
+		_create_zscale_params_dialog()
+	
+	# Update sliders with current values and their labels
+	contrast_slider.value = zscale_contrast
+	samples_slider.value = zscale_samples
+	samples_per_line_slider.value = zscale_samples_per_line
+	
+	# Update the labels to show current values
+	var vbox = zscale_params_dialog.get_child(0)
+	var contrast_label = vbox.get_child(0)
+	var samples_label = vbox.get_child(2)
+	var samples_per_line_label = vbox.get_child(4)
+	
+	contrast_label.text = "Contrast: %.2f" % zscale_contrast
+	samples_label.text = "Number of Samples: %d" % zscale_samples
+	samples_per_line_label.text = "Samples per Line: %d" % zscale_samples_per_line
+	
+	# Show the dialog
+	zscale_params_dialog.popup_centered()
+
+func _on_zscale_params_dialog_confirmed() -> void:
+	# Store the selected parameters
+	zscale_contrast = contrast_slider.value
+	zscale_samples = int(samples_slider.value)
+	zscale_samples_per_line = int(samples_per_line_slider.value)
+	
+	# Apply zscale with the selected parameters
+	_apply_zscale_with_params(zscale_contrast, zscale_samples, zscale_samples_per_line)
 
 func _apply_filter_trimming() -> void:
 	# Apply hardcoded filter boundaries for alignment
