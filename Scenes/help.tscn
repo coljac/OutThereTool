@@ -48,7 +48,6 @@ bbcode_enabled = true
 text = "Keyboard shortcuts:
 
 [b]1[/b] - [b]5[/b]: Set quality flag
-
 [b]b[/b]: prev spectrum
 [b]n[/b]: next spectrum
 [b]/[/b]: focus comment (ctrl+Enter to save)
@@ -56,6 +55,7 @@ text = "Keyboard shortcuts:
 [b]?[/b]: toggle this help
 [b]c[/b]: Show galaxy comments
 [b]Space[/b]: Show contam
+[b]h/j, y/u:[/b] Zoom 1D spectrum
 
 [b]→[/b] [b]←[/b]: z up/down
 

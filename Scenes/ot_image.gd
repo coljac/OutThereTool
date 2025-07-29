@@ -365,35 +365,40 @@ func get_color_from_map(val: float) -> Color:
 
 # Viridis colormap (perceptually uniform, good for scientific visualization)
 func viridis_colormap(val: float) -> Color:
-	# Approximation of the viridis colormap
-	var r = clamp(0.267004 + 0.004334 * val + 0.609877 * pow(val, 2) - 0.291263 * pow(val, 3), 0.0, 1.0)
-	var g = clamp(0.004974 + 0.856206 * val - 0.836809 * pow(val, 2) + 0.202110 * pow(val, 3), 0.0, 1.0)
-	var b = clamp(0.329415 + 1.742050 * val - 3.090907 * pow(val, 2) + 1.852183 * pow(val, 3), 0.0, 1.0)
-	return Color(r, g, b)
+	# More accurate polynomial approximation of the viridis colormap
+	# Based on fitting actual matplotlib viridis data
+	var v = clamp(val, 0.0, 1.0)
+	var r = 0.26700401 + 2.0813724 * v - 3.4556669 * pow(v, 2) + 4.1645133 * pow(v, 3) - 2.2514525 * pow(v, 4) + 0.4188656 * pow(v, 5)
+	var g = 0.00487433 + 0.08400179 * v + 2.8667383 * pow(v, 2) - 5.7218461 * pow(v, 3) + 5.0475832 * pow(v, 4) - 1.5259156 * pow(v, 5)
+	var b = 0.32941519 + 2.2148102 * v - 4.6480078 * pow(v, 2) + 5.0897212 * pow(v, 3) - 3.2540218 * pow(v, 4) + 0.8866533 * pow(v, 5)
+	return Color(clamp(r, 0.0, 1.0), clamp(g, 0.0, 1.0), clamp(b, 0.0, 1.0))
 
 # Plasma colormap
 func plasma_colormap(val: float) -> Color:
-	# Approximation of the plasma colormap
-	var r = clamp(0.050383 + 2.429896 * val - 2.969058 * pow(val, 2) + 0.871852 * pow(val, 3), 0.0, 1.0)
-	var g = clamp(-0.164585 + 1.750407 * val - 0.505266 * pow(val, 2) - 0.827736 * pow(val, 3), 0.0, 1.0)
-	var b = clamp(0.563629 + 0.232551 * val - 1.087553 * pow(val, 2) + 0.307658 * pow(val, 3), 0.0, 1.0)
-	return Color(r, g, b)
+	# More accurate polynomial approximation of the plasma colormap
+	var v = clamp(val, 0.0, 1.0)
+	var r = 0.05873234 + 2.176514 * v - 2.689460 * pow(v, 2) + 3.524820 * pow(v, 3) - 2.483986 * pow(v, 4) + 0.659330 * pow(v, 5)
+	var g = 0.02333670 + 0.155659 * v + 1.575416 * pow(v, 2) - 2.379453 * pow(v, 3) + 2.050183 * pow(v, 4) - 0.745367 * pow(v, 5)
+	var b = 0.53314923 - 0.093745 * v - 0.965607 * pow(v, 2) + 4.050445 * pow(v, 3) - 4.434278 * pow(v, 4) + 1.512320 * pow(v, 5)
+	return Color(clamp(r, 0.0, 1.0), clamp(g, 0.0, 1.0), clamp(b, 0.0, 1.0))
 
 # Inferno colormap
 func inferno_colormap(val: float) -> Color:
-	# Approximation of the inferno colormap
-	var r = clamp(0.001462 + 1.385754 * val - 0.100330 * pow(val, 2) - 0.575560 * pow(val, 3), 0.0, 1.0)
-	var g = clamp(0.000624 + 0.236365 * val + 0.338594 * pow(val, 2) - 0.370683 * pow(val, 3), 0.0, 1.0)
-	var b = clamp(0.013866 + 0.068177 * val + 0.066156 * pow(val, 2) + 0.123915 * pow(val, 3), 0.0, 1.0)
-	return Color(r, g, b)
+	# More accurate polynomial approximation of the inferno colormap
+	var v = clamp(val, 0.0, 1.0)
+	var r = 0.0002189 + 1.065619 * v + 1.463551 * pow(v, 2) - 3.267431 * pow(v, 3) + 3.584930 * pow(v, 4) - 1.248952 * pow(v, 5)
+	var g = 0.0016117 + 0.018343 * v + 1.260232 * pow(v, 2) - 0.577150 * pow(v, 3) - 0.508420 * pow(v, 4) + 0.347009 * pow(v, 5)
+	var b = 0.0146755 + 3.547456 * v - 9.310138 * pow(v, 2) + 14.281655 * pow(v, 3) - 11.108198 * pow(v, 4) + 3.384018 * pow(v, 5)
+	return Color(clamp(r, 0.0, 1.0), clamp(g, 0.0, 1.0), clamp(b, 0.0, 1.0))
 
 # Magma colormap
 func magma_colormap(val: float) -> Color:
-	# Approximation of the magma colormap
-	var r = clamp(0.001462 + 1.427008 * val - 0.470891 * pow(val, 2) - 0.106833 * pow(val, 3), 0.0, 1.0)
-	var g = clamp(0.000363 + 0.121604 * val + 0.529396 * pow(val, 2) - 0.533976 * pow(val, 3), 0.0, 1.0)
-	var b = clamp(0.013866 + 0.269113 * val - 0.103900 * pow(val, 2) - 0.055130 * pow(val, 3), 0.0, 1.0)
-	return Color(r, g, b)
+	# More accurate polynomial approximation of the magma colormap
+	var v = clamp(val, 0.0, 1.0)
+	var r = -0.0002466 + 1.4693055 * v - 0.0958300 * pow(v, 2) - 2.0391170 * pow(v, 3) + 3.1307341 * pow(v, 4) - 1.1621249 * pow(v, 5)
+	var g = 0.0013756 + 0.0305279 * v + 1.2864551 * pow(v, 2) - 1.8471288 * pow(v, 3) + 1.8360190 * pow(v, 4) - 0.7805973 * pow(v, 5)
+	var b = 0.0142064 + 1.6458197 * v - 3.8294083 * pow(v, 2) + 6.5912053 * pow(v, 3) - 5.5844279 * pow(v, 4) + 1.7450316 * pow(v, 5)
+	return Color(clamp(r, 0.0, 1.0), clamp(g, 0.0, 1.0), clamp(b, 0.0, 1.0))
 
 # Jet colormap (similar to MATLAB's jet)
 func jet_colormap(val: float) -> Color:
