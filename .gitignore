@@ -18,7 +18,6 @@ mono_crash.*.json
 .editorconfig
 .gitattributes
 data
-bin
 lib/
 processed/
 release/
