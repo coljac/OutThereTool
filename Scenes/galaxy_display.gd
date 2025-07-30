@@ -186,6 +186,7 @@ func oned_zoomed():
 func set_redshift(z: float) -> void:
 	$CanvasLayer/RedshiftLabel.text = ""
 	if z == redshift:
+		redshift_label.text = "z = " + "%.*f" % [3, z]
 		return
 	redshift = z
 	pofz.constant_lines = []
@@ -237,7 +238,7 @@ func _on_object_loaded(success: bool) -> void:
 	
 	# Initial UI setup
 	get_node("VBoxContainer/MarginContainer/Label").text = object_id
-	redshift_label.text = ""
+	redshift_label.text = "Redshift"
 	
 	# Clear any existing data
 	if pofz:
@@ -262,6 +263,7 @@ func _on_object_loaded(success: bool) -> void:
 		# Fall back to async loading
 		asset_helper.load_all_resources()
 		_try_load_cached_resources()
+	set_redshift(redshift)
 
 func _on_resource_ready(resource_name: String) -> void:
 	# A resource has been loaded, try to update the display
@@ -832,7 +834,7 @@ func toggle_lines(on: bool = true):
 			
 			# Get color from loaded line_colors dictionary
 			var line_color = line_colors.get(color_group, Color.WHITE)
-			spec_1d.add_constant_line(lambda, true, line_color, 2.0, false)
+			spec_1d.add_constant_line(lambda, true, line_color, 0.4, true)
 			
 			# Add annotation
 			var yval = (spec_1d.y_max * 0.9) + (y_off * spec_1d.y_max * 0.05)
