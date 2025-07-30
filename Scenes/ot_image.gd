@@ -49,6 +49,15 @@ var contrast_slider: HSlider
 var samples_slider: HSlider
 var samples_per_line_slider: HSlider
 
+# Scale parameters dialog
+var scale_params_dialog: AcceptDialog
+var scale_min_input: SpinBox
+var scale_max_input: SpinBox
+var histogram_display: Control
+var clip_min: float = 0.0
+var clip_max: float = 1.0
+var use_clipping_limits: bool = false
+
 # ZScale parameters with DS9 defaults
 var zscale_contrast: float = 0.25
 var zscale_samples: int = 600
@@ -204,6 +213,16 @@ func _load_object() -> void:
 			# Initialize zscale parameters to data range
 			z_min = 0.0
 			z_max = 1.0
+			
+			# Initialize clipping limits to data range
+			var data_min = image_data[0]
+			var data_max = image_data[0]
+			for value in image_data:
+				if is_finite(value):
+					data_min = min(data_min, value)
+					data_max = max(data_max, value)
+			clip_min = data_min
+			clip_max = data_max
 
 		white_level = get_percentile(95.5)
 		var wcs: Dictionary
@@ -246,7 +265,10 @@ func _settings_changed():
 		"is_zscale_active": is_zscale_active,
 		"zscale_contrast": zscale_contrast,
 		"zscale_samples": zscale_samples,
-		"zscale_samples_per_line": zscale_samples_per_line
+		"zscale_samples_per_line": zscale_samples_per_line,
+		"clip_min": clip_min,
+		"clip_max": clip_max,
+		"use_clipping_limits": use_clipping_limits
 	})
 
 func set_label(t: String):
@@ -317,6 +339,14 @@ func use_settings(settings: Dictionary):
 		z_max = settings['z_max']
 		if shader_material:
 			shader_material.set_shader_parameter("z_max", z_max)
+	
+	# Apply clipping limit settings
+	if "clip_min" in settings:
+		clip_min = settings['clip_min']
+	if "clip_max" in settings:
+		clip_max = settings['clip_max']
+	if "use_clipping_limits" in settings:
+		use_clipping_limits = settings['use_clipping_limits']
 	
 	applying_settings = false
 	
@@ -506,6 +536,7 @@ func _create_context_menu() -> void:
 	
 	# Add zscale option
 	context_menu.add_item("Set Z-Scale...", 5)
+	context_menu.add_item("Scale Parameters...", 7)
 	context_menu.add_separator()
 	
 	# Add invert option
@@ -599,6 +630,8 @@ func _on_context_menu_item_selected(id: int) -> void:
 			_show_zscale_params_dialog()
 		6: # Invert
 			invert_color = not invert_color
+		7: # Scale Parameters
+			_show_scale_parameters_dialog()
 	_settings_changed()
 
 func _on_colormap_selected(colormap_id: int) -> void:
@@ -673,7 +706,10 @@ func _on_zscale_dialog_confirmed() -> void:
 
 func _apply_zscale() -> void:
 	# Apply zscale algorithm with current parameters
-	_apply_zscale_with_params(zscale_contrast, zscale_samples, zscale_samples_per_line)
+	if use_clipping_limits:
+		_apply_zscale_with_limits()
+	else:
+		_apply_zscale_with_params(zscale_contrast, zscale_samples, zscale_samples_per_line)
 
 func _apply_zscale_with_params(contrast: float, n_samples: int, samples_per_line: int) -> void:
 	if not image_data or image_data.size() == 0:
@@ -914,6 +950,226 @@ func _on_zscale_params_dialog_confirmed() -> void:
 	# Apply zscale with the selected parameters
 	_apply_zscale_with_params(zscale_contrast, zscale_samples, zscale_samples_per_line)
 
+func _create_scale_parameters_dialog() -> void:
+	scale_params_dialog = AcceptDialog.new()
+	scale_params_dialog.title = "Scale Parameters"
+	scale_params_dialog.size = Vector2i(500, 400)
+	add_child(scale_params_dialog)
+	
+	# Create main container
+	var vbox = VBoxContainer.new()
+	scale_params_dialog.add_child(vbox)
+	
+	# Title label
+	var title_label = Label.new()
+	title_label.text = "Set Min/Max values for clipping and scaling"
+	vbox.add_child(title_label)
+	
+	# Min value input
+	var min_container = HBoxContainer.new()
+	vbox.add_child(min_container)
+	
+	var min_label = Label.new()
+	min_label.text = "Min Value:"
+	min_label.custom_minimum_size.x = 80
+	min_container.add_child(min_label)
+	
+	scale_min_input = SpinBox.new()
+	scale_min_input.min_value = -1000.0
+	scale_min_input.max_value = 1000.0
+	scale_min_input.step = 0.001
+	scale_min_input.value = clip_min
+	scale_min_input.value_changed.connect(_on_scale_param_changed)
+	min_container.add_child(scale_min_input)
+	
+	# Max value input
+	var max_container = HBoxContainer.new()
+	vbox.add_child(max_container)
+	
+	var max_label = Label.new()
+	max_label.text = "Max Value:"
+	max_label.custom_minimum_size.x = 80
+	max_container.add_child(max_label)
+	
+	scale_max_input = SpinBox.new()
+	scale_max_input.min_value = -1000.0
+	scale_max_input.max_value = 1000.0
+	scale_max_input.step = 0.001
+	scale_max_input.value = clip_max
+	scale_max_input.value_changed.connect(_on_scale_param_changed)
+	max_container.add_child(scale_max_input)
+	
+	# Auto percentile buttons
+	var percentile_container = HBoxContainer.new()
+	vbox.add_child(percentile_container)
+	
+	var percentile_label = Label.new()
+	percentile_label.text = "Quick Set:"
+	percentile_container.add_child(percentile_label)
+	
+	var p95_button = Button.new()
+	p95_button.text = "95%"
+	p95_button.pressed.connect(func(): _set_percentile_limits(2.5, 97.5))
+	percentile_container.add_child(p95_button)
+	
+	var p99_button = Button.new()
+	p99_button.text = "99%"
+	p99_button.pressed.connect(func(): _set_percentile_limits(0.5, 99.5))
+	percentile_container.add_child(p99_button)
+	
+	var full_range_button = Button.new()
+	full_range_button.text = "Full Range"
+	full_range_button.pressed.connect(func(): _set_full_range_limits())
+	percentile_container.add_child(full_range_button)
+	
+	# Histogram display
+	histogram_display = Control.new()
+	histogram_display.custom_minimum_size = Vector2(450, 150)
+	histogram_display.draw.connect(_draw_histogram)
+	vbox.add_child(histogram_display)
+	
+	# Connect dialog signals
+	scale_params_dialog.connect("confirmed", _on_scale_params_dialog_confirmed)
+
+func _show_scale_parameters_dialog() -> void:
+	if not scale_params_dialog:
+		_create_scale_parameters_dialog()
+	
+	# Update inputs with current values
+	scale_min_input.value = clip_min
+	scale_max_input.value = clip_max
+	
+	# Update histogram
+	histogram_display.queue_redraw()
+	
+	# Show the dialog
+	scale_params_dialog.popup_centered()
+
+func _on_scale_param_changed(value: float):
+	# Live update the image when parameters change
+	clip_min = scale_min_input.value
+	clip_max = scale_max_input.value
+	
+	# Ensure min < max
+	if clip_min >= clip_max:
+		if scale_min_input.has_focus():
+			clip_max = clip_min + 0.001
+			scale_max_input.value = clip_max
+		else:
+			clip_min = clip_max - 0.001
+			scale_min_input.value = clip_min
+	
+	use_clipping_limits = true
+	histogram_display.queue_redraw()
+	
+	# Apply the scaling immediately for live preview
+	_apply_current_scaling()
+
+func _on_scale_params_dialog_confirmed() -> void:
+	# Apply the final settings
+	clip_min = scale_min_input.value
+	clip_max = scale_max_input.value
+	use_clipping_limits = true
+	
+	# Apply current scaling method with new limits
+	_apply_current_scaling()
+	_settings_changed()
+
+func _set_percentile_limits(min_percentile: float, max_percentile: float) -> void:
+	if not image_data or image_data.size() == 0:
+		return
+	
+	var sorted_data = image_data.duplicate()
+	sorted_data.sort()
+	
+	var min_idx = int((min_percentile / 100.0) * sorted_data.size())
+	var max_idx = int((max_percentile / 100.0) * sorted_data.size()) - 1
+	
+	min_idx = clamp(min_idx, 0, sorted_data.size() - 1)
+	max_idx = clamp(max_idx, 0, sorted_data.size() - 1)
+	
+	clip_min = sorted_data[min_idx]
+	clip_max = sorted_data[max_idx]
+	
+	scale_min_input.value = clip_min
+	scale_max_input.value = clip_max
+	
+	use_clipping_limits = true
+	histogram_display.queue_redraw()
+	_apply_current_scaling()
+
+func _set_full_range_limits() -> void:
+	if not image_data or image_data.size() == 0:
+		return
+	
+	var min_val = image_data[0]
+	var max_val = image_data[0]
+	
+	for value in image_data:
+		if is_finite(value):
+			min_val = min(min_val, value)
+			max_val = max(max_val, value)
+	
+	clip_min = min_val
+	clip_max = max_val
+	
+	scale_min_input.value = clip_min
+	scale_max_input.value = clip_max
+	
+	use_clipping_limits = true
+	histogram_display.queue_redraw()
+	_apply_current_scaling()
+
+func _apply_current_scaling() -> void:
+	# Apply the current scaling method (zscale or percentile) with clipping limits
+	if is_zscale_active:
+		_apply_zscale_with_limits()
+	else:
+		# For percentile scaling, the limits are applied directly through shader
+		if use_clipping_limits:
+			var data_min = image_data[0]
+			var data_max = image_data[0]
+			for value in image_data:
+				if is_finite(value):
+					data_min = min(data_min, value)
+					data_max = max(data_max, value)
+			
+			if data_max > data_min:
+				z_min = (clip_min - data_min) / (data_max - data_min)
+				z_max = (clip_max - data_min) / (data_max - data_min)
+				z_min = clamp(z_min, 0.0, 1.0)
+				z_max = clamp(z_max, 0.0, 1.0)
+				if shader_material:
+					shader_material.set_shader_parameter("z_min", z_min)
+					shader_material.set_shader_parameter("z_max", z_max)
+
+func _apply_zscale_with_limits() -> void:
+	if not image_data or image_data.size() == 0:
+		return
+	
+	var data_to_use = image_data
+	
+	# If using clipping limits, pre-filter the data
+	if use_clipping_limits:
+		var filtered_data = PackedFloat32Array()
+		for value in image_data:
+			if value >= clip_min and value <= clip_max:
+				filtered_data.append(value)
+		
+		if filtered_data.size() > 0:
+			data_to_use = filtered_data
+	
+	# Calculate zscale limits on the (potentially filtered) data
+	var limits = _calculate_zscale_limits(data_to_use, width, height, zscale_contrast, zscale_samples, zscale_samples_per_line)
+	
+	# Update shader parameters
+	z_min = limits[0]
+	z_max = limits[1]
+	
+	if shader_material:
+		shader_material.set_shader_parameter("z_min", z_min)
+		shader_material.set_shader_parameter("z_max", z_max)
+
 func _apply_filter_trimming() -> void:
 	# Apply hardcoded filter boundaries for alignment
 	# F115W: trim above 1.3 microns
@@ -981,3 +1237,111 @@ func _trim_texture_data(new_left: float, new_right: float, original_left: float,
 	# Update image data and width
 	image_data = new_image_data
 	width = new_width
+
+func _draw_histogram():
+	if not image_data or image_data.size() == 0:
+		return
+	
+	var hist_size = histogram_display.size
+	if hist_size.x <= 0 or hist_size.y <= 0:
+		return
+	
+	# Calculate histogram
+	var num_bins = 100
+	var min_val = image_data[0]
+	var max_val = image_data[0]
+	
+	# Find data range
+	for value in image_data:
+		if is_finite(value):
+			min_val = min(min_val, value)
+			max_val = max(max_val, value)
+	
+	if max_val == min_val:
+		max_val = min_val + 1.0
+	
+	var bin_width = (max_val - min_val) / num_bins
+	var bins = []
+	bins.resize(num_bins)
+	for i in range(num_bins):
+		bins[i] = 0
+	
+	# Fill histogram
+	for value in image_data:
+		if is_finite(value):
+			var bin_idx = int((value - min_val) / bin_width)
+			bin_idx = clamp(bin_idx, 0, num_bins - 1)
+			bins[bin_idx] += 1
+	
+	# Find max count for scaling
+	var max_count = 0
+	for count in bins:
+		max_count = max(max_count, count)
+	
+	if max_count == 0:
+		return
+	
+	# Draw histogram
+	var margin = 10
+	var plot_width = hist_size.x - 2 * margin
+	var plot_height = hist_size.y - 2 * margin
+	var bin_pixel_width = plot_width / num_bins
+	
+	# Draw background
+	histogram_display.draw_rect(Rect2(Vector2.ZERO, hist_size), Color.BLACK)
+	
+	# Draw histogram bars
+	for i in range(num_bins):
+		var bar_height = (bins[i] / float(max_count)) * plot_height
+		var x = margin + i * bin_pixel_width
+		var y = hist_size.y - margin - bar_height
+		
+		histogram_display.draw_rect(
+			Rect2(x, y, bin_pixel_width - 1, bar_height),
+			Color.WHITE
+		)
+	
+	# Draw clipping limit lines if active
+	if use_clipping_limits:
+		var min_x = margin + ((clip_min - min_val) / (max_val - min_val)) * plot_width
+		var max_x = margin + ((clip_max - min_val) / (max_val - min_val)) * plot_width
+		
+		# Draw min limit line
+		histogram_display.draw_line(
+			Vector2(min_x, margin),
+			Vector2(min_x, hist_size.y - margin),
+			Color.RED, 2
+		)
+		
+		# Draw max limit line
+		histogram_display.draw_line(
+			Vector2(max_x, margin),
+			Vector2(max_x, hist_size.y - margin),
+			Color.RED, 2
+		)
+	
+	# Draw labels
+	var font = ThemeDB.fallback_font
+	var font_size = 12
+	
+	# Min value label
+	histogram_display.draw_string(
+		font,
+		Vector2(margin, hist_size.y - 2),
+		"%.3f" % min_val,
+		HORIZONTAL_ALIGNMENT_LEFT,
+		-1,
+		font_size,
+		Color.WHITE
+	)
+	
+	# Max value label
+	histogram_display.draw_string(
+		font,
+		Vector2(hist_size.x - margin, hist_size.y - 2),
+		"%.3f" % max_val,
+		HORIZONTAL_ALIGNMENT_RIGHT,
+		-1,
+		font_size,
+		Color.WHITE
+	)
