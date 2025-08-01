@@ -4,8 +4,12 @@ extends Control
 @onready var class_options: OptionButton = %ClassOptions
 @onready var spurious_checkbox: CheckBox = $MarginContainer/VBoxContainer/GridContainer/Spurious
 @onready var redshift_input: SpinBox = %RedshiftInput
+@onready var reset_button: Button = %ResetButton
 
 signal save_galaxy(vals: Dictionary)
+signal redshift_changed(value: float)
+
+var original_redshift = 0.0
 
 func _ready():
 	mouse_filter = MOUSE_FILTER_PASS
@@ -21,6 +25,10 @@ func _ready():
 	redshift_input.max_value = 20.0
 	redshift_input.step = 0.001
 	redshift_input.value = 0.0
+	
+	# Connect redshift signals
+	redshift_input.value_changed.connect(_on_redshift_changed)
+	reset_button.pressed.connect(_on_reset_pressed)
 
 func set_galaxy_details(details: Dictionary):
 	comments.text = details['comments'] if details['comments'] else ""
@@ -37,9 +45,11 @@ func set_galaxy_details(details: Dictionary):
 	# Set redshift input
 	var galaxy_redshift = details.get('redshift', 0.0)
 	if galaxy_redshift != null:
-		redshift_input.value = float(galaxy_redshift)
+		original_redshift = float(galaxy_redshift)
+		redshift_input.set_value_no_signal(original_redshift)
 	else:
-		redshift_input.value = 0.0
+		original_redshift = 0.0
+		redshift_input.set_value_no_signal(0.0)
 	
 	%TickRect.text = ""
 
@@ -67,3 +77,13 @@ func save():
 	}
 	
 	save_galaxy.emit(save_data)
+
+func _on_redshift_changed(value: float):
+	redshift_changed.emit(value)
+	save()
+
+func _on_reset_pressed():
+	redshift_input.value = original_redshift
+	
+func set_redshift(value: float):
+	redshift_input.set_value_no_signal(value)

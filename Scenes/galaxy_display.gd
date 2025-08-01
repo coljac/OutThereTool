@@ -27,6 +27,8 @@ var path = "./data/"
 var redshift = 1.0
 @onready var otimg = preload("res://Scenes/ot_image.tscn")
 
+signal redshift_changed_in_display(value: float)
+
 var asset_helper: AssetHelper
 # = AssetHelper.new()
 
@@ -183,7 +185,7 @@ func oned_zoomed():
 	toggle_lines(true)
 
 
-func set_redshift(z: float) -> void:
+func set_redshift(z: float, emit_signal: bool = true) -> void:
 	$CanvasLayer/RedshiftLabel.text = ""
 	if z == redshift:
 		redshift_label.text = "z = " + "%.*f" % [3, z]
@@ -194,6 +196,9 @@ func set_redshift(z: float) -> void:
 	toggle_lines(false)
 	toggle_lines(true)
 	redshift_label.text = "z = " + "%.*f" % [3, z]
+	slider.set_value_no_signal(z)
+	if emit_signal:
+		redshift_changed_in_display.emit(z)
 	
 	
 #func _process(delta: float) -> void:
@@ -263,7 +268,7 @@ func _on_object_loaded(success: bool) -> void:
 		# Fall back to async loading
 		asset_helper.load_all_resources()
 		_try_load_cached_resources()
-	set_redshift(redshift)
+	set_redshift(redshift, false)
 
 func _on_resource_ready(resource_name: String) -> void:
 	# A resource has been loaded, try to update the display
@@ -672,7 +677,7 @@ func _load_all_cached_resources_sync() -> void:
 func _finalize_loading() -> void:
 	Logger.logger.info("GalaxyDisplay: Finalizing loading for: " + object_id)
 	_is_loading = false
-	set_redshift(redshift)
+	set_redshift(redshift, false)
 	call_deferred("oned_zoomed")
 	
 	# Apply locked image settings if enabled
@@ -849,7 +854,7 @@ func toggle_lines(on: bool = true):
 		spec_1d.annotations = []
 
 func _on_h_slider_value_changed(value: float) -> void:
-	set_redshift(value)
+	set_redshift(value, true)
 
 
 func _on_zoom_in_pressed() -> void:
@@ -861,7 +866,7 @@ func _on_zoom_out_pressed() -> void:
 	print("Zoom out pressed")
 
 func _on_redshift_plot_left_clicked(position: Vector2) -> void:
-	set_redshift(position.x)
+	set_redshift(position.x, true)
 
 # Toggle methods for 1D plot series
 func toggle_flux_visibility(visible: bool) -> void:
@@ -1008,4 +1013,4 @@ func _set_redshift_for_line(line_name: String, line_info: Dictionary):
 		new_redshift = 20.0
 	
 	Logger.logger.info("Setting redshift to " + str(new_redshift) + " to place " + line_name + " at cursor position " + str(observed_wavelength) + " μm")
-	set_redshift(new_redshift)
+	set_redshift(new_redshift, true)

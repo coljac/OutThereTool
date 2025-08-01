@@ -14,8 +14,6 @@ extends Control
 @onready var cb_bestfit = %CBBestfit
 @onready var cb_errors = %CBErrors
 @onready var cb_contam = %CBContam
-@onready var current_redshift_edit = %CurrentRedshiftEdit
-@onready var reset_redshift_button = %ResetRedshiftButton
 var all_lock = true
 var locked = true
 var image_settings = {}
@@ -30,7 +28,6 @@ var zoom_level = 100
 var objects = []
 # var obj_index = 0
 var dialog_open = false
-var original_redshift = 0.0
 
 # Comments storage
 var current_galaxy_comments: Array = []
@@ -63,14 +60,8 @@ func _ready():
 	cb_errors.toggled.connect(_on_errors_toggled)
 	cb_contam.toggled.connect(_on_contam_toggled)
 	
-	# Connect redshift edit signals
-	if current_redshift_edit:
-		current_redshift_edit.value_changed.connect(_on_current_redshift_changed)
-	if reset_redshift_button:
-		reset_redshift_button.pressed.connect(_on_reset_redshift_pressed)
-	
 	# Connect to ObjectViewing's redshift changes
-	%ObjectViewing.get_node("%RedshiftInput").value_changed.connect(_on_object_viewing_redshift_changed)
+	%ObjectViewing.redshift_changed.connect(_on_redshift_changed)
 	
 	# Set default checkbox states
 	cb_flux.button_pressed = true
@@ -229,11 +220,9 @@ func _display_object(obj_id: String) -> void:
 	%ObjectViewing.set_galaxy_details(galaxy_with_user_data)
 	gal_display.name = obj_id
 	
-	# Update current redshift display and store original value
-	var redshift = galaxy_with_user_data.get('redshift', 0.0)
-	original_redshift = redshift if redshift != null else 0.0
-	if current_redshift_edit:
-		current_redshift_edit.set_value_no_signal(original_redshift)
+	# Connect galaxy display redshift changes if not already connected
+	if not gal_display.redshift_changed_in_display.is_connected(_on_galaxy_display_redshift_changed):
+		gal_display.redshift_changed_in_display.connect(_on_galaxy_display_redshift_changed)
 	
 	# Fetch comments from server for this galaxy asynchronously
 	DataManager.fetch_galaxy_comments_async(obj_id)
@@ -651,31 +640,14 @@ func _on_sync_comments_pressed() -> void:
 	await DataManager.sync_comments_to_server()
 	print("Comment sync completed")
 
-func _on_current_redshift_changed(value: float) -> void:
-	"""Handle changes to the current redshift text box"""
-	# Update the ObjectViewing redshift input
-	%ObjectViewing.get_node("%RedshiftInput").set_value_no_signal(value)
-	
-	# Update the galaxy display
-	var gal_display = %SimpleTab.get_tab_control(0)
-	if gal_display and gal_display.has_method("set_redshift"):
-		gal_display.set_redshift(value)
-
-func _on_object_viewing_redshift_changed(value: float) -> void:
+func _on_redshift_changed(value: float) -> void:
 	"""Handle changes from the ObjectViewing redshift input"""
-	# Update the current redshift display
-	if current_redshift_edit:
-		current_redshift_edit.set_value_no_signal(value)
-	
-	# Update the galaxy display
+	# Update the galaxy display without emitting signal to avoid loop
 	var gal_display = %SimpleTab.get_tab_control(0)
 	if gal_display and gal_display.has_method("set_redshift"):
-		gal_display.set_redshift(value)
+		gal_display.set_redshift(value, false)
 
-func _on_reset_redshift_pressed() -> void:
-	"""Handle reset redshift button press"""
-	# Reset to original value
-	if current_redshift_edit:
-		current_redshift_edit.value = original_redshift
-	
-	# This will trigger the value_changed signal and update everything else
+func _on_galaxy_display_redshift_changed(value: float) -> void:
+	"""Handle redshift changes from galaxy display (slider, plot click, leader key)"""
+	# Update the ObjectViewing redshift input
+	%ObjectViewing.set_redshift(value)
