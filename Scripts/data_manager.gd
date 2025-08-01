@@ -213,11 +213,15 @@ func get_gals(redshift_min: float = 0.0, redshift_max: float = 10.0, bands: int 
 	
 	# Add default user data fields (will be populated when individual galaxy is viewed)
 	for gal in gals:
+		# Store the canonical redshift
+		var canonical_redshift = gal.get("redshift", 0.0)
+		gal["canonical_redshift"] = canonical_redshift
+		
 		gal["status"] = -1
 		gal["comments"] = ""
 		gal["galaxy_class"] = 0
 		gal["checkboxes"] = 0
-		gal["redshift"] = 0.0
+		gal["redshift"] = canonical_redshift  # Use canonical as default
 		gal["altered"] = 0
 	
 	return gals
@@ -253,21 +257,27 @@ func get_gals_by_ids(object_ids: Array) -> Array:
 	
 	# Merge with user comments/status for these specific galaxies
 	for gal in gals:
+		# Store the canonical redshift before overwriting
+		var canonical_redshift = gal.get("redshift", 0.0)
+		
 		var user_data = _get_user_comment(gal["id"])
 		if user_data:
 			gal["status"] = user_data["status"]
 			gal["comments"] = user_data["comments"]
 			gal["galaxy_class"] = user_data.get("galaxy_class", 0)
 			gal["checkboxes"] = user_data.get("checkboxes", 0)
-			gal["redshift"] = user_data.get("redshift", 0.0)
+			gal["redshift"] = user_data.get("redshift", canonical_redshift)
 			gal["altered"] = user_data["altered"]
 		else:
 			gal["status"] = -1
 			gal["comments"] = ""
 			gal["galaxy_class"] = 0
 			gal["checkboxes"] = 0
-			gal["redshift"] = 0.0
+			gal["redshift"] = canonical_redshift
 			gal["altered"] = 0
+		
+		# Add canonical redshift as a separate field for reset functionality
+		gal["canonical_redshift"] = canonical_redshift
 	
 	# Create a dictionary to preserve order of input IDs
 	var id_to_gal = {}
@@ -329,21 +339,27 @@ func get_galaxy_with_user_data(galaxy_id: String) -> Dictionary:
 		return {}
 	
 	var gal = gals[0]
+	# Store the canonical redshift before overwriting
+	var canonical_redshift = gal.get("redshift", 0.0)
+	
 	var user_data = _get_user_comment(galaxy_id)
 	if user_data:
 		gal["status"] = user_data["status"]
 		gal["comments"] = user_data["comments"]
 		gal["galaxy_class"] = user_data.get("galaxy_class", 0)
 		gal["checkboxes"] = user_data.get("checkboxes", 0)
-		gal["redshift"] = user_data.get("redshift", 0.0)
+		gal["redshift"] = user_data.get("redshift", canonical_redshift)
 		gal["altered"] = user_data["altered"]
 	else:
 		gal["status"] = -1
 		gal["comments"] = ""
 		gal["galaxy_class"] = 0
 		gal["checkboxes"] = 0
-		gal["redshift"] = 0.0
+		gal["redshift"] = canonical_redshift
 		gal["altered"] = 0
+	
+	# Add canonical redshift as a separate field for reset functionality
+	gal["canonical_redshift"] = canonical_redshift
 	
 	return gal
 

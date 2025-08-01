@@ -42,14 +42,13 @@ func set_galaxy_details(details: Dictionary):
 	var checkboxes = details.get('checkboxes', 0)
 	spurious_checkbox.button_pressed = (checkboxes & 1) != 0
 	
-	# Set redshift input
-	var galaxy_redshift = details.get('redshift', 0.0)
-	if galaxy_redshift != null:
-		original_redshift = float(galaxy_redshift)
-		redshift_input.set_value_no_signal(original_redshift)
-	else:
-		original_redshift = 0.0
-		redshift_input.set_value_no_signal(0.0)
+	# Set redshift input - use canonical redshift for reset
+	var canonical_redshift = details.get('canonical_redshift', 0.0)
+	var user_redshift = details.get('redshift', canonical_redshift)
+	
+	original_redshift = float(canonical_redshift) if canonical_redshift != null else 0.0
+	var display_redshift = float(user_redshift) if user_redshift != null else original_redshift
+	redshift_input.set_value_no_signal(display_redshift)
 	
 	%TickRect.text = ""
 
