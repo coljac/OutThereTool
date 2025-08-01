@@ -209,6 +209,14 @@ theme_override_font_sizes/font_size = 44
 text = "z  = 1.0"
 script = ExtResource("6_1oh7d")
 
+[node name="PixelLabel" type="Label" parent="CanvasLayer"]
+visible = false
+offset_left = 20.0
+offset_top = 543.0
+offset_right = 60.0
+offset_bottom = 566.0
+text = "100"
+
 [connection signal="reference_pressed" from="VBoxContainer/TabToolbar" to="." method="_on_tab_toolbar_reference_pressed"]
 [connection signal="zoomed" from="VBoxContainer/MarginContainer5/Spec1d" to="." method="oned_zoomed"]
 [connection signal="plot_left_clicked" from="VBoxContainer/MarginContainer6/VBoxContainer/Redshift" to="." method="_on_redshift_plot_left_clicked"]

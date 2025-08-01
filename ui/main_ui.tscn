@@ -172,6 +172,37 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 2
 
+[node name="SpacerRedshift" type="Control" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[node name="CurrentRedshiftLabel" type="Label" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 0.866667, 1)
+theme_override_font_sizes/font_size = 18
+text = "Current Redshift"
+horizontal_alignment = 1
+
+[node name="CurrentRedshiftContainer" type="HBoxContainer" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="CurrentRedshiftEdit" type="SpinBox" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/CurrentRedshiftContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 20.0
+step = 0.001
+prefix = "z="
+
+[node name="ResetRedshiftButton" type="Button" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer/CurrentRedshiftContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Reset"
+
+[node name="SpacerAfterRedshift" type="Control" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
 [node name="Preferences" type="Label" parent="VBoxContainer/HSplitContainer/LeftPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 0.866667, 1)

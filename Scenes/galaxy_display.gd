@@ -595,6 +595,9 @@ func get_performance_stats() -> Dictionary:
 		return asset_helper.get_performance_stats()
 	return {}
 
+func set_pixel_label(val: float):
+	%PixelLabel.text = "%.*f" % [1, val]
+	
 # Check if all required resources are already in memory cache
 func _all_resources_cached() -> bool:
 	if not asset_helper or not asset_helper.manifest:
